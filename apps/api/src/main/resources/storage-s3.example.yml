@@ -1,0 +1,3 @@
+# Future adapter contract only; no S3 adapter or credentials in Phase 0.
+# StoragePort must preserve private, authorized access and temporary URLs.
+# Production configuration will use region, private bucket and task-role IAM.

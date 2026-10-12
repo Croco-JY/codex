@@ -1,0 +1,41 @@
+node_modules/
+dist/
+target/
+.env
+.local/
+playwright-report/
+test-results/
+.terraform/
+*.tfstate*
+.venv/
+__pycache__/
+
+*.tsbuildinfo
+
+# Local environment files and credentials
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local caches, logs, and reports
+.cache/
+.pnpm-store/
+.m2/
+.uv-cache/
+.pytest_cache/
+.ruff_cache/
+coverage/
+*.log
+.DS_Store
+
+# Terraform inputs may contain deployment credentials
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+!*.tfvars.json.example

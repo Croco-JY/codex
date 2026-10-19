@@ -38,7 +38,7 @@ CREATE TABLE supplier_alias (
 );
 CREATE TABLE supplier_verification_event (
  id uuid PRIMARY KEY,supplier_id uuid NOT NULL REFERENCES supplier_profile(id),previous_status varchar(30),new_status varchar(30) NOT NULL,
- reason varchar(1000) NOT NULL CHECK(length(trim(reason))>0),actor_issuer varchar(500) NOT NULL,actor_subject varchar(255) NOT NULL,
+ reason varchar(1000) NOT NULL CHECK(length(trim(reason))>0),actor_issuer varchar(500) NOT NULL CHECK(length(trim(actor_issuer))>0),actor_subject varchar(255) NOT NULL CHECK(length(trim(actor_subject))>0),
  source_observation_id uuid REFERENCES data_source_observation(id),occurred_at timestamptz NOT NULL DEFAULT now(),
  CHECK(previous_status IS NULL OR previous_status IN ('DISCOVERED','CLAIMED','VERIFIED','AUDITED','TRANSACTED','PROVEN')),
  CHECK(new_status IN ('DISCOVERED','CLAIMED','VERIFIED','AUDITED','TRANSACTED','PROVEN'))
@@ -51,6 +51,7 @@ CREATE TABLE supplier_source (
 );
 CREATE INDEX supplier_source_observation_idx ON supplier_source(source_observation_id);
 CREATE TRIGGER supplier_binding_immutable BEFORE UPDATE OR DELETE ON supplier_external_record FOR EACH ROW EXECUTE FUNCTION reject_source_fact_mutation();
+CREATE TRIGGER supplier_binding_no_truncate BEFORE TRUNCATE ON supplier_external_record FOR EACH STATEMENT EXECUTE FUNCTION reject_source_fact_mutation();
 CREATE TRIGGER supplier_verification_immutable BEFORE UPDATE OR DELETE ON supplier_verification_event FOR EACH ROW EXECUTE FUNCTION reject_source_fact_mutation();
 CREATE TRIGGER supplier_verification_no_truncate BEFORE TRUNCATE ON supplier_verification_event FOR EACH STATEMENT EXECUTE FUNCTION reject_source_fact_mutation();
 COMMENT ON TABLE supplier_external_record IS 'Identity Resolution: persistent external record identifies one canonical SupplierProfile. Not fact provenance.';

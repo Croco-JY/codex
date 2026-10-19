@@ -43,8 +43,8 @@ CREATE INDEX review_latest_idx ON data_source_observation_review(observation_id,
 CREATE FUNCTION protect_external_identity() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE policy text; expected text;
 BEGIN
- IF TG_OP='UPDATE' AND (NEW.data_source_id,NEW.record_kind,NEW.external_record_key,NEW.normalized_external_record_key)
- IS DISTINCT FROM (OLD.data_source_id,OLD.record_kind,OLD.external_record_key,OLD.normalized_external_record_key)
+ IF TG_OP='UPDATE' AND (NEW.id,NEW.data_source_id,NEW.record_kind,NEW.external_record_key,NEW.normalized_external_record_key)
+ IS DISTINCT FROM (OLD.id,OLD.data_source_id,OLD.record_kind,OLD.external_record_key,OLD.normalized_external_record_key)
  THEN RAISE EXCEPTION 'External identity is immutable' USING ERRCODE='23514'; END IF;
  SELECT normalization_policy INTO policy FROM data_source WHERE id=NEW.data_source_id FOR SHARE;
  expected:=CASE policy WHEN 'TRIM' THEN btrim(NEW.external_record_key) ELSE NEW.external_record_key END;
@@ -62,6 +62,8 @@ END; $$;
 CREATE TRIGGER source_contract BEFORE UPDATE ON data_source FOR EACH ROW EXECUTE FUNCTION protect_source_contract();
 CREATE FUNCTION reject_source_fact_mutation() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN RAISE EXCEPTION 'Source fact is append-only' USING ERRCODE='23514'; END; $$;
+CREATE TRIGGER record_no_delete BEFORE DELETE ON data_source_record FOR EACH ROW EXECUTE FUNCTION reject_source_fact_mutation();
+CREATE TRIGGER record_no_truncate BEFORE TRUNCATE ON data_source_record FOR EACH STATEMENT EXECUTE FUNCTION reject_source_fact_mutation();
 CREATE TRIGGER observation_immutable BEFORE UPDATE OR DELETE ON data_source_observation FOR EACH ROW EXECUTE FUNCTION reject_source_fact_mutation();
 CREATE TRIGGER observation_no_truncate BEFORE TRUNCATE ON data_source_observation FOR EACH STATEMENT EXECUTE FUNCTION reject_source_fact_mutation();
 CREATE TRIGGER review_immutable BEFORE UPDATE OR DELETE ON data_source_observation_review FOR EACH ROW EXECUTE FUNCTION reject_source_fact_mutation();

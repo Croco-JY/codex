@@ -73,6 +73,7 @@ CREATE TRIGGER facility_geography AFTER INSERT OR UPDATE ON facility FOR EACH ST
 CREATE TRIGGER region_facility_geography AFTER UPDATE ON region FOR EACH STATEMENT EXECUTE FUNCTION validate_facility_geography();
 CREATE TRIGGER cluster_facility_geography AFTER UPDATE ON industrial_cluster FOR EACH STATEMENT EXECUTE FUNCTION validate_facility_geography();
 CREATE TRIGGER facility_binding_immutable BEFORE UPDATE OR DELETE ON facility_external_record FOR EACH ROW EXECUTE FUNCTION reject_source_fact_mutation();
+CREATE TRIGGER facility_binding_no_truncate BEFORE TRUNCATE ON facility_external_record FOR EACH STATEMENT EXECUTE FUNCTION reject_source_fact_mutation();
 COMMENT ON TABLE facility_external_record IS 'Identity Resolution: FACILITY external record identifies exactly one canonical Facility. Not fact evidence.';
 COMMENT ON TABLE facility_source IS 'Fact Provenance: an immutable observation supports a facility fact; not an external identity binding.';
 COMMENT ON TABLE facility_capability_source IS 'Typed observation provenance for a facility-capability assertion.';

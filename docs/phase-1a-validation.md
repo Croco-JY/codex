@@ -8,7 +8,7 @@ Commands ran in this cloud environment with Java 25.0.4.1, PostgreSQL 18.3 Testc
 
 | Check | Observed result |
 |---|---|
-| Complete backend `./mvnw -B verify`, through `./scripts/test.sh` | 59 passed; 0 failed, errors or skipped |
+| Complete backend `./mvnw -B verify`, through `./scripts/test.sh` | 63 passed; 0 failed, errors or skipped |
 | Frontend strict typecheck | passed |
 | Vitest | 2 passed |
 | Production frontend build | passed |
@@ -21,7 +21,7 @@ Commands ran in this cloud environment with Java 25.0.4.1, PostgreSQL 18.3 Testc
 | Gitleaks 8.28.0, archive checksum verified | committed history and final staged changes scanned with redaction; no leaks |
 | Git whitespace validation | passed |
 
-Existing `scripts/test.sh` exited 0. The live local API migrated the existing development database from V2 to V8 and served the browser smoke test. No Flyway repair, disabled validation, H2 fallback or test skip was used. GitHub Actions results are separate; this report claims local validation only.
+Existing `scripts/test.sh` exited 0. The final hardening browser run used a separate fresh V8 development database; the populated V1/V2 upgrade is verified by MigrationUpgradeTest. No Flyway repair, disabled validation, H2 fallback or test skip was used. GitHub Actions results are separate; this report claims local validation only.
 
 ## Backend test inventory
 
@@ -34,10 +34,11 @@ Existing `scripts/test.sh` exited 0. The live local API migrated the existing de
 | IdentityTest | 3 |
 | MigrationUpgradeTest | 2 |
 | OidcSecurityIntegrationTest | 3 |
+| PersistentIdentityHardeningTest | 4 |
 | PlatformFoundationTest | 5 |
 | SupplierDirectoryTest | 14 |
 
-The 13 Phase 0 backend tests remain and pass (Foundation 6, Identity 3, OIDC security 3, architecture 1). Phase 1A adds 46 tests: platform 5, migrations 2, geography/source 13, supplier 14, facility/search 12. The existing foundation migration-count assertion now expects 8 migrations; its prior behavioral checks remain. Frontend and browser tests are unchanged.
+The 13 Phase 0 backend tests remain and pass (Foundation 6, Identity 3, OIDC security 3, architecture 1). Phase 1A adds 50 tests: platform 5, migrations 2, geography/source 13, supplier 14, facility/search 12, final identity hardening 4. The existing foundation migration-count assertion now expects 8 migrations; its prior behavioral checks remain. Frontend and browser tests are unchanged.
 
 New tests cover real PostgreSQL direct constraints, migration history preservation, audit UPDATE/DELETE/TRUNCATE guards, platform grant/revoke and organization-role isolation, source raw/normalized identities, observation retry/conflict/supersession, append-only reviews, supplier identity concurrency, link cardinalities, verification rollback when audit fails, geography and capability cycles, exact nullable quantities, stale versions and same-facility search semantics.
 
@@ -116,3 +117,21 @@ No unresolved local validation failures. Production-scale import/search throughp
 The operator bootstrap runbook documents atomic grant/audit, but no production identity or database was provisioned. Live OIDC provider integration and production deployment remain unvalidated here; tests use the existing mocked decoder and isolated synthetic principals. The frontend retains the Phase 0 shell; a full directory/admin UI is deferred by scope.
 
 Before Phase 1B/V9, explicitly review the Material architecture choice (supplier-scoped, canonical plus listing/offer, or staged hybrid), DB-enforced subtype integrity, immutable price identity/value with narrow closing rules, deterministic scope-aware resolver order, observation-based inventory idempotency/NULL uniqueness, and future raw-artifact authorization/retention. These are planning gates, not implemented placeholders; see [plan](phase-1-plan.md).
+
+## Final Phase 1A hardening
+
+The workflow display name is now `SOURCE OS CI` and its artifact is `source-os-test-results`. All jobs, steps, commands and validation coverage remain unchanged; the workflow diff contains only those two replacements.
+
+Only unmerged migrations V6/V7/V8 change in this pass. V7 requires `length(trim(actor_issuer)) > 0` and `length(trim(actor_subject)) > 0` for verification events, in addition to NOT NULL. V3/V4/V5 and V1/V2 remain unchanged. No V9 or new tables are introduced.
+
+Persistent identity protection uses the existing rejection function, without a new lifecycle or history framework:
+
+- `data_source_record`: protect the stable UUID as well as its source/kind/raw/normalized key from UPDATE; reject physical DELETE and TRUNCATE. An unreferenced record could previously be deleted because no FK yet depended on it. Legitimate first_seen_at/last_seen_at observation updates remain allowed and are tested.
+- `supplier_external_record` and `facility_external_record`: retain UPDATE/DELETE guards and explicitly reject TRUNCATE. Row mutation triggers do not fire for TRUNCATE, and these binding tables have no inbound FK that reliably prevents their independent truncation. Direct guards make their persistence independent of other history tables.
+- Observations, observation reviews and verification events retain their existing UPDATE/DELETE/TRUNCATE protection. Reviews and verification actions append new facts; they do not edit old events.
+
+The source/supplier/facility controllers and services were reviewed. No ordinary HTTP UPDATE/DELETE route modifies historical observations, reviews, verification events or bindings; no DELETE endpoint exists for source records. Regression requests reject PUT/PATCH/DELETE even for a platform administrator. Canonical supplier/facility updates and source-record observation timestamps remain distinct from immutable history. No application implementation or provenance schema was changed.
+
+Migration validation uses new PostgreSQL 18 databases for clean V1→V8 and populated Phase 0 V1/V2→V8. Browser smoke uses a separate fresh development database. The earlier V8 development database is preserved, with no Flyway repair, checksum replacement or disabled validation. Since these migrations are unmerged, an already-applied development V6–V8 is not an upgrade baseline for the edited checksums.
+
+The initial full run passed backend/frontend checks but browser navigation timed out while reusing an existing development server. The unchanged smoke passed a diagnostic rerun with tracing. The final full `scripts/test.sh` run exited 0 with Playwright starting a fresh web server after the build, matching CI startup order. No application code, test assertion or timeout was changed. Final counts are 63 backend, 2 frontend and 1 browser test, all passed; contract regeneration and Terraform checks also pass.

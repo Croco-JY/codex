@@ -9,7 +9,7 @@ CREATE TABLE data_source (
 );
 CREATE TABLE data_source_record (
  id uuid PRIMARY KEY,data_source_id uuid NOT NULL REFERENCES data_source(id),
- record_kind varchar(30) NOT NULL CHECK(record_kind IN ('SUPPLIER','FACILITY','MATERIAL','MATERIAL_VARIANT')),
+ record_kind varchar(30) NOT NULL CONSTRAINT data_source_record_kind_check CHECK(record_kind IN ('SUPPLIER','FACILITY','MATERIAL','MATERIAL_VARIANT')),
  external_record_key varchar(500) NOT NULL CHECK(length(trim(external_record_key))>0),
  normalized_external_record_key varchar(500) NOT NULL CHECK(length(normalized_external_record_key)>0),
  first_seen_at timestamptz,last_seen_at timestamptz,created_at timestamptz NOT NULL DEFAULT now(),

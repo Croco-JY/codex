@@ -63,6 +63,7 @@ class MigrationUpgradeTest {
         assertThatThrownBy(() -> stmt.execute(sql))
             .isInstanceOf(SQLException.class)
             .hasMessageContaining("append-only");
+      assertNamedRecordKindConstraint(c);
     }
   }
 
@@ -96,6 +97,56 @@ class MigrationUpgradeTest {
                   + " AND data_type='jsonb'");
       json.next();
       assertThat(json.getInt(1)).isZero();
+      assertNamedRecordKindConstraint(c);
+    }
+  }
+
+  private void assertNamedRecordKindConstraint(Connection connection) throws SQLException {
+    try (var statement = connection.createStatement()) {
+      var constraint =
+          statement.executeQuery(
+              """
+              SELECT count(*) FROM pg_constraint
+              WHERE conrelid='data_source_record'::regclass
+                AND conname='data_source_record_kind_check' AND contype='c' AND convalidated
+              """);
+      assertThat(constraint.next()).isTrue();
+      assertThat(constraint.getInt(1)).isEqualTo(1);
+    }
+    UUID source = UUID.randomUUID();
+    try (var insert =
+        connection.prepareStatement(
+            """
+            INSERT INTO data_source(id,source_code,source_type,name,access_method)
+            VALUES(?,?,'MANUAL_ENTRY','Synthetic record kind constraint test','MANUAL')
+            """)) {
+      insert.setObject(1, source);
+      insert.setString(2, "kind-check-" + source);
+      assertThat(insert.executeUpdate()).isEqualTo(1);
+    }
+    try (var insert =
+        connection.prepareStatement(
+            """
+            INSERT INTO data_source_record
+              (id,data_source_id,record_kind,external_record_key,normalized_external_record_key)
+            VALUES(?,?,?,'same-external-key','same-external-key')
+            """)) {
+      insert.setObject(2, source);
+      for (String kind : List.of("SUPPLIER", "FACILITY", "MATERIAL", "MATERIAL_VARIANT")) {
+        insert.setObject(1, UUID.randomUUID());
+        insert.setString(3, kind);
+        assertThat(insert.executeUpdate()).isEqualTo(1);
+      }
+      insert.setObject(1, UUID.randomUUID());
+      insert.setString(3, "INVALID_KIND");
+      assertThatThrownBy(insert::executeUpdate)
+          .isInstanceOfSatisfying(
+              org.postgresql.util.PSQLException.class,
+              error -> {
+                assertThat(error.getSQLState()).isEqualTo("23514");
+                assertThat(error.getServerErrorMessage().getConstraint())
+                    .isEqualTo("data_source_record_kind_check");
+              });
     }
   }
 }

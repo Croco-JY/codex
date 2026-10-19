@@ -9,8 +9,10 @@ import org.springframework.transaction.annotation.*;
 @Service
 public class AuditRecorder {
   private final JdbcClient jdbc;
+  private final com.sourceos.identity.IdentityService identities;
 
-  public AuditRecorder(JdbcClient jdbc) {
+  public AuditRecorder(JdbcClient jdbc,com.sourceos.identity.IdentityService identities) {
+    this.identities=identities;
     this.jdbc = jdbc;
   }
 
@@ -51,4 +53,10 @@ public class AuditRecorder {
     jdbc.sql("INSERT INTO audit_event(id,actor_issuer,actor_subject,scope,action,entity_type,entity_id,request_id,before_state,after_state) VALUES(:id,:issuer,:subject,'PLATFORM',:action,:type,:entity,:request,CAST(:before AS jsonb),CAST(:after AS jsonb))")
       .param("id",UUID.randomUUID()).param("issuer",actor.issuer()).param("subject",actor.subject()).param("action",action).param("type",entityType).param("entity",entityId).param("request",requestId).param("before",b).param("after",a).update();
   }
-} 
+ @Transactional(propagation=Propagation.MANDATORY)
+ public void changed(String action,String type,UUID id,java.util.Map<String,?> before,java.util.Map<String,?> after){
+  var attributes=org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+  Object request=attributes==null?null:attributes.getAttribute("requestId",0);
+  platform(identities.current(),action,type,id,request==null?"internal-"+UUID.randomUUID():request.toString(),before,after);
+ }
+}

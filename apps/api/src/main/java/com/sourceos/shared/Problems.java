@@ -56,6 +56,10 @@ public class Problems extends ResponseEntityExceptionHandler {
     return detail(409, "Organization changed; refresh and retry", req);
   }
 
+  @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+  ProblemDetail integrity(Exception e,HttpServletRequest req){return detail(409,"Data conflicts with an integrity constraint",req);}
+  @ExceptionHandler(IllegalArgumentException.class)
+  ProblemDetail input(Exception e,HttpServletRequest req){return detail(400,"Invalid input",req);}
   @ExceptionHandler(Exception.class)
   ProblemDetail unexpected(Exception e, HttpServletRequest req) {
     return detail(500, "Unexpected server error", req);

@@ -1,2 +1,3 @@
-@org.springframework.modulith.ApplicationModule(allowedDependencies={"identity","authorization","audit","shared"})
+@org.springframework.modulith.ApplicationModule(
+    allowedDependencies = {"identity", "authorization", "audit", "shared"})
 package com.sourceos.dataingestion;

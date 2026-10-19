@@ -107,13 +107,15 @@ Supplier/facility lists use created_at DESC,id DESC keyset with default 25/max 1
 
 ## Modules, tests and delivery
 
-Domain modules own their tables. Identity/organization stay unchanged; authorization owns platform policy; audit owns serialization. Geography/dataingestion/supplier/supplieraccount/supplierverification/facility/capability/supplysearch use public services, IDs and immutable records, with no direct mutation of foreign entities. Read composition can use documented parameterized joins. No shared business mega-module.
+Domain modules own their tables. Identity/organization stay unchanged; authorization owns platform policy; audit owns serialization. Geography/dataingestion/supplier/facility/capability/supplysearch use public services, IDs and immutable records, with no direct mutation of foreign entities. Account-link schema and verification history remain encapsulated in the supplier module; no separate claim service exists. Read composition can use documented parameterized joins. No shared business mega-module.
 
 Use actual PostgreSQL 18 Testcontainers for clean V1→V8 and populated V1/V2→V8 upgrade, audit guards/allowlist, platform grant/revoke/denials, recursive geography/taxonomy cycles, source normalization/idempotency, immutable observations/reviews, correct-kind binding/citations, ACTIVE link cardinalities, supplier multi-role/aliases/verification atomicity, facility geography/quantities, optimistic conflicts, all search filters and same-facility predicates. Include direct DB constraint and concurrent/retry checks where behavior depends on SQL. Preserve Phase 0 regression.
 
 Frontend remains existing shell; do not build full Phase 1 UI. Regenerate Java-owned OpenAPI and TypeScript schema and preserve existing frontend types/tests/build/browser smoke. Run full backend, scripts/test.sh, contract consistency, module/auth tests, Terraform fmt/init/validate and available secret scan before final push. Record actual counts and unrun outcomes separately.
 
 Exactly three logical implementation commits after validation. Update architecture/domain/authorization/ingestion docs and add a Phase 1A validation report with observed results. Push only phase-1-supply-network; stop without PR/merge or V9.
+
+Implementation status: slices 1A-1 through 1A-3 and local validation are complete. See [observed validation](phase-1a-validation.md) for exact migration/table/API inventory and test counts. This does not authorize Phase 1B or claim a GitHub Actions result.
 
 ## Mandatory Phase 1B review gates — document only
 

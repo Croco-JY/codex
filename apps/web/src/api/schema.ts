@@ -45,7 +45,7 @@ export interface paths {
         };
         get: operations["list"];
         put?: never;
-        post: operations["create"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -68,6 +68,614 @@ export interface paths {
         patch: operations["rename"];
         trace?: never;
     };
+    "/api/v1/admin/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/capabilities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_2"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/countries/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["country"];
+        trace?: never;
+    };
+    "/api/v1/admin/facilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facilities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facilities/{id}/capabilities/{capability}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["assign"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facilities/{id}/external-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bind_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facilities/{id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["citations_1"];
+        put?: never;
+        post: operations["cite_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facility-identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolve_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/industrial-clusters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cluster_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/industrial-clusters/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["cluster"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["region_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/regions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["region"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/source-observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["observe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/source-observations/{id}/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["reviews"];
+        put?: never;
+        post: operations["review"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/source-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/source-records/{id}/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["observations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["sources"];
+        put?: never;
+        post: operations["source_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/sources/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["source"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/supplier-identities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["alias"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/external-records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bind"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["citations"];
+        put?: never;
+        post: operations["cite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/suppliers/{id}/verification-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["verify"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/countries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["countries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["facilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facilities/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["read_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/facilities/{id}/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["capabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/industrial-clusters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["clusters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["regions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suppliers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["suppliers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suppliers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["read_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suppliers/{id}/aliases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["aliases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suppliers/{id}/facilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["supplierFacilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/suppliers/{id}/verification-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -76,12 +684,184 @@ export interface components {
             issuer?: string;
             subject?: string;
         };
+        AliasInput: {
+            alias: string;
+            /** @enum {string} */
+            aliasType: "ORIGINAL" | "ENGLISH" | "ROMANIZED" | "COMMERCIAL" | "OTHER";
+            languageCode?: string;
+            /** Format: uuid */
+            observationId: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        AliasView: {
+            alias?: string;
+            /** @enum {string} */
+            aliasType?: "ORIGINAL" | "ENGLISH" | "ROMANIZED" | "COMMERCIAL" | "OTHER";
+            /** Format: uuid */
+            id?: string;
+            languageCode?: string;
+        };
+        Binding: {
+            /** Format: uuid */
+            sourceRecordId: string;
+        };
+        CapabilityInput: {
+            maximumOrderQuantity?: number;
+            minimumOrderQuantity?: number;
+            notes?: string;
+            /** Format: uuid */
+            observationId: string;
+            /** @enum {string} */
+            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
+            /** @enum {string} */
+            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
+            /** @enum {string} */
+            verificationStatus: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            /** Format: int64 */
+            version?: number;
+        };
+        CapabilityView: {
+            /** Format: uuid */
+            capabilityId?: string;
+            maximumOrderQuantity?: number;
+            minimumOrderQuantity?: number;
+            /** @enum {string} */
+            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
+            /** @enum {string} */
+            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
+            /** @enum {string} */
+            verificationStatus?: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            /** Format: int64 */
+            version?: number;
+        };
+        Citation: {
+            /** @enum {string} */
+            fieldName: "RECORD" | "DISPLAY_NAME" | "LEGAL_NAME" | "NATIVE_NAME" | "ENGLISH_NAME" | "COUNTRY" | "WEBSITE_URL" | "DESCRIPTION" | "ROLE" | "ALIAS" | "VERIFICATION";
+            /** Format: uuid */
+            observationId: string;
+        };
+        Cluster: {
+            active?: boolean;
+            /** Format: uuid */
+            countryId?: string;
+            description?: string;
+            /** Format: uuid */
+            id?: string;
+            nameEn?: string;
+            nameNative?: string;
+            /** Format: uuid */
+            regionId?: string;
+            slug?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        ClusterInput: {
+            active?: boolean;
+            /** Format: uuid */
+            countryId: string;
+            description?: string;
+            nameEn: string;
+            nameNative?: string;
+            /** Format: uuid */
+            regionId?: string;
+            slug: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        Country: {
+            active?: boolean;
+            alpha2?: string;
+            alpha3?: string;
+            /** Format: uuid */
+            id?: string;
+            nameEn?: string;
+            nameNative?: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        CountryInput: {
+            active?: boolean;
+            nameEn: string;
+            nameNative: string;
+            /** Format: int64 */
+            version?: number;
+        };
         CreateOrganization: {
             name: string;
+        };
+        FacilityHit: {
+            country?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** @enum {string} */
+            facilityType?: "OFFICE" | "MILL" | "FACTORY" | "WAREHOUSE" | "SHOWROOM" | "PROCESSING_PLANT" | "QC_SITE" | "OTHER";
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            industrialClusterId?: string;
+            name?: string;
+            /** Format: uuid */
+            regionId?: string;
+            /** Format: uuid */
+            supplierId?: string;
         };
         Health: {
             application?: string;
             status?: string;
+        };
+        IdentityInput: {
+            /** Format: uuid */
+            sourceRecordId: string;
+            supplier: components["schemas"]["Input"];
+        };
+        Input: {
+            businessRegistrationNumber?: string;
+            /** Format: uuid */
+            countryId: string;
+            description?: string;
+            displayName: string;
+            englishName?: string;
+            legalName?: string;
+            nativeName?: string;
+            /** Format: uuid */
+            observationId: string;
+            roles: ("MILL" | "CONVERTER" | "MATERIAL_SUPPLIER" | "TRIM_SUPPLIER" | "FACTORY" | "PROCESSOR" | "QC_COMPANY" | "LOGISTICS_COMPANY" | "OTHER")[];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: int64 */
+            version?: number;
+            websiteUrl?: string;
+        };
+        Observation: {
+            contentHash?: string;
+            hashAlgorithm?: string;
+            /** Format: uuid */
+            id?: string;
+            observationKey?: string;
+            /** Format: date-time */
+            observedAt?: string;
+            /** Format: date-time */
+            recordedAt?: string;
+            /** Format: date-time */
+            retrievedAt?: string;
+            /** Format: uuid */
+            sourceRecordId?: string;
+            /** Format: uuid */
+            supersedesObservationId?: string;
+        };
+        ObservationInput: {
+            contentHash?: string;
+            hashAlgorithm?: string;
+            observationKey: string;
+            /** Format: date-time */
+            observedAt: string;
+            /** Format: date-time */
+            retrievedAt?: string;
+            /** Format: uuid */
+            sourceRecordId: string;
+            /** Format: uuid */
+            supersedesObservationId?: string;
         };
         OrganizationView: {
             /** Format: uuid */
@@ -92,10 +872,182 @@ export interface components {
             /** Format: int64 */
             version?: number;
         };
+        PageFacilityHit: {
+            items?: components["schemas"]["FacilityHit"][];
+            nextCursor?: string;
+        };
+        PageSupplierHit: {
+            items?: components["schemas"]["SupplierHit"][];
+            nextCursor?: string;
+        };
+        RecordInput: {
+            /** Format: uuid */
+            dataSourceId: string;
+            externalRecordKey: string;
+            /** @enum {string} */
+            recordKind: "SUPPLIER" | "FACILITY" | "MATERIAL" | "MATERIAL_VARIANT";
+        };
+        RecordView: {
+            /** Format: uuid */
+            dataSourceId?: string;
+            externalRecordKey?: string;
+            /** Format: date-time */
+            firstSeenAt?: string;
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            lastSeenAt?: string;
+            normalizedExternalRecordKey?: string;
+            /** @enum {string} */
+            recordKind?: "SUPPLIER" | "FACILITY" | "MATERIAL" | "MATERIAL_VARIANT";
+        };
+        Region: {
+            active?: boolean;
+            code?: string;
+            /** Format: uuid */
+            countryId?: string;
+            /** Format: uuid */
+            id?: string;
+            nameEn?: string;
+            nameNative?: string;
+            /** Format: uuid */
+            parentRegionId?: string;
+            /** @enum {string} */
+            regionType?: "PROVINCE" | "PREFECTURE" | "METROPOLITAN" | "CITY" | "DISTRICT" | "OTHER";
+            /** Format: int64 */
+            version?: number;
+        };
+        RegionInput: {
+            active?: boolean;
+            code?: string;
+            /** Format: uuid */
+            countryId: string;
+            nameEn: string;
+            nameNative?: string;
+            /** Format: uuid */
+            parentRegionId?: string;
+            /** @enum {string} */
+            regionType: "PROVINCE" | "PREFECTURE" | "METROPOLITAN" | "CITY" | "DISTRICT" | "OTHER";
+            /** Format: int64 */
+            version?: number;
+        };
         RenameOrganization: {
             name: string;
             /** Format: int64 */
             version?: number;
+        };
+        Review: {
+            /** Format: uuid */
+            id?: string;
+            licenseStatus?: string;
+            notes?: string;
+            /** Format: uuid */
+            observationId?: string;
+            /** @enum {string} */
+            reviewStatus?: "ACCEPTED" | "REJECTED" | "NEEDS_REVIEW";
+            /** Format: date-time */
+            reviewedAt?: string;
+            reviewedByIssuer?: string;
+            reviewedBySubject?: string;
+            termsStatus?: string;
+        };
+        ReviewInput: {
+            /** @enum {string} */
+            licenseStatus?: "UNKNOWN" | "PERMITTED" | "RESTRICTED" | "PROHIBITED";
+            notes?: string;
+            /** @enum {string} */
+            reviewStatus: "ACCEPTED" | "REJECTED" | "NEEDS_REVIEW";
+            /** @enum {string} */
+            termsStatus?: "UNKNOWN" | "PERMITTED" | "RESTRICTED" | "PROHIBITED";
+        };
+        SourceInput: {
+            /** @enum {string} */
+            accessMethod: "MANUAL" | "API" | "FEED" | "PERMITTED_WEB" | "OTHER";
+            active?: boolean;
+            baseUrl?: string;
+            name: string;
+            namespace?: string;
+            /** @enum {string} */
+            normalizationPolicy: "PRESERVE" | "TRIM";
+            sourceCode: string;
+            /** @enum {string} */
+            sourceType: "OFFICIAL_WEBSITE" | "PUBLIC_DIRECTORY" | "PARTNER_FEED" | "MANUAL_ENTRY" | "SUPPLIER_SUBMISSION" | "TRADE_SHOW" | "OTHER";
+            /** Format: int64 */
+            version?: number;
+        };
+        SourceView: {
+            /** @enum {string} */
+            accessMethod?: "MANUAL" | "API" | "FEED" | "PERMITTED_WEB" | "OTHER";
+            active?: boolean;
+            baseUrl?: string;
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            namespace?: string;
+            /** @enum {string} */
+            normalizationPolicy?: "PRESERVE" | "TRIM";
+            sourceCode?: string;
+            /** @enum {string} */
+            sourceType?: "OFFICIAL_WEBSITE" | "PUBLIC_DIRECTORY" | "PARTNER_FEED" | "MANUAL_ENTRY" | "SUPPLIER_SUBMISSION" | "TRADE_SHOW" | "OTHER";
+            /** Format: int64 */
+            version?: number;
+        };
+        SupplierHit: {
+            country?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            displayName?: string;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            verificationStatus?: "DISCOVERED" | "CLAIMED" | "VERIFIED" | "AUDITED" | "TRANSACTED" | "PROVEN";
+        };
+        VerificationEvent: {
+            actorIssuer?: string;
+            actorSubject?: string;
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            newStatus?: "DISCOVERED" | "CLAIMED" | "VERIFIED" | "AUDITED" | "TRANSACTED" | "PROVEN";
+            /** Format: uuid */
+            observationId?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            previousStatus?: string;
+            reason?: string;
+        };
+        VerificationInput: {
+            /** Format: uuid */
+            observationId: string;
+            reason: string;
+            /** @enum {string} */
+            status: "DISCOVERED" | "CLAIMED" | "VERIFIED" | "AUDITED" | "TRANSACTED" | "PROVEN";
+            /** Format: int64 */
+            version?: number;
+        };
+        View: {
+            businessRegistrationNumber?: string;
+            /** Format: uuid */
+            countryId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            description?: string;
+            displayName?: string;
+            englishName?: string;
+            /** Format: uuid */
+            id?: string;
+            legalName?: string;
+            nativeName?: string;
+            roles?: ("MILL" | "CONVERTER" | "MATERIAL_SUPPLIER" | "TRIM_SUPPLIER" | "FACTORY" | "PROCESSOR" | "QC_COMPANY" | "LOGISTICS_COMPANY" | "OTHER")[];
+            /** @enum {string} */
+            status?: "ACTIVE" | "ARCHIVED";
+            /** Format: date-time */
+            updatedAt?: string;
+            /** @enum {string} */
+            verificationStatus?: "DISCOVERED" | "CLAIMED" | "VERIFIED" | "AUDITED" | "TRANSACTED" | "PROVEN";
+            /** Format: int64 */
+            version?: number;
+            websiteUrl?: string;
         };
     };
     responses: never;
@@ -166,7 +1118,7 @@ export interface operations {
             };
         };
     };
-    create: {
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -234,6 +1186,1032 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["OrganizationView"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Input"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Input"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    country: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CountryInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Input"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Input"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                capability: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapabilityInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    bind_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Binding"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    citations_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    cite_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Citation"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    resolve_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    cluster_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClusterInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    cluster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClusterInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    region_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    region: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegionInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    observe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Observation"];
+                };
+            };
+        };
+    };
+    reviews: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Review"][];
+                };
+            };
+        };
+    };
+    review: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["RecordView"];
+                };
+            };
+        };
+    };
+    observations: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Observation"][];
+                };
+            };
+        };
+    };
+    sources: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SourceView"][];
+                };
+            };
+        };
+    };
+    source_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    source: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    resolve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdentityInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Input"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Input"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    alias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AliasInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    bind: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Binding"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    citations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
+    cite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Citation"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    verify: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerificationInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"][];
+                };
+            };
+        };
+    };
+    countries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Country"][];
+                };
+            };
+        };
+    };
+    facilities: {
+        parameters: {
+            query?: {
+                country?: string;
+                region?: string;
+                cluster?: string;
+                type?: "OFFICE" | "MILL" | "FACTORY" | "WAREHOUSE" | "SHOWROOM" | "PROCESSING_PLANT" | "QC_SITE" | "OTHER";
+                capability?: string;
+                supplier?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageFacilityHit"];
+                };
+            };
+        };
+    };
+    read_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    capabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CapabilityView"][];
+                };
+            };
+        };
+    };
+    clusters: {
+        parameters: {
+            query?: {
+                country?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Cluster"][];
+                };
+            };
+        };
+    };
+    regions: {
+        parameters: {
+            query?: {
+                country?: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Region"][];
+                };
+            };
+        };
+    };
+    suppliers: {
+        parameters: {
+            query?: {
+                country?: string;
+                role?: "MILL" | "CONVERTER" | "MATERIAL_SUPPLIER" | "TRIM_SUPPLIER" | "FACTORY" | "PROCESSOR" | "QC_COMPANY" | "LOGISTICS_COMPANY" | "OTHER";
+                verificationStatus?: "DISCOVERED" | "CLAIMED" | "VERIFIED" | "AUDITED" | "TRANSACTED" | "PROVEN";
+                facilityCountry?: string;
+                region?: string;
+                cluster?: string;
+                capability?: string;
+                q?: string;
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageSupplierHit"];
+                };
+            };
+        };
+    };
+    read_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["View"];
+                };
+            };
+        };
+    };
+    aliases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AliasView"][];
+                };
+            };
+        };
+    };
+    supplierFacilities: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageFacilityHit"];
+                };
+            };
+        };
+    };
+    events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["VerificationEvent"][];
                 };
             };
         };

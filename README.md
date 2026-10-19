@@ -1,5 +1,5 @@
-# SOURCE OS — Phase 0
-A modular manufacturing-platform foundation. No supply, pattern, contract or payment workflows are implemented.
+# SOURCE OS — Phase 1A
+A modular manufacturing-platform foundation with a canonical supplier/facility directory, source identity and provenance, geography and capability taxonomy. Materials and commercial workflows remain outside this implementation.
 
 ## Prerequisites
 Java 25 LTS, Node 24 LTS, pnpm 11.25.0, Docker with Compose; CPython 3.14 + uv for deterministic OpenAPI export tooling; workers remain README-only. Terraform >=1.10 <2 for scaffold validation only.
@@ -33,4 +33,6 @@ Backend uses actual PostgreSQL 18 Testcontainers for migrations, repositories, a
 ## Layout
 `apps/api`: Java transactional core; `apps/web`: React UI; `workers/*`: future-only README scaffolds; `infra/terraform`: nondeployed skeleton; `docs`: architecture, ADRs, design system, specification and API contract; `scripts`: local orchestration.
 
-See `docs/phase-0-validation.md` for observed validation and remaining release limits. Production infrastructure and full Cognito browser sign-in require deployment-specific configuration; this repository supplies their foundations only.
+Phase 1A APIs use `/api/v1/suppliers`, `/facilities`, `/countries`, `/regions`, `/industrial-clusters` and `/capabilities`. Directory reads require authentication; `/api/v1/admin/...` mutations require a separately provisioned PLATFORM_ADMIN, never an organization role. See [platform bootstrap](docs/platform-admin-bootstrap.md), [ingestion contract](docs/data-ingestion.md) and [API contract](docs/openapi.json). No production principals or fake suppliers are seeded; only KR/JP/CN reference countries are seeded. Full directory/admin UI is deferred.
+
+See [Phase 1A validation](docs/phase-1a-validation.md) for current results and `docs/phase-0-validation.md` for historical baseline results. Production infrastructure and full Cognito browser sign-in require deployment-specific configuration; this repository supplies their foundations only.

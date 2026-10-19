@@ -12,6 +12,355 @@
         },
         "type": "object"
       },
+      "AliasInput": {
+        "properties": {
+          "alias": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "aliasType": {
+            "enum": [
+              "ORIGINAL",
+              "ENGLISH",
+              "ROMANIZED",
+              "COMMERCIAL",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "languageCode": {
+            "pattern": "[A-Za-z]{2,8}([-_][A-Za-z0-9]{1,8})*",
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alias",
+          "aliasType",
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "AliasView": {
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "aliasType": {
+            "enum": [
+              "ORIGINAL",
+              "ENGLISH",
+              "ROMANIZED",
+              "COMMERCIAL",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "languageCode": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Binding": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "CapabilityInput": {
+        "properties": {
+          "maximumOrderQuantity": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "minimumOrderQuantity": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "proficiencyLevel": {
+            "enum": [
+              "SUPPORTED",
+              "EXPERIENCED",
+              "SPECIALIST"
+            ],
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2"
+            ],
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "UNVERIFIED",
+              "DOCUMENTED",
+              "AUDITED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "observationId",
+          "verificationStatus"
+        ],
+        "type": "object"
+      },
+      "CapabilityView": {
+        "properties": {
+          "capabilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maximumOrderQuantity": {
+            "type": "number"
+          },
+          "minimumOrderQuantity": {
+            "type": "number"
+          },
+          "proficiencyLevel": {
+            "enum": [
+              "SUPPORTED",
+              "EXPERIENCED",
+              "SPECIALIST"
+            ],
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2"
+            ],
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "UNVERIFIED",
+              "DOCUMENTED",
+              "AUDITED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Citation": {
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "RECORD",
+              "DISPLAY_NAME",
+              "LEGAL_NAME",
+              "NATIVE_NAME",
+              "ENGLISH_NAME",
+              "COUNTRY",
+              "WEBSITE_URL",
+              "DESCRIPTION",
+              "ROLE",
+              "ALIAS",
+              "VERIFICATION"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldName",
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "Cluster": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "nameNative": {
+            "type": "string"
+          },
+          "regionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ClusterInput": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nameEn": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nameNative": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "regionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "slug": {
+            "minLength": 1,
+            "pattern": "[a-z0-9][a-z0-9-]{0,99}",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "countryId",
+          "nameEn",
+          "slug"
+        ],
+        "type": "object"
+      },
+      "Country": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "alpha2": {
+            "type": "string"
+          },
+          "alpha3": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "nameNative": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "CountryInput": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "nameEn": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nameNative": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "nameEn",
+          "nameNative"
+        ],
+        "type": "object"
+      },
       "CreateOrganization": {
         "properties": {
           "name": {
@@ -25,6 +374,50 @@
         ],
         "type": "object"
       },
+      "FacilityHit": {
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "facilityType": {
+            "enum": [
+              "OFFICE",
+              "MILL",
+              "FACTORY",
+              "WAREHOUSE",
+              "SHOWROOM",
+              "PROCESSING_PLANT",
+              "QC_SITE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "industrialClusterId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "regionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "supplierId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "Health": {
         "properties": {
           "application": {
@@ -34,6 +427,184 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "IdentityInput": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "supplier": {
+            "$ref": "#/components/schemas/Input"
+          }
+        },
+        "required": [
+          "sourceRecordId",
+          "supplier"
+        ],
+        "type": "object"
+      },
+      "Input": {
+        "properties": {
+          "businessRegistrationNumber": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "displayName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "englishName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "legalName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nativeName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "enum": [
+                "MILL",
+                "CONVERTER",
+                "MATERIAL_SUPPLIER",
+                "TRIM_SUPPLIER",
+                "FACTORY",
+                "PROCESSOR",
+                "QC_COMPANY",
+                "LOGISTICS_COMPANY",
+                "OTHER"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "websiteUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "countryId",
+          "displayName",
+          "observationId",
+          "roles",
+          "status"
+        ],
+        "type": "object"
+      },
+      "Observation": {
+        "properties": {
+          "contentHash": {
+            "type": "string"
+          },
+          "hashAlgorithm": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observationKey": {
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "retrievedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "supersedesObservationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ObservationInput": {
+        "properties": {
+          "contentHash": {
+            "pattern": "[a-f0-9]{64}",
+            "type": "string"
+          },
+          "hashAlgorithm": {
+            "pattern": "SHA-256",
+            "type": "string"
+          },
+          "observationKey": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "retrievedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "supersedesObservationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "observationKey",
+          "observedAt",
+          "sourceRecordId"
+        ],
         "type": "object"
       },
       "OrganizationView": {
@@ -58,6 +629,194 @@
         },
         "type": "object"
       },
+      "PageFacilityHit": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FacilityHit"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PageSupplierHit": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SupplierHit"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "RecordInput": {
+        "properties": {
+          "dataSourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "externalRecordKey": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "recordKind": {
+            "enum": [
+              "SUPPLIER",
+              "FACILITY",
+              "MATERIAL",
+              "MATERIAL_VARIANT"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataSourceId",
+          "externalRecordKey",
+          "recordKind"
+        ],
+        "type": "object"
+      },
+      "RecordView": {
+        "properties": {
+          "dataSourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "externalRecordKey": {
+            "type": "string"
+          },
+          "firstSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "lastSeenAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "normalizedExternalRecordKey": {
+            "type": "string"
+          },
+          "recordKind": {
+            "enum": [
+              "SUPPLIER",
+              "FACILITY",
+              "MATERIAL",
+              "MATERIAL_VARIANT"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Region": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "nameNative": {
+            "type": "string"
+          },
+          "parentRegionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "regionType": {
+            "enum": [
+              "PROVINCE",
+              "PREFECTURE",
+              "METROPOLITAN",
+              "CITY",
+              "DISTRICT",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "RegionInput": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "code": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nameEn": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nameNative": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "parentRegionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "regionType": {
+            "enum": [
+              "PROVINCE",
+              "PREFECTURE",
+              "METROPOLITAN",
+              "CITY",
+              "DISTRICT",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "countryId",
+          "nameEn",
+          "regionType"
+        ],
+        "type": "object"
+      },
       "RenameOrganization": {
         "properties": {
           "name": {
@@ -74,6 +833,398 @@
         "required": [
           "name"
         ],
+        "type": "object"
+      },
+      "Review": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "licenseStatus": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reviewStatus": {
+            "enum": [
+              "ACCEPTED",
+              "REJECTED",
+              "NEEDS_REVIEW"
+            ],
+            "type": "string"
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "reviewedByIssuer": {
+            "type": "string"
+          },
+          "reviewedBySubject": {
+            "type": "string"
+          },
+          "termsStatus": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ReviewInput": {
+        "properties": {
+          "licenseStatus": {
+            "enum": [
+              "UNKNOWN",
+              "PERMITTED",
+              "RESTRICTED",
+              "PROHIBITED"
+            ],
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "reviewStatus": {
+            "enum": [
+              "ACCEPTED",
+              "REJECTED",
+              "NEEDS_REVIEW"
+            ],
+            "type": "string"
+          },
+          "termsStatus": {
+            "enum": [
+              "UNKNOWN",
+              "PERMITTED",
+              "RESTRICTED",
+              "PROHIBITED"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "reviewStatus"
+        ],
+        "type": "object"
+      },
+      "SourceInput": {
+        "properties": {
+          "accessMethod": {
+            "enum": [
+              "MANUAL",
+              "API",
+              "FEED",
+              "PERMITTED_WEB",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "baseUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "namespace": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "normalizationPolicy": {
+            "enum": [
+              "PRESERVE",
+              "TRIM"
+            ],
+            "type": "string"
+          },
+          "sourceCode": {
+            "minLength": 1,
+            "pattern": "[A-Za-z0-9][A-Za-z0-9._-]{0,99}",
+            "type": "string"
+          },
+          "sourceType": {
+            "enum": [
+              "OFFICIAL_WEBSITE",
+              "PUBLIC_DIRECTORY",
+              "PARTNER_FEED",
+              "MANUAL_ENTRY",
+              "SUPPLIER_SUBMISSION",
+              "TRADE_SHOW",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accessMethod",
+          "name",
+          "normalizationPolicy",
+          "sourceCode",
+          "sourceType"
+        ],
+        "type": "object"
+      },
+      "SourceView": {
+        "properties": {
+          "accessMethod": {
+            "enum": [
+              "MANUAL",
+              "API",
+              "FEED",
+              "PERMITTED_WEB",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "baseUrl": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "normalizationPolicy": {
+            "enum": [
+              "PRESERVE",
+              "TRIM"
+            ],
+            "type": "string"
+          },
+          "sourceCode": {
+            "type": "string"
+          },
+          "sourceType": {
+            "enum": [
+              "OFFICIAL_WEBSITE",
+              "PUBLIC_DIRECTORY",
+              "PARTNER_FEED",
+              "MANUAL_ENTRY",
+              "SUPPLIER_SUBMISSION",
+              "TRADE_SHOW",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "SupplierHit": {
+        "properties": {
+          "country": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "DISCOVERED",
+              "CLAIMED",
+              "VERIFIED",
+              "AUDITED",
+              "TRANSACTED",
+              "PROVEN"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VerificationEvent": {
+        "properties": {
+          "actorIssuer": {
+            "type": "string"
+          },
+          "actorSubject": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "newStatus": {
+            "enum": [
+              "DISCOVERED",
+              "CLAIMED",
+              "VERIFIED",
+              "AUDITED",
+              "TRANSACTED",
+              "PROVEN"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "occurredAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "previousStatus": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "VerificationInput": {
+        "properties": {
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DISCOVERED",
+              "CLAIMED",
+              "VERIFIED",
+              "AUDITED",
+              "TRANSACTED",
+              "PROVEN"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "observationId",
+          "reason",
+          "status"
+        ],
+        "type": "object"
+      },
+      "View": {
+        "properties": {
+          "businessRegistrationNumber": {
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "englishName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "legalName": {
+            "type": "string"
+          },
+          "nativeName": {
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "enum": [
+                "MILL",
+                "CONVERTER",
+                "MATERIAL_SUPPLIER",
+                "TRIM_SUPPLIER",
+                "FACTORY",
+                "PROCESSOR",
+                "QC_COMPANY",
+                "LOGISTICS_COMPANY",
+                "OTHER"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "DISCOVERED",
+              "CLAIMED",
+              "VERIFIED",
+              "AUDITED",
+              "TRANSACTED",
+              "PROVEN"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "websiteUrl": {
+            "type": "string"
+          }
+        },
         "type": "object"
       }
     }
@@ -147,7 +1298,7 @@
         ]
       },
       "post": {
-        "operationId": "create",
+        "operationId": "create_3",
         "requestBody": {
           "content": {
             "application/json": {
@@ -242,6 +1393,1730 @@
         },
         "tags": [
           "organization-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/capabilities": {
+      "post": {
+        "operationId": "create_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "capability-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/capabilities/{id}": {
+      "put": {
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "capability-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/countries/{id}": {
+      "patch": {
+        "operationId": "country",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CountryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/facilities": {
+      "post": {
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/facilities/{id}": {
+      "put": {
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/facilities/{id}/capabilities/{capability}": {
+      "put": {
+        "operationId": "assign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CapabilityInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/facilities/{id}/external-records": {
+      "post": {
+        "operationId": "bind_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Binding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/facilities/{id}/sources": {
+      "get": {
+        "operationId": "citations_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": {},
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      },
+      "post": {
+        "operationId": "cite_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Citation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/facility-identities": {
+      "post": {
+        "operationId": "resolve_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/industrial-clusters": {
+      "post": {
+        "operationId": "cluster_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/industrial-clusters/{id}": {
+      "put": {
+        "operationId": "cluster",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClusterInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/regions": {
+      "post": {
+        "operationId": "region_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/regions/{id}": {
+      "put": {
+        "operationId": "region",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/source-observations": {
+      "post": {
+        "operationId": "observe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/Observation"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/source-observations/{id}/reviews": {
+      "get": {
+        "operationId": "reviews",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Review"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      },
+      "post": {
+        "operationId": "review",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/source-records": {
+      "post": {
+        "operationId": "record",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecordInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecordView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/source-records/{id}/observations": {
+      "get": {
+        "operationId": "observations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Observation"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/sources": {
+      "get": {
+        "operationId": "sources",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      },
+      "post": {
+        "operationId": "source_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/sources/{id}": {
+      "put": {
+        "operationId": "source",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "source-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/supplier-identities": {
+      "post": {
+        "operationId": "resolve",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdentityInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/suppliers": {
+      "post": {
+        "operationId": "create",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/suppliers/{id}": {
+      "put": {
+        "operationId": "update",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Input"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/suppliers/{id}/aliases": {
+      "post": {
+        "operationId": "alias",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/suppliers/{id}/external-records": {
+      "post": {
+        "operationId": "bind",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Binding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/suppliers/{id}/sources": {
+      "get": {
+        "operationId": "citations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": {},
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      },
+      "post": {
+        "operationId": "cite",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Citation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/suppliers/{id}/verification-events": {
+      "post": {
+        "operationId": "verify",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerificationInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "operationId": "list_1",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/View"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "capability-controller"
+        ]
+      }
+    },
+    "/api/v1/countries": {
+      "get": {
+        "operationId": "countries",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Country"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/facilities": {
+      "get": {
+        "operationId": "facilities",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "region",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cluster",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "OFFICE",
+                "MILL",
+                "FACTORY",
+                "WAREHOUSE",
+                "SHOWROOM",
+                "PROCESSING_PLANT",
+                "QC_SITE",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "capability",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "supplier",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageFacilityHit"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "directory-controller"
+        ]
+      }
+    },
+    "/api/v1/facilities/{id}": {
+      "get": {
+        "operationId": "read_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/facilities/{id}/capabilities": {
+      "get": {
+        "operationId": "capabilities",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CapabilityView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/industrial-clusters": {
+      "get": {
+        "operationId": "clusters",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Cluster"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/regions": {
+      "get": {
+        "operationId": "regions",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Region"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/suppliers": {
+      "get": {
+        "operationId": "suppliers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "enum": [
+                "MILL",
+                "CONVERTER",
+                "MATERIAL_SUPPLIER",
+                "TRIM_SUPPLIER",
+                "FACTORY",
+                "PROCESSOR",
+                "QC_COMPANY",
+                "LOGISTICS_COMPANY",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "verificationStatus",
+            "required": false,
+            "schema": {
+              "enum": [
+                "DISCOVERED",
+                "CLAIMED",
+                "VERIFIED",
+                "AUDITED",
+                "TRANSACTED",
+                "PROVEN"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "facilityCountry",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "region",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cluster",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "capability",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageSupplierHit"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "directory-controller"
+        ]
+      }
+    },
+    "/api/v1/suppliers/{id}": {
+      "get": {
+        "operationId": "read_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/View"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/suppliers/{id}/aliases": {
+      "get": {
+        "operationId": "aliases",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AliasView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
+        ]
+      }
+    },
+    "/api/v1/suppliers/{id}/facilities": {
+      "get": {
+        "operationId": "supplierFacilities",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageFacilityHit"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "directory-controller"
+        ]
+      }
+    },
+    "/api/v1/suppliers/{id}/verification-events": {
+      "get": {
+        "operationId": "events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VerificationEvent"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "supplier-controller"
         ]
       }
     }

@@ -119,7 +119,7 @@ Implementation status: slices 1A-1 through 1A-3 and local validation are complet
 
 ## Mandatory Phase 1B review gates — document only
 
-- Before V9 choose supplier-scoped Material versus canonical Material + supplier listing/offer, or a staged hybrid. The earlier planned Material schema is not an accepted decision. Do not implement any of them now.
+- The later accepted direction is supplier-scoped Material + SupplierMaterialListing; [Phase 1B architecture plan](phase-1b-plan.md) records the detailed proposal and review gates. This does not authorize V9 or Phase 1B implementation.
 - Future subtype correctness needs type-aware DB integrity (material type plus composite unique/FK), not application checks alone.
 - Future price commercial/source identity is immutable; narrow DB guard may allow only valid_to NULL→timestamp plus version/updated_at. New price is INSERT; no casual reopening.
 - Future resolver order: effective date, supplier/source scope, exact variant, eligible MOQ, valid_from, observed_at, created_at, stable ID. Do not collapse supplier/source scopes.

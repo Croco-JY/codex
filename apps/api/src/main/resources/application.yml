@@ -1,0 +1,42 @@
+spring:
+  application:
+    name: source-os
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+server:
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+logging:
+  structured:
+    format:
+      console: logstash
+source:
+  storage-root: ${STORAGE_ROOT:./.local/storage}
+  cors-origins: ${CORS_ORIGINS:}
+  oidc:
+    issuer: ${OIDC_ISSUER_URI:}
+    audience: ${OIDC_AUDIENCE:}

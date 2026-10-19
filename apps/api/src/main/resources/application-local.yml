@@ -1,0 +1,9 @@
+server:
+  address: 127.0.0.1
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/source_os}
+    username: ${DB_USER:source_os}
+    password: ${DB_PASSWORD:local-development-only}
+source:
+  cors-origins: http://localhost:5173,http://127.0.0.1:5173

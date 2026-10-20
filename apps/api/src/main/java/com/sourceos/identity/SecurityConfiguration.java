@@ -23,7 +23,9 @@ class SecurityConfiguration {
       throw new IllegalStateException("Explicit CORS origins required");
     c.setAllowedOrigins(allowed);
     c.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "OPTIONS"));
-    c.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Request-ID", "X-Dev-Subject"));
+    c.setAllowedHeaders(
+        List.of(
+            "Authorization", "Content-Type", "X-Request-ID", "X-Dev-Subject", "Idempotency-Key"));
     c.setExposedHeaders(List.of("X-Request-ID"));
     var src = new UrlBasedCorsConfigurationSource();
     src.registerCorsConfiguration("/**", c);

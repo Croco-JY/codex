@@ -1,4 +1,4 @@
-name: Phase 0
+name: SOURCE OS CI
 on: [push, pull_request]
 permissions:
   contents: read
@@ -60,7 +60,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: phase-0-test-results
+          name: source-os-test-results
           path: |
             apps/api/target/surefire-reports
             apps/web/test-results

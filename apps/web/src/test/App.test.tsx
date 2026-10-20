@@ -550,3 +550,111 @@ test("selecting an organization as ORG_OWNER does not grant curation access", as
     screen.queryByRole("link", { name: "Curation" }),
   ).not.toBeInTheDocument();
 });
+
+test("known ADMIN remains visible during a background refresh, then revocation applies after response", async () => {
+  admin = true;
+  const client = mount("/admin");
+  await screen.findByRole("heading", { name: "Curation workspace" });
+  const wait = deferred<Response>();
+  capabilityWait = wait.promise;
+  let refresh!: Promise<void>;
+  await act(async () => {
+    refresh = client.invalidateQueries({
+      queryKey: queryKeys.capabilities(getSession().key),
+    });
+  });
+  expect(
+    client.isFetching({ queryKey: queryKeys.capabilities(getSession().key) }),
+  ).toBe(1);
+  expect(
+    screen.getByRole("heading", { name: "Curation workspace" }),
+  ).toBeVisible();
+  expect(screen.getByRole("link", { name: "Curation" })).toBeVisible();
+  expect(
+    screen.queryByRole("status", { name: "Checking curation access" }),
+  ).not.toBeInTheDocument();
+  await act(async () => {
+    wait.resolve(reply({ platformAdmin: false }));
+    await refresh;
+  });
+  expect(
+    await screen.findByRole("heading", { name: "Access denied" }),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole("link", { name: "Curation" }),
+  ).not.toBeInTheDocument();
+});
+
+test("known NON_ADMIN keeps denied UX during refresh, then a successful grant enables curation", async () => {
+  const client = mount("/admin");
+  await screen.findByRole("heading", { name: "Access denied" });
+  const wait = deferred<Response>();
+  capabilityWait = wait.promise;
+  let refresh!: Promise<void>;
+  await act(async () => {
+    refresh = client.invalidateQueries({
+      queryKey: queryKeys.capabilities(getSession().key),
+    });
+  });
+  expect(
+    client.isFetching({ queryKey: queryKeys.capabilities(getSession().key) }),
+  ).toBe(1);
+  expect(screen.getByRole("heading", { name: "Access denied" })).toBeVisible();
+  expect(
+    screen.queryByRole("status", { name: "Checking curation access" }),
+  ).not.toBeInTheDocument();
+  await act(async () => {
+    wait.resolve(reply({ platformAdmin: true }));
+    await refresh;
+  });
+  expect(
+    await screen.findByRole("heading", { name: "Curation workspace" }),
+  ).toBeVisible();
+  expect(screen.getByRole("link", { name: "Curation" })).toBeVisible();
+});
+
+test.each([true, false])(
+  "failed background refresh closes stale ADMIN access and explicit retry restores %s",
+  async (restored) => {
+    admin = true;
+    const client = mount("/admin");
+    await screen.findByRole("heading", { name: "Curation workspace" });
+    capabilityStatus = 503;
+    await act(async () => {
+      await client.invalidateQueries({
+        queryKey: queryKeys.capabilities(getSession().key),
+      });
+    });
+    expect(
+      await screen.findByRole("heading", {
+        name: "Curation access unavailable",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Curation" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Curation workspace" }),
+    ).not.toBeInTheDocument();
+    expect(
+      requests.every(
+        (r) => !new URL(r.url).pathname.startsWith("/api/v1/admin"),
+      ),
+    ).toBe(true);
+    const wait = deferred<Response>();
+    capabilityWait = wait.promise;
+    await userEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(
+      screen.getByRole("heading", { name: "Curation access unavailable" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "Curation" }),
+    ).not.toBeInTheDocument();
+    await act(async () => wait.resolve(reply({ platformAdmin: restored })));
+    expect(
+      await screen.findByRole("heading", {
+        name: restored ? "Curation workspace" : "Access denied",
+      }),
+    ).toBeVisible();
+  },
+);

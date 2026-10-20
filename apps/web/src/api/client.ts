@@ -1,16 +1,28 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
+import { resolveApiOrigin } from "./config";
 import { ApiError, responseError, safeRequestId } from "./errors";
 import { applyCredentials, expireSession, getSession } from "./session";
 export { setAccessToken, setLocalSubject } from "./session";
 
+const apiOrigin = resolveApiOrigin(
+  import.meta.env.VITE_API_BASE_URL,
+  window.location.origin,
+  import.meta.env.DEV,
+);
+function requireTrustedTarget(request: Request) {
+  if (new URL(request.url).origin !== apiOrigin) throw new ApiError(400);
+}
 const requestScopes = new WeakMap<Request, string>();
 export const api = createClient<paths>({
-  baseUrl: window.location.origin,
+  baseUrl: apiOrigin,
+  // Do not forward authentication headers through an API redirect.
+  redirect: "error",
   fetch: async (request) => {
     const scope = requestScopes.get(request);
     if (scope !== getSession().key || request.signal.aborted)
       throw new DOMException("Request cancelled", "AbortError");
+    requireTrustedTarget(request);
     let response: Response;
     try {
       response = await globalThis.fetch(request);
@@ -31,6 +43,9 @@ export const api = createClient<paths>({
 });
 api.use({
   onRequest({ request }) {
+    requireTrustedTarget(request);
+    // Per-call options cannot opt an authenticated request into following redirects.
+    request = new Request(request, { redirect: "error" });
     requestScopes.set(request, getSession().key);
     request.headers.set("X-Request-ID", crypto.randomUUID());
     applyCredentials(request.headers);

@@ -135,14 +135,13 @@ function SessionScope({
         queryKey: queryKeys.capabilities(snapshot.key),
       });
   }, [pathname, status, cache, snapshot.key]);
-  const capability: CapabilityState =
-    capabilities.isFetching || capabilities.isPending
+  const capability: CapabilityState = capabilities.isError
+    ? "ERROR"
+    : capabilities.isPending
       ? "PENDING"
-      : capabilities.isError
-        ? "ERROR"
-        : capabilities.data === true
-          ? "ADMIN"
-          : "NON_ADMIN";
+      : capabilities.data === true
+        ? "ADMIN"
+        : "NON_ADMIN";
   return (
     <Context.Provider
       value={{

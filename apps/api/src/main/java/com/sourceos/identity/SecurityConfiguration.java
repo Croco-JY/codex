@@ -1,7 +1,9 @@
 package com.sourceos.identity;
 
 import com.sourceos.shared.Problems;
+import java.net.URI;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,6 +23,20 @@ class SecurityConfiguration {
         Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList();
     if (allowed.stream().anyMatch(s -> s.contains("*")))
       throw new IllegalStateException("Explicit CORS origins required");
+    for (String origin : allowed) {
+      try {
+        var uri = URI.create(origin);
+        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+            || uri.getHost() == null
+            || uri.getRawUserInfo() != null
+            || !uri.getRawPath().isEmpty()
+            || uri.getRawQuery() != null
+            || uri.getRawFragment() != null
+            || uri.getPort() > 65535) throw new IllegalArgumentException();
+      } catch (IllegalArgumentException e) {
+        throw new IllegalStateException("CORS entries must be exact HTTP(S) origins");
+      }
+    }
     c.setAllowedOrigins(allowed);
     c.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "OPTIONS"));
     c.setAllowedHeaders(
@@ -32,9 +48,10 @@ class SecurityConfiguration {
     return src;
   }
 
-  private HttpSecurity foundation(HttpSecurity h) throws Exception {
+  private HttpSecurity foundation(HttpSecurity h, CorsConfigurationSource corsSource)
+      throws Exception {
     return h.csrf(c -> c.disable())
-        .cors(c -> {})
+        .cors(c -> c.configurationSource(corsSource))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             a ->
@@ -51,19 +68,24 @@ class SecurityConfiguration {
 
   @Bean
   @Profile("local")
-  SecurityFilterChain local(HttpSecurity h, @Value("${server.address:}") String address)
+  SecurityFilterChain local(
+      HttpSecurity h,
+      @Qualifier("cors") CorsConfigurationSource corsSource,
+      @Value("${server.address:}") String address)
       throws Exception {
     if (!Set.of("127.0.0.1", "::1", "localhost").contains(address))
       throw new IllegalStateException("Local authentication must bind to loopback");
-    return foundation(h)
+    return foundation(h, corsSource)
         .addFilterBefore(new LocalIdentityFilter(), AnonymousAuthenticationFilter.class)
         .build();
   }
 
   @Bean
   @Profile("!local")
-  SecurityFilterChain oidc(HttpSecurity h, JwtDecoder decoder) throws Exception {
-    return foundation(h)
+  SecurityFilterChain oidc(
+      HttpSecurity h, JwtDecoder decoder, @Qualifier("cors") CorsConfigurationSource corsSource)
+      throws Exception {
+    return foundation(h, corsSource)
         .oauth2ResourceServer(
             o ->
                 o.jwt(j -> j.decoder(decoder))

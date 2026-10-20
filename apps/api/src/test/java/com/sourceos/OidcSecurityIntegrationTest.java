@@ -18,6 +18,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@TestPropertySource(properties = "source.cors-origins=https://frontend.example.test")
 class OidcSecurityIntegrationTest {
   @Container static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18.3");
 
@@ -35,9 +36,13 @@ class OidcSecurityIntegrationTest {
 
   @Test
   void developmentHeaderCannotAuthenticateProduction() throws Exception {
-    mvc.perform(get("/api/identity").header("X-Dev-Subject", "forged-owner"))
+    mvc.perform(
+            get("/api/identity")
+                .header("X-Dev-Subject", "forged-owner")
+                .header("Origin", "https://frontend.example.test"))
         .andExpect(status().isUnauthorized())
-        .andExpect(jsonPath("$.requestId").exists());
+        .andExpect(jsonPath("$.requestId").exists())
+        .andExpect(header().string("Access-Control-Allow-Origin", "https://frontend.example.test"));
   }
 
   @Test
@@ -62,5 +67,44 @@ class OidcSecurityIntegrationTest {
         .andExpect(status().isUnauthorized())
         .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
         .andExpect(jsonPath("$.requestId").exists());
+  }
+
+  @Test
+  void allowedProductionPreflightDoesNotRequireBearerAuthentication() throws Exception {
+    mvc.perform(
+            options("/api/identity")
+                .header("Origin", "https://frontend.example.test")
+                .header("Access-Control-Request-Method", "GET")
+                .header("Access-Control-Request-Headers", "Authorization,X-Request-ID"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Access-Control-Allow-Origin", "https://frontend.example.test"))
+        .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
+  }
+
+  @Test
+  void validatedBearerWorksOnlyForAnAllowedBrowserOrigin() throws Exception {
+    when(decoder.decode("cors-test-token"))
+        .thenReturn(
+            Jwt.withTokenValue("cors-test-token")
+                .header("alg", "RS256")
+                .issuer("https://issuer.example")
+                .subject("cors-provider-user")
+                .build());
+    mvc.perform(
+            get("/api/identity")
+                .header("Origin", "https://frontend.example.test")
+                .header("Authorization", "Bearer cors-test-token")
+                .header("X-Request-ID", "oidc-cors-reference"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.subject").value("cors-provider-user"))
+        .andExpect(header().string("Access-Control-Allow-Origin", "https://frontend.example.test"))
+        .andExpect(header().string("Access-Control-Expose-Headers", "X-Request-ID"))
+        .andExpect(header().string("X-Request-ID", "oidc-cors-reference"));
+    mvc.perform(
+            get("/api/identity")
+                .header("Origin", "https://evil.example.test")
+                .header("Authorization", "Bearer cors-test-token"))
+        .andExpect(status().isForbidden())
+        .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
   }
 }

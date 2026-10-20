@@ -15,6 +15,34 @@ test("real organization workflow preserves selection, keyboard access and sessio
   await page.getByLabel("Local development identity").fill(subject);
   await page.getByRole("button", { name: "Use local identity" }).click();
   await expect(page.getByText("Session active")).toBeVisible();
+  // Real browser fetch: verify preflight-compatible identity access and exposed correlation header.
+  const identity = await page.evaluate(
+    async ({ origin, subject }) => {
+      const response = await fetch(new URL("/api/identity", origin), {
+        headers: {
+          "X-Dev-Subject": subject,
+          "X-Request-ID": "browser-cors-reference",
+        },
+        redirect: "error",
+      });
+      return {
+        status: response.status,
+        requestId: response.headers.get("X-Request-ID"),
+        subject: (await response.json()).subject,
+      };
+    },
+    {
+      origin:
+        process.env.VITE_API_BASE_URL?.trim() || new URL(page.url()).origin,
+      subject,
+    },
+  );
+  expect(identity).toEqual({
+    status: 200,
+    requestId: "browser-cors-reference",
+    subject,
+  });
+
   await page.getByRole("link", { name: "Organization", exact: true }).click();
   await expect(page.getByText("No organizations yet")).toBeVisible();
   await expect(

@@ -71,6 +71,32 @@ class ApiReadinessContractTest extends SupplyIntegrationSupport {
   }
 
   @Test
+  void curationBlockerCorrectionsKeepAdminNotesSeparateAndDeclareCreatePreconditions() {
+    String assignment = "/api/v1/admin/facilities/{id}/capabilities/{capability}";
+    response(assignment, "get", "FacilityCapabilityAdminView", false);
+    var admin = schema("FacilityCapabilityAdminView").path("properties");
+    assertThat(admin.has("notes")).isTrue();
+    assertThat(admin.has("version")).isTrue();
+    assertThat(admin.path("minimumOrderQuantity").path("type").asText()).isEqualTo("string");
+    assertThat(admin.path("maximumOrderQuantity").path("type").asText()).isEqualTo("string");
+    assertThat(schema("FacilityCapabilityView").path("properties").has("notes")).isFalse();
+    for (String path :
+        List.of(
+            assignment,
+            "/api/v1/admin/materials/{id}/fabric-spec",
+            "/api/v1/admin/materials/{id}/leather-spec")) {
+      var headers = new java.util.ArrayList<JsonNode>();
+      for (var parameter : spec.path("paths").path(path).path("put").path("parameters"))
+        if (parameter.path("in").asText().equals("header")) headers.add(parameter);
+      assertThat(headers).hasSize(1);
+      assertThat(headers.getFirst().path("name").asText()).isEqualTo("If-None-Match");
+      assertThat(headers.getFirst().path("required").asBoolean()).isFalse();
+      assertThat(headers.getFirst().path("description").asText())
+          .contains("412", "404", "409", "400");
+    }
+  }
+
+  @Test
   void supplierContractsRetainTheirOwnFieldsAndNestedCommands() {
     response("/api/v1/suppliers/{id}", "get", "SupplierView", false);
     request("/api/v1/admin/suppliers", "post", "SupplierInput");

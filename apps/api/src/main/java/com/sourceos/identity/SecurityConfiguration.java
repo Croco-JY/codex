@@ -41,7 +41,12 @@ class SecurityConfiguration {
     c.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "OPTIONS"));
     c.setAllowedHeaders(
         List.of(
-            "Authorization", "Content-Type", "X-Request-ID", "X-Dev-Subject", "Idempotency-Key"));
+            "Authorization",
+            "Content-Type",
+            "X-Request-ID",
+            "X-Dev-Subject",
+            "Idempotency-Key",
+            "If-None-Match"));
     c.setExposedHeaders(List.of("X-Request-ID"));
     var src = new UrlBasedCorsConfigurationSource();
     src.registerCorsConfiguration("/**", c);

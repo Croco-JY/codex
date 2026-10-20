@@ -1,5 +1,7 @@
 package com.sourceos.material;
 
+import com.sourceos.shared.WritePreconditions;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.util.*;
@@ -134,8 +136,12 @@ class MaterialController {
 
   @PutMapping("/admin/materials/{id}/fabric-spec")
   MaterialService.FabricView fabric(
-      @PathVariable UUID id, @Valid @RequestBody MaterialService.FabricInput v) {
-    return service.fabric(id, v);
+      @PathVariable UUID id,
+      @Parameter(description = WritePreconditions.DESCRIPTION)
+          @RequestHeader(name = "If-None-Match", required = false)
+          String ifNoneMatch,
+      @Valid @RequestBody MaterialService.FabricInput v) {
+    return service.fabric(id, v, ifNoneMatch);
   }
 
   @GetMapping("/materials/{id}/leather-spec")
@@ -145,7 +151,11 @@ class MaterialController {
 
   @PutMapping("/admin/materials/{id}/leather-spec")
   MaterialService.LeatherView leather(
-      @PathVariable UUID id, @Valid @RequestBody MaterialService.LeatherInput v) {
-    return service.leather(id, v);
+      @PathVariable UUID id,
+      @Parameter(description = WritePreconditions.DESCRIPTION)
+          @RequestHeader(name = "If-None-Match", required = false)
+          String ifNoneMatch,
+      @Valid @RequestBody MaterialService.LeatherInput v) {
+    return service.leather(id, v, ifNoneMatch);
   }
 }

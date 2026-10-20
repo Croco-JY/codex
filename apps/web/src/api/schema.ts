@@ -171,7 +171,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["capability"];
         put: operations["assign"];
         post?: never;
         delete?: never;
@@ -1423,6 +1423,25 @@ export interface components {
             /** Format: uuid */
             sourceRecordId: string;
         };
+        FacilityCapabilityAdminView: {
+            /** Format: uuid */
+            capabilityId?: string;
+            /** Format: uuid */
+            facilityId?: string;
+            /** Format: decimal */
+            maximumOrderQuantity?: string;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
+            notes?: string;
+            /** @enum {string} */
+            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
+            /** @enum {string} */
+            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
+            /** @enum {string} */
+            verificationStatus?: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            /** Format: int64 */
+            version?: number;
+        };
         FacilityCapabilityInput: {
             /** Format: decimal */
             maximumOrderQuantity?: string;
@@ -2613,10 +2632,36 @@ export interface operations {
             };
         };
     };
-    assign: {
+    capability: {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                id: string;
+                capability: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacilityCapabilityAdminView"];
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
             path: {
                 id: string;
                 capability: string;
@@ -3380,7 +3425,10 @@ export interface operations {
     fabric: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -3406,7 +3454,10 @@ export interface operations {
     leather: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
             path: {
                 id: string;
             };

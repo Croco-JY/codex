@@ -4,6 +4,7 @@ import com.sourceos.audit.AuditRecorder;
 import com.sourceos.authorization.PlatformAuthorization;
 import com.sourceos.dataingestion.SourceService;
 import com.sourceos.shared.ValidationRules;
+import com.sourceos.shared.WritePreconditions;
 import com.sourceos.supplier.SupplierService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -133,6 +134,18 @@ public class FacilityService {
       BigDecimal minimumOrderQuantity,
       BigDecimal maximumOrderQuantity,
       Unit quantityUnit,
+      Verification verificationStatus,
+      long version) {}
+
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityCapabilityAdminView")
+  public record CapabilityAdminView(
+      UUID facilityId,
+      UUID capabilityId,
+      Proficiency proficiencyLevel,
+      BigDecimal minimumOrderQuantity,
+      BigDecimal maximumOrderQuantity,
+      Unit quantityUnit,
+      String notes,
       Verification verificationStatus,
       long version) {}
 
@@ -312,8 +325,9 @@ public class FacilityService {
   }
 
   @Transactional
-  public void assign(UUID facility, UUID capability, CapabilityInput v) {
+  public void assign(UUID facility, UUID capability, CapabilityInput v, String ifNoneMatch) {
     auth.requireAdmin();
+    boolean createOnly = WritePreconditions.createOnly(ifNoneMatch, v.version());
     find(facility);
     sources.requireObservation(v.observationId());
     ValidationRules.notes(v.notes());
@@ -323,14 +337,26 @@ public class FacilityService {
         && v.maximumOrderQuantity() != null
         && v.minimumOrderQuantity().compareTo(v.maximumOrderQuantity()) > 0)
       throw ValidationRules.bad("Invalid quantity range");
+    if (!createOnly
+        && jdbc.sql(
+                "SELECT version FROM facility_capability WHERE facility_id=:facility AND"
+                    + " capability_id=:capability FOR UPDATE")
+            .param("facility", facility)
+            .param("capability", capability)
+            .query(Long.class)
+            .optional()
+            .isEmpty()) throw ValidationRules.missing();
     int n =
         jdbc.sql(
-                "INSERT INTO"
-                    + " facility_capability(facility_id,capability_id,proficiency_level,minimum_order_quantity,maximum_order_quantity,quantity_unit,notes,verification_status)"
-                    + " VALUES(:facility,:capability,:level,:min,:max,:unit,:notes,:verification)"
-                    + " ON CONFLICT(facility_id,capability_id) DO UPDATE SET"
-                    + " proficiency_level=EXCLUDED.proficiency_level,minimum_order_quantity=EXCLUDED.minimum_order_quantity,maximum_order_quantity=EXCLUDED.maximum_order_quantity,quantity_unit=EXCLUDED.quantity_unit,notes=EXCLUDED.notes,verification_status=EXCLUDED.verification_status,version=facility_capability.version+1,updated_at=now()"
-                    + " WHERE facility_capability.version=:version")
+                createOnly
+                    ? "INSERT INTO"
+                          + " facility_capability(facility_id,capability_id,proficiency_level,minimum_order_quantity,maximum_order_quantity,quantity_unit,notes,verification_status)"
+                          + " VALUES(:facility,:capability,:level,:min,:max,:unit,:notes,:verification)"
+                          + " ON CONFLICT(facility_id,capability_id) DO NOTHING"
+                    : "UPDATE facility_capability SET"
+                          + " proficiency_level=:level,minimum_order_quantity=:min,maximum_order_quantity=:max,quantity_unit=:unit,notes=:notes,verification_status=:verification,version=version+1,updated_at=now()"
+                          + " WHERE facility_id=:facility AND capability_id=:capability AND"
+                          + " version=:version")
             .param("facility", facility)
             .param("capability", capability)
             .param("level", v.proficiencyLevel() == null ? null : v.proficiencyLevel().name())
@@ -341,7 +367,10 @@ public class FacilityService {
             .param("verification", v.verificationStatus().name())
             .param("version", v.version())
             .update();
-    if (n != 1) throw ValidationRules.conflict();
+    if (n != 1) {
+      if (createOnly) throw WritePreconditions.failed();
+      throw ValidationRules.conflict();
+    }
     jdbc.sql(
             "INSERT INTO"
                 + " facility_capability_source(facility_id,capability_id,source_observation_id)"
@@ -379,6 +408,35 @@ public class FacilityService {
                     Verification.valueOf(rs.getString("verification_status")),
                     rs.getLong("version")))
         .list();
+  }
+
+  @Transactional(readOnly = true)
+  public CapabilityAdminView capability(UUID facility, UUID capability) {
+    auth.requireAdmin();
+    find(facility);
+    return jdbc.sql(
+            "SELECT * FROM facility_capability WHERE facility_id=:facility AND"
+                + " capability_id=:capability")
+        .param("facility", facility)
+        .param("capability", capability)
+        .query(
+            (rs, n) ->
+                new CapabilityAdminView(
+                    facility,
+                    rs.getObject("capability_id", UUID.class),
+                    rs.getString("proficiency_level") == null
+                        ? null
+                        : Proficiency.valueOf(rs.getString("proficiency_level")),
+                    rs.getBigDecimal("minimum_order_quantity"),
+                    rs.getBigDecimal("maximum_order_quantity"),
+                    rs.getString("quantity_unit") == null
+                        ? null
+                        : Unit.valueOf(rs.getString("quantity_unit")),
+                    rs.getString("notes"),
+                    Verification.valueOf(rs.getString("verification_status")),
+                    rs.getLong("version")))
+        .optional()
+        .orElseThrow(ValidationRules::missing);
   }
 
   public List<Map<String, Object>> citations(UUID facility) {

@@ -13,6 +13,21 @@ class CorsSecurityIntegrationTest extends SupplyIntegrationSupport {
   static final String EVIL = "https://evil.example.test";
 
   @Test
+  void configuredOriginCanSendTheExplicitCreateOnlyPrecondition() throws Exception {
+    mvc.perform(
+            options(
+                    "/api/v1/admin/facilities/00000000-0000-4000-8000-000000000001/capabilities/00000000-0000-4000-8000-000000000002")
+                .header("Origin", ALLOWED)
+                .header("Access-Control-Request-Method", "PUT")
+                .header(
+                    "Access-Control-Request-Headers", "Content-Type,Authorization,If-None-Match"))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Access-Control-Allow-Origin", ALLOWED))
+        .andExpect(header().string("Access-Control-Allow-Headers", containsString("If-None-Match")))
+        .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
+  }
+
+  @Test
   void configuredPreflightNeedsNoIdentityAndKeepsExplicitPolicy() throws Exception {
     mvc.perform(
             options("/api/identity")

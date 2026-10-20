@@ -175,7 +175,10 @@ class ExactDecimalTransportTest extends CatalogIntegrationSupport {
             null,
             observation,
             0);
-    var response = command(put("/api/v1/admin/materials/" + m.id() + "/fabric-spec"), input);
+    var response =
+        command(
+            put("/api/v1/admin/materials/" + m.id() + "/fabric-spec").header("If-None-Match", "*"),
+            input);
     assertDecimal(response, "gsm", "999999.9999");
     assertDecimal(response, "widthMm", "99999999.9999");
     assertDecimal(response, "thicknessMm", "0.0001");
@@ -230,6 +233,7 @@ class ExactDecimalTransportTest extends CatalogIntegrationSupport {
             0);
     mvc.perform(
             put("/api/v1/admin/facilities/" + facility + "/capabilities/" + capabilityId)
+                .header("If-None-Match", "*")
                 .header("X-Dev-Subject", principal)
                 .contentType("application/json")
                 .content(json.writeValueAsString(capability)))

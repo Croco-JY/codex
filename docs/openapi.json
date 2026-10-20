@@ -264,6 +264,63 @@
         ],
         "type": "object"
       },
+      "FacilityCapabilityAdminView": {
+        "properties": {
+          "capabilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "facilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maximumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "proficiencyLevel": {
+            "enum": [
+              "SUPPORTED",
+              "EXPERIENCED",
+              "SPECIALIST"
+            ],
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2"
+            ],
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "UNVERIFIED",
+              "DOCUMENTED",
+              "AUDITED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "FacilityCapabilityInput": {
         "properties": {
           "maximumOrderQuantity": {
@@ -3488,6 +3545,44 @@
       }
     },
     "/api/v1/admin/facilities/{id}/capabilities/{capability}": {
+      "get": {
+        "operationId": "capability",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacilityCapabilityAdminView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      },
       "put": {
         "operationId": "assign",
         "parameters": [
@@ -3506,6 +3601,15 @@
             "required": true,
             "schema": {
               "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
               "type": "string"
             }
           }
@@ -4637,6 +4741,15 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -4676,6 +4789,15 @@
             "required": true,
             "schema": {
               "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
               "type": "string"
             }
           }

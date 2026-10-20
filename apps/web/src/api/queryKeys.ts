@@ -10,6 +10,14 @@ export const queryKeys = {
     ["supply", scope, "materials", filters, limit] as const,
   material: (scope: string, id: string) =>
     ["supply", scope, "material", id] as const,
+  facility: (scope: string, id: string) =>
+    ["supply", scope, "facility", id] as const,
+  commercial: (scope: string, id: string, kind: string, filters: unknown) =>
+    ["supply", scope, "listing", id, kind, filters, 25] as const,
+  listing: (scope: string, id: string) =>
+    ["supply", scope, "listing", id] as const,
+  materialChild: (scope: string, id: string, kind: string, context: unknown) =>
+    ["supply", scope, "material", id, kind, context] as const,
   countries: (scope: string) => ["supply", scope, "countries"] as const,
   fibers: (scope: string) => ["supply", scope, "fibers"] as const,
   supplier: (scope: string, id: string) =>

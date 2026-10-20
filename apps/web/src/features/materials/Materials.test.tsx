@@ -74,6 +74,9 @@ beforeEach(() => {
         return reply({ platformAdmin: false });
       if (url.pathname === "/api/v1/materials")
         return searchHandler(url, request);
+      if (/\/(variants|listings)$/.test(url.pathname)) return reply([]);
+      if (/\/(fabric-spec|leather-spec)$/.test(url.pathname))
+        return reply({}, 404);
       if (url.pathname.startsWith("/api/v1/materials/"))
         return reply(row, detailStatus);
       if (url.pathname === "/api/v1/countries")

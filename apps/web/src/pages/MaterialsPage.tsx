@@ -207,6 +207,9 @@ export default function MaterialsPage() {
                       {material.id ? (
                         <Link
                           to={`/materials/${encodeURIComponent(material.id)}`}
+                          state={{
+                            discoveryReturn: `/materials${parsed.canonical ? `?${parsed.canonical}` : ""}`,
+                          }}
                         >
                           {material.displayName || "Material name not entered"}
                         </Link>

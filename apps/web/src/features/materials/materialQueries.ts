@@ -61,3 +61,34 @@ export function useReferences() {
   return { countries, fibers, fiberList: fibers.data?.pages.flat() ?? [] };
 }
 export type References = ReturnType<typeof useReferences>;
+
+export const detailOptions = (scope: string, id: string) =>
+  queryOptions({
+    queryKey: queryKeys.material(scope, id),
+    enabled: !!id,
+    queryFn: async ({ signal }) => {
+      const { data, response } = await api.GET("/api/v1/materials/{id}", {
+        signal,
+        params: { path: { id } },
+      });
+      return requireData(data, response);
+    },
+  });
+export const variantOptions = (scope: string, id: string) =>
+  infiniteQueryOptions({
+    queryKey: queryKeys.materialChild(scope, id, "variants", 25),
+    enabled: !!id,
+    initialPageParam: 0,
+    queryFn: async ({ signal, pageParam }) => {
+      const { data, response } = await api.GET(
+        "/api/v1/materials/{id}/variants",
+        {
+          signal,
+          params: { path: { id }, query: { limit: 25, offset: pageParam } },
+        },
+      );
+      return requireData(data, response);
+    },
+    getNextPageParam: (page, _pages, offset) =>
+      page.length === 25 ? offset + 25 : undefined,
+  });

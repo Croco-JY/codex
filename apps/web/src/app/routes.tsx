@@ -9,6 +9,7 @@ const Organization = lazy(() => import("../pages/OrganizationPage"));
 const Admin = lazy(() => import("../pages/AdminLandingPage"));
 const Materials = lazy(() => import("../pages/MaterialsPage"));
 const MaterialDetail = lazy(() => import("../pages/MaterialDetailPage"));
+const MaterialListing = lazy(() => import("../pages/MaterialListingPage"));
 function Authenticated({ children }: { children: ReactNode }) {
   const session = useSession();
   if (session.status === "pending")
@@ -63,6 +64,14 @@ export function AppRoutes() {
           element={
             <Authenticated>
               <MaterialDetail />
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/material-listings/:id"
+          element={
+            <Authenticated>
+              <MaterialListing />
             </Authenticated>
           }
         />

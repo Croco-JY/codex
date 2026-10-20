@@ -59,6 +59,11 @@ test("real Material discovery applies listing terms, opens detail and returns th
   ).toBeVisible();
   const filteredUrl = page.url();
   expect(filteredUrl).toContain("maxMoq=80");
+  expect(
+    requests.filter((url) =>
+      /fabric-spec|leather-spec|listings|prices|inventory/.test(url.pathname),
+    ),
+  ).toHaveLength(0);
   await page.getByRole("link", { name: "Review wool gabardine" }).click();
   await expect(
     page.getByRole("heading", { level: 1, name: "Review wool gabardine" }),
@@ -74,9 +79,7 @@ test("real Material discovery applies listing terms, opens detail and returns th
   );
   await expect(page.locator(".material-card")).toHaveCount(1);
   expect(
-    requests.filter((url) =>
-      /fabric-spec|leather-spec|listings|prices|inventory/.test(url.pathname),
-    ),
+    requests.filter((url) => /effective-prices|inventory/.test(url.pathname)),
   ).toHaveLength(0);
   expect(
     requests

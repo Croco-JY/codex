@@ -1,6 +1,6 @@
 # SOURCE OS Phase 1B architecture plan
 
-Status: design only, awaiting architecture review. The accepted direction is **supplier-scoped Material + SupplierMaterialListing**. The detailed choices below are proposals for that review, not permission to implement. No V9–V12 files, Java/TypeScript application changes or Phase 1B OpenAPI changes accompany this document.
+Status: final Phase 1B implementation plan. Authority: the user’s consolidated V9–V12 implementation specification, received 2026-10-20 (Asia/Seoul), supersedes earlier proposals. Supplier-scoped Material + SupplierMaterialListing is accepted. Implement only Phase 1B on phase-1-supply-network; preserve V1–V8 bytes, exactly 16 new tables, no Flyway repair, PR, merge, Phase 1C UI or Phase 2.
 
 Baseline: Phase 1A hardening `9f14aac`; micro-fix `9f377ebbd89a38f397a62a96ef7a28ea120bef61` explicitly names `data_source_record_kind_check`. Its [SOURCE OS CI](https://github.com/Croco-JY/codex/actions/runs/39245263123) completed successfully before this document was started. Local validation passed 63 backend / 2 frontend / 1 browser tests, clean V1→V8 and populated Phase 0 V1/V2→V8 migration, contract consistency, Terraform and secret scans. V1/V2 are unchanged. All SQL fragments below are **future design examples**, not applied migrations.
 
@@ -80,11 +80,11 @@ Exactly **16 new tables**; no generic idempotency table, listing-variant table, 
 
 Field dictionaries below enumerate all proposed columns; comma-separated field names mean distinct columns with the same rule. `NN` means NOT NULL; `?` means nullable. UUIDs are primary identifiers; times are UTC `timestamptz` at PostgreSQL microsecond precision. No unspecified numeric field defaults to zero.
 
-Mutable records use `version bigint NN DEFAULT 0`, `created_at timestamptz NN DEFAULT now()` and `updated_at timestamptz NN DEFAULT now()`. Creation time/ID are immutable. On updates compare expected version, increment once and update the timestamp; stale requests return 409. Lifecycle is `status varchar(20) NN DEFAULT 'ACTIVE' CHECK IN ('ACTIVE','ARCHIVED')`, without an active boolean. Reference FiberType may use active. Unless stated otherwise, FKs use NO ACTION, never destructive cascades.
+Mutable records use `version bigint NN DEFAULT 0`, `created_at timestamptz NN DEFAULT now()` and `updated_at timestamptz NN DEFAULT now()`. Creation time/ID are immutable. On updates compare expected version, increment once and update the timestamp; stale requests return 409. Material lifecycle is DRAFT/ACTIVE/ARCHIVED (default DRAFT); Variant and Listing lifecycle is ACTIVE/ARCHIVED (default ACTIVE). Each uses a NOT NULL status CHECK, without an active boolean. Reference FiberType may use active. Unless stated otherwise, FKs use NO ACTION, never destructive cascades.
 
 Material types: FABRIC, LEATHER, LINING, INTERLINING, ZIPPER, BUTTON, SNAP, BUCKLE, THREAD, TAPE, LABEL, ELASTIC, FILLING, PACKAGING, OTHER. A named DB CHECK enforces this set. Only FABRIC and LEATHER have dedicated specs; no forced spec for lining/interlining/trims.
 
-Quantity/price-unit codes: PCS, METER, YARD, KG, GRAM, MM, CM, M2. DB CHECKs enforce the shared controlled set, without introducing a units table. Quantities/amounts use `NUMERIC(19,4)` / BigDecimal; reject excess precision rather than silently rounding API input. Unknown is NULL. Explicit known zero is allowed only where the field's check permits it. Currency is an uppercase ISO-4217 code: DB format CHECK `^[A-Z]{3}$`, plus supported ISO registry validation in the service; direct DB writes must use that reviewed registry too. No FX/unit conversion.
+Quantity/price-unit codes: PCS, METER, YARD, KG, GRAM, MM, CM, M2, FT2, ROLL, HIDE, SET, PACK. DB CHECKs enforce the shared controlled set, without introducing a units table. Quantities/amounts use `NUMERIC(19,4)` / BigDecimal; reject excess precision rather than silently rounding API input. Unknown is NULL. Explicit known zero is allowed only where the field's check permits it. Currency is an uppercase ISO-4217 code: DB format CHECK `^[A-Z]{3}$`, plus supported ISO registry validation in the service; direct DB writes must use that reviewed registry too. Reject noncommercial XXX/XTS currency identifiers even if Java recognizes them. No FX/unit conversion.
 
 JSONB fields below are nullable bounded objects, not raw source payloads: `jsonb_typeof(value)='object'` and maximum 8192 UTF-8 bytes of its serialized representation. Application schemas allow only documented long-tail physical keys/values. Core searchable facts stay in columns. Never accept authentication data, arbitrary API responses or whole entities in these objects.
 
@@ -101,7 +101,7 @@ JSONB fields below are nullable bounded objects, not raw source payloads: `jsonb
 | description | varchar(4000) ? |
 | origin_country_id | uuid ? FK country(id); no default from supplier country |
 | composition_completeness | varchar(20) NN DEFAULT 'UNKNOWN'; COMPLETE/PARTIAL/UNKNOWN |
-| status | lifecycle above |
+| status | DRAFT/ACTIVE/ARCHIVED, default DRAFT |
 | version, created_at, updated_at | mutable-record convention above |
 
 Add `UNIQUE(id,material_type)` for subtype FKs. Do not add global or supplier/article-number uniqueness: incomplete/reused codes must not force false identity merges. Imported identity is the typed external binding. Catalog article number may be enriched/corrected only with evidence that it is still the same catalog article; a different article means archive + new Material. Wrong catalog supplier or type always means archive + new Material, never UPDATE those identity fields. Mutable fields are article-code representation, display/normalized name, description, origin, composition completeness and lifecycle, plus version/update time.
@@ -126,7 +126,7 @@ Add `UNIQUE(id,material_id)`. Catalog SKU, name, color, batch and physical attri
 
 | Column | Type and integrity |
 |---|---|
-| id | uuid NN PK; immutable; manual create uses UUID command identity, section 5 |
+| id | uuid NN PK; immutable; manual create uses server-generated UUID, section 5 |
 | material_id | uuid NN FK material(id); immutable |
 | seller_supplier_id | uuid NN FK supplier_profile(id); immutable |
 | seller_article_number | varchar(160) ?; seller's commercial reference |
@@ -134,12 +134,11 @@ Add `UNIQUE(id,material_id)`. Catalog SKU, name, color, batch and physical attri
 | quantity_unit | varchar(10) ?; controlled set; required if either minimum is non-NULL |
 | standard_lead_time_days, reproduction_lead_time_days | integer ?; CHECK >=0 |
 | status | lifecycle above |
-| creation_request_hash | varchar(64) NN; lowercase SHA-256 CHECK; server-only, immutable |
 | version, created_at, updated_at | mutable-record convention |
 
-Add `UNIQUE(id,material_id)` for price/inventory FKs. **No UNIQUE(material_id,seller_supplier_id)**, including partial ACTIVE uniqueness. Stock-service, made-to-order, domestic, export and other programmes can coexist as distinct UUID listings. External listing identity deduplicates imports; manual command identity deduplicates manual creation. No weak programme/article-number natural key is invented.
+Add `UNIQUE(id,material_id)` for price/inventory FKs. **No UNIQUE(material_id,seller_supplier_id)**, including partial ACTIVE uniqueness. Stock-service, made-to-order, domestic, export and other programmes can coexist as distinct UUID listings. External listing identity deduplicates imports; manual create uses a server UUID without a retry-idempotency guarantee. No weak programme/article-number natural key is invented.
 
-Exact immutable fields: id, material_id, seller_supplier_id, creation_request_hash, created_at. Correcting the seller/material relationship requires archive + new listing. Exact mutable business fields: seller_article_number, both minima, quantity_unit, both lead times and status. Seller article number is mutable because it is a seller reference that can be corrected/renamed without changing the catalog article or seller; preserve evidence and audit, and never use its change to rebind an external record. The hash is the only extra technical column proposed for manual creation retry safety; it adds no table/state framework.
+Exact immutable fields: id, material_id, seller_supplier_id, created_at. Correcting the seller/material relationship requires archive + new listing. Exact mutable business fields: seller_article_number, both minima, quantity_unit, both lead times and status. Seller article number is mutable because it is a seller reference that can be corrected/renamed without changing the catalog article or seller; preserve evidence and audit, and never use its change to rebind an external record. No canonical JSON hashing, client-assigned Listing PK or generic idempotency framework is allowed. Low-frequency manual Listing retries may create duplicates; document this explicit limitation. Imported listings remain idempotent through MATERIAL_LISTING external identity.
 
 ### 3.4 Physical specs
 
@@ -175,9 +174,9 @@ Both spec tables have `material_id uuid NN PK`, `material_type varchar(30) NN` f
 | Table | Columns and integrity |
 |---|---|
 | fiber_type | `id uuid NN PK`; `code varchar(40) NN UNIQUE CHECK ^[A-Z][A-Z0-9_]*$`; `name_en varchar(160) NN` nonblank; `name_local varchar(160) ?`; `active boolean NN DEFAULT true`; `version bigint NN DEFAULT 0`; `created_at,updated_at timestamptz NN DEFAULT now()` |
-| material_composition | `material_id uuid NN FK material(id)`; `fiber_type_id uuid NN FK fiber_type(id)`; `percentage numeric(7,4) NN CHECK 0<=percentage AND percentage<=100`; `created_at,updated_at timestamptz NN DEFAULT now()`; PK(material_id,fiber_type_id) |
+| material_composition | `material_id uuid NN FK material(id)`; `fiber_type_id uuid NN FK fiber_type(id)`; `percentage numeric(7,4) NN CHECK percentage>0 AND percentage<=100`; `created_at,updated_at timestamptz NN DEFAULT now()`; PK(material_id,fiber_type_id) |
 
-Initial reference fibers: WOOL, CASHMERE, COTTON, SILK, LINEN, HEMP, POLYESTER, NYLON, VISCOSE, ACETATE, ELASTANE. Do not infer unknown fibers or populate fake zero rows. Fiber code/ID/creation time are immutable; names/active are versioned reference updates. Composition changes use the Material version and parent lock, not an independent version per component. Aggregate completeness enforcement is in section 6.
+Initial reference fibers: WOOL, CASHMERE, COTTON, LINEN, SILK, POLYESTER, NYLON, ACRYLIC, RAYON, VISCOSE, LYOCELL, ELASTANE, OTHER. Defer aliases rather than add a table or complicate JPA/search. Do not auto-map unknown source terms to OTHER without an explicit reviewed mapping. Do not infer unknown fibers or populate fake zero rows. Fiber code/ID/creation time are immutable; names/active are versioned reference updates. Composition changes use the Material version and parent lock, not an independent version per component. Aggregate completeness enforcement is in section 6.
 
 ### 3.6 Typed bindings and typed fact citations
 
@@ -210,7 +209,7 @@ These are **Fact Provenance**, supporting a field/fact with an actual immutable 
 | material_id | uuid NN; deliberate integrity duplication only |
 | material_variant_id | uuid ?; variant composite FK below |
 | data_source_id | uuid NN FK data_source(id); provider scope |
-| amount | numeric(19,4) NN CHECK >=0; no default |
+| amount | numeric(19,4) NN CHECK >0; no default; unknown/free/pending/sample is not a zero price |
 | currency | varchar(3) NN; ISO/format validation in section 3 |
 | price_unit | varchar(10) NN; controlled unit CHECK |
 | minimum_order_quantity | numeric(19,4) ? CHECK >=0; tier threshold, not listing MOQ |
@@ -252,7 +251,7 @@ All columns are immutable after INSERT; there is no version or updated_at. Unkno
 
 ## 4. V9–V12 migration plan
 
-Future filenames proposed for review: `V9__material_catalog_and_listings.sql`, `V10__material_price.sql`, `V11__material_inventory_snapshot.sql`, `V12__material_search_indexes.sql`. These files do not exist in this change.
+Future filenames proposed for review: `V9__material_catalog_and_listings.sql`, `V10__material_price.sql`, `V11__material_inventory_snapshot.sql`, `V12__material_search_indexes.sql`. Create these four files only during their authorized implementation slices.
 
 ### V9: named constraint extension, then 13 tables
 
@@ -292,11 +291,7 @@ Repository inspection found no general HTTP command-idempotency table/service or
 
 ### Manual Listing create decision
 
-Require `Idempotency-Key` to be a client-generated random UUID command ID; use that UUID as the new listing's primary key. This is an explicit global UUID resource/command identity, not a globally unique assumption about human text. Hash a versioned canonical encoding of the validated creation payload plus server Actor issuer/subject and operation. Normalize field ordering, null representation, decimal scale and timestamps before SHA-256; never hash/accept arbitrary request dumps. Store only the resulting `creation_request_hash`, never a raw payload or authentication data. All listing creates, including imported initial creates, assign this server-derived immutable hash.
-
-Within one transaction: require PLATFORM_ADMIN; INSERT listing ON CONFLICT(id) DO NOTHING; lock/read that ID; compare the immutable creation hash. First creation writes initial citations and audit and returns 201. Same command/actor/payload returns the existing current resource (200) without another mutation/audit. Different payload/actor with the same UUID returns 409. The original hash survives later commercial edits/archival, so a delayed original retry cannot recreate, revert or resurrect the listing. For imports the source-record lock/binding is authoritative; its resolver reuses the bound ID rather than comparing a new observation to the original creation hash.
-
-This adds one technical hash column to Listing, no new table and no synthetic external source pretending an HTTP command is external evidence. Ordinary updates use versioned PUT, not create replay. Future CORS configuration must explicitly allow Idempotency-Key if browser clients send it; current security configuration has no such header yet. This document makes no CORS/code/contract change.
+Use the existing normal PLATFORM_ADMIN create pattern: server-generated UUID, one transaction and audit. Do not accept a client Listing PK, add creation_request_hash, hash canonical request JSON, require Idempotency-Key or add a generic idempotency table. Low-frequency manual creation intentionally has no automatic retry deduplication; a retry may create another listing. Imported Listing idempotency remains the persistent MATERIAL_LISTING record + typed binding. Same seller/material may legitimately have multiple listings, so do not guess a natural deduplication key.
 
 ### Imported catalog/variant/listing identity
 
@@ -309,17 +304,17 @@ Proposed exact semantics at transaction commit:
 | completeness | Row/aggregate rule |
 |---|---|
 | UNKNOWN | zero composition rows; no fake zero-percent components |
-| PARTIAL | at least one explicitly known component row; exact NUMERIC sum between 0 and 100 inclusive |
+| PARTIAL | at least one explicitly known positive component row; exact NUMERIC sum >0 and <=100 |
 | COMPLETE | at least one row; exact NUMERIC sum =100 |
 
-Every row also satisfies 0<=percentage<=100 and unique material/fiber. No epsilon/FLOAT tolerance. Explicit measured 0% is a known absence, not an unknown placeholder; normal data entry omits absent fibers. PARTIAL may total 100 without claiming the source evidence was reviewed as COMPLETE. Unknown quantitative evidence never defaults to zero. Do not infer a fiber for leather/other types.
+Every row also satisfies 0<percentage<=100 and unique material/fiber. No epsilon/FLOAT tolerance. Every 0% component row is forbidden; absence means no row. PARTIAL may total 100 without claiming the source evidence was reviewed as COMPLETE. Unknown quantitative evidence never defaults to zero. Do not infer a fiber for leather/other types.
 
 | Strategy | Assessment |
 |---|---|
 | Service-only transactional SUM validation | Easy errors/DTO validation, but direct SQL/import mistakes can bypass the total/completeness rule; concurrent writers need parent serialization anyway. Insufficient as the only invariant. |
 | Small DEFERRABLE constraint triggers | Chosen: service validates early; PostgreSQL validates final rows at commit. Allows replacing a COMPLETE composition atomically without rejecting temporary intermediate totals. No queue/framework/table is needed. |
 
-Use one shared aggregate-check function and DEFERRABLE INITIALLY DEFERRED constraint triggers on material_composition INSERT/UPDATE/DELETE and material INSERT/UPDATE. They validate the final parent completeness and component SUM/count. A small BEFORE ROW composition-write trigger locks its parent Material FOR UPDATE; completeness changes already lock that same row. Do not allow moving a component row to another material by UPDATE; replace it explicitly. All composition API operations lock the parent and compare/increment Material.version before replacing rows. Multi-material batch operations lock material UUIDs in stable order. At READ COMMITTED, a waiter validates against the committed preceding writer plus its own changes; serialization/deadlock failures abort and return a retryable conflict. Test the concurrent direct-SQL case on PostgreSQL, not just service calls.
+Use one shared aggregate-check function and DEFERRABLE INITIALLY DEFERRED constraint triggers on material_composition INSERT/UPDATE/DELETE and material INSERT/UPDATE OF composition_completeness. They validate the final parent completeness and component SUM/count. A small BEFORE ROW composition-write trigger locks its parent Material FOR UPDATE; completeness changes already lock that same row. Do not allow moving a component row to another material by UPDATE; replace it explicitly. All composition API operations lock the parent and compare/increment Material.version before replacing rows. Multi-material batch operations lock material UUIDs in stable order. At READ COMMITTED, a waiter validates against the committed preceding writer plus its own changes; serialization/deadlock failures abort and return a retryable conflict. Test the concurrent direct-SQL case on PostgreSQL, not just service calls.
 
 For COMPLETE creation/update, parent and components must be supplied/changed within the same transaction. UNKNOWN transition deletes components in that transaction. Invalid deferred checks roll back canonical facts, citations and audit together. Trigger functions should stay small (one aggregate query per checked parent); no novelty trigger framework. Aggregate tests must cover zero/partial/exact/over-100, duplicate fiber, direct SQL, and concurrent inserts that would otherwise overshoot 100.
 
@@ -342,37 +337,25 @@ The price BEFORE UPDATE trigger compares all immutable columns with NULL-safe IS
 
 The only successful UPDATE is thus one valid_to closure plus its technical fields. No no-op/technical-only UPDATE; no reopen, extend, shorten or second close, even to the same timestamp. DB guards also reject DELETE and TRUNCATE, reusing the existing rejection function where appropriate. The SQL update itself compares expected version/valid_to IS NULL; service races return 409 rather than overwriting. Closure and PLATFORM audit commit together. A newly inserted historical price may already have valid_to if its interval is valid; it cannot subsequently be edited.
 
-New price knowledge/value/currency/unit/source/tier/variant means INSERT, not UPDATE. Simultaneous valid records remain allowed; no global overlap constraint is introduced. For idempotent price command retries use a caller UUID price ID and compare existing immutable business facts, returning the existing row without altering its closure. Conflicting reuse returns 409. Imported line commands must derive that UUID from stable source observation + provider item identity; not from amount/name similarity. This needs no mutable aggregate wrapper or additional price-idempotency table. A later supporting observation is an idempotent PriceSource association, checked against the same provider and audited.
+New price knowledge/value/currency/unit/source/tier/variant means INSERT, not UPDATE. Simultaneous valid records remain allowed; no global overlap constraint is introduced. For optional idempotent manual Price creation, accept an Idempotency-Key UUID (and allow that header in CORS for browser calls); otherwise generate the Price UUID server-side. Use that command UUID as the Price ID and compare existing immutable business facts, returning the existing row without altering its closure. Conflicting reuse returns 409. Imported line commands must derive that UUID from stable source observation + provider item identity; not from amount/name similarity. This needs no mutable aggregate wrapper or additional price-idempotency table. A later supporting observation is an idempotent PriceSource association, checked against the same provider and audited.
 
-## 8. Deterministic price resolver
+## 8. Price Match and separate current commercial eligibility
 
-Boundary: one Listing + one DataSource. With no dataSourceId filter the response contains independently resolved provider groups, never a single cross-provider winner. Listing already supplies seller identity. Do not compare or silently collapse other listings, suppliers, currencies or units.
+Price Match uses immutable MaterialPrice facts only. Never gate it by current Listing MOQ, MCQ, lead time, status or mutable parent lifecycle. Reading a past price still works after a listing is archived or its terms change. No ListingTermsHistory is added.
 
-Planned request: listing_id; optional requested_variant_id; requested_quantity >0; quantity_unit; currency; price_unit; as_of; allow_material_fallback **default FALSE**; optional data_source_id to narrow provider groups. Explicit currency/unit are necessary because no conversions exist. Variant, when supplied, must belong to the listing's Material; invalid foreign-parent input is rejected before resolution.
+Request: listing_id; optional requested_variant_id; optional requested_quantity; optional currency, price_unit and data_source_id; optional as_of (omitted means capture server now once); allow_material_fallback defaults FALSE. Explicit as_of is treated as a historical/specified-time query for eligibility disclosure. Validate variant’s immutable Material relationship, not its current lifecycle. Reject supplied quantity <=0 or excess scale. Inputs/outputs use the existing unit codes plus justified additions, never aliases or conversions.
 
-### Eligibility before ranking
+Partition by listing_id + data_source_id + currency + price_unit. Return independently bounded provider/currency/unit scopes; never select a global winner. Filter each scope by listing, optional provider/currency/unit and `valid_from<=as_of AND (valid_to IS NULL OR valid_to>as_of)`.
 
-1. Require an ACTIVE listing/material/seller, and an ACTIVE requested variant if one is specified. Archival preserves all history; historical row-read APIs remain available. DataSource.active controls collection, not deletion of historical provider evidence.
-2. The requested quantity is for one article/variant/color lot, not a mixed-color basket. Match quantity_unit exactly to listing.quantity_unit and price_unit. Unknown/different units give no resolved commercial price, never an implicit METER↔YARD or quantity↔weight conversion.
-3. Listing MOQ is the general order minimum. Require known listing minimum_order_quantity and `requested_quantity >= listing.minimum_order_quantity` **before considering a price tier**. A NULL listing MOQ is unknown, so return a TERMS_UNKNOWN outcome with no resolved price rather than assume zero. Known zero means explicitly no general minimum.
-4. For the single-color-lot contract, also enforce known MCQ against that same quantity. Unknown MCQ likewise yields TERMS_UNKNOWN; explicitly no color minimum can be represented by a known zero, never fabricated from missing data. Mixed-color order validation is deferred. This conservative choice is a review point, not an extra schema/table.
-5. Candidate prices must match listing, provider group, requested currency and price_unit; satisfy `valid_from <= as_of AND (valid_to IS NULL OR valid_to > as_of)`; and satisfy `minimum_order_quantity IS NULL OR minimum_order_quantity <= requested_quantity`. NULL price-tier MOQ is expressly a broad/base tier, different from unknown listing MOQ.
-6. If no variant is requested, only material_variant_id IS NULL can match; never choose an arbitrary variant. If a variant is requested, exact ID prices can match. Material-level NULL-variant candidates are admitted **only** when fallback is explicitly true.
+Variant rules: without requested_variant_id only NULL-variant rows are candidates (MATERIAL_EXACT). With a variant and fallback=false only that exact variant is eligible (VARIANT_EXACT). Only explicit fallback=true admits NULL-variant rows as MATERIAL_FALLBACK, after exact variant candidates.
 
-Thus an eligible tier below the listing's MOQ never becomes usable merely because the price-tier threshold is smaller. Example: listing MOQ 100 METER and tier MOQ 10 METER with requested 50 METER returns no price. If listing MOQ is 20 and exact variant tiers are NULL, 10 and 50, a request for 60 selects the 50 tier before comparing recency; all known single-lot minima must also hold.
+Price-tier rules: supplied quantity admits non-NULL tiers <=quantity plus NULL base rows; highest eligible explicit tier wins before NULL base within a variant priority. If quantity is absent, only NULL base prices are eligible. NULL price MOQ is an untiered base price, never an unknown Listing MOQ or an assumed zero. Full history/tier lists remain readable independently.
 
-### Rank inside each listing_id + data_source_id group
+Rank inside each provider/currency/unit scope: exact variant, explicit material fallback, explicit eligible MOQ DESC NULLS LAST, valid_from DESC, observed_at DESC, created_at DESC, id DESC. Return MATCHED/NO_MATCH plus VARIANT_EXACT/MATERIAL_FALLBACK/MATERIAL_EXACT, row ID, provider, currency, unit, amount, tier, interval and observation time. Known scopes with no candidate return NO_MATCH; an empty listing has no price scopes and an overall NO_MATCH outcome.
 
-1. Exact variant first; explicitly permitted material fallback second.
-2. Highest eligible minimum_order_quantity DESC NULLS LAST (NULL base tier below explicit positive thresholds; explicit known zero may precede NULL).
-3. valid_from DESC.
-4. observed_at DESC.
-5. created_at DESC.
-6. id DESC as stable tie-break.
+Separately expose current listing terms (MOQ, MCQ, unit, lead times, status), listingTermsScope and commercialEligibility. A specified as_of returns NOT_EVALUATED_FOR_HISTORICAL_QUERY and explicitly says historical listing terms are not reconstructed. For an omitted-as_of current query: archived listing yields INELIGIBLE; unknown MOQ/unit or missing/incomparable quantity yields UNKNOWN_TERMS; known comparable MOQ is checked for ELIGIBLE/INELIGIBLE. This result never suppresses or rewrites a valid priceMatch. MCQ is exposed, never compared to generic requested quantity: a variant may be finish, batch, length or size rather than a color lot. No color_lot_quantity/RFQ model is added.
 
-Return each provider group's chosen price ID, listing/material/provider IDs, requested/selected variant, amount/currency/unit, tier, validity, observation time and `match_scope`: VARIANT_EXACT, MATERIAL_FALLBACK, or MATERIAL_EXACT when no variant was requested. An absent exact match with default fallback=false returns NO_MATCH, not a hidden material price. Unknown terms/unit mismatch/archived inputs have explicit non-price outcomes. No FX, unit conversion, lowest-price merge across providers or global source priority.
-
-`as_of` controls price interval eligibility; the listing's mutable MOQ/MCQ/lifecycle are **current terms**, not a reconstruction of past contracts. Phase 1B has no listing-terms history table or historical order quotation engine. Disclose that boundary in API documentation and responses; raw historical price reads must not pretend to reconstruct historic order eligibility.
+Thus MATCHED + UNKNOWN_TERMS is valid and useful, and changing Listing MOQ today cannot change historical Price Match. Listing minimum and price-tier minimum are distinct facts. No FX, unit conversion, source priority or implicit zero.
 
 ## 9. Inventory capture, idempotency and immutability
 
@@ -413,9 +396,9 @@ PostgreSQL is the only search engine. Physical filters select one Material: type
 
 Example Wool>=80%, GSM 450–550, origin JP and listing MOQ<=50 METER means that one Material satisfies the wool/spec/origin predicates and at least one of its ACTIVE listings satisfies both quantity_unit=METER and known minimum_order_quantity<=50. Supplier nationality does not imply material origin. NULL MOQ does not satisfy <=50. Composition queries Wool>=80, Cashmere>=10 and Cotton=100 compare structured NUMERIC rows; expose completeness and optionally filter COMPLETE rather than silently treating PARTIAL as complete.
 
-Price-range filtering requires explicit currency, price_unit, quantity_unit, requested_quantity and as_of, plus the same fallback semantics as section 8. Evaluate the selected effective price within that candidate Listing/provider; do not match an arbitrary obsolete row or one provider's currency with another provider's amount. A variant/color filter and price filter must refer to the same selected variant, or an explicitly permitted material fallback; unrelated variants cannot satisfy the two halves. No FX/unit conversion.
+Price-range filtering requires explicit currency and price_unit and uses the same as_of, optional quantity, provider partition and fallback semantics as section 8. Historical price predicates never implicitly add current Listing MOQ/MCQ/status; explicitly requested commercial filters are separate current-term predicates. Evaluate the selected effective price within that candidate Listing/provider; do not match an arbitrary obsolete row or one provider's currency with another provider's amount. A variant/color filter and price filter must refer to the same selected variant, or an explicitly permitted material fallback; unrelated variants cannot satisfy the two halves. No FX/unit conversion.
 
-Normalize names for search only using the existing SearchText policy; preserve catalog/seller codes and source keys. Bound LIKE literals and SQL parameters; no guessed dynamic column/sort SQL. Return material hits with matching listing IDs so the reason for a commercial match is visible. Default listing/material/seller activity rules match the resolver; archived/history detail reads are explicit and do not delete old data.
+Normalize names for search only using the existing SearchText policy; preserve catalog/seller codes and source keys. Bound LIKE literals and SQL parameters; no guessed dynamic column/sort SQL. Return material hits with matching listing IDs so the reason for a commercial match is visible. Ordinary catalog discovery can default to ACTIVE materials/listings. Price history/match does not inherit current Listing lifecycle or terms. An explicit MOQ/MCQ/lead-time filter excludes NULL; without that filter missing terms do not exclude discovery.
 
 Use created_at DESC,id DESC keyset pagination, default 25/max 100. Validate cursor structure, sort and the complete physical/commercial filter hash, including resolver quantities/units/currency/as_of/fallback. Bound child collections and provider-group responses too; provider pagination can order by data_source_id with the full request identity in its cursor. as_of is explicit and stable across pages.
 
@@ -463,7 +446,7 @@ All paths below have `/api/v1` prefix. Read APIs require authentication; every a
 | PUT /admin/materials/{id}/fabric-spec or /leather-spec | subtype-aware create/update; own version, parent identity/status checked under lock |
 | PUT /admin/materials/{id}/composition | completeness + full component replacement in one Material-version transaction |
 | POST/PUT /admin/fiber-types[/{id}] | platform-controlled reference maintenance; immutable code after creation |
-| POST /admin/material-listings | manual create with required UUID Idempotency-Key and creation hash |
+| POST /admin/material-listings | manual create with server-generated UUID; no retry-idempotency guarantee |
 | PUT /admin/material-listings/{id} | versioned commercial terms/lifecycle only; immutable seller/material absent from update DTO |
 | POST /admin/material-identities; /admin/material-variant-identities; /admin/material-listing-identities | typed import resolution, source-record lock, observation evidence, atomic binding/create/audit |
 | POST /admin/{materials,material-variants,material-listings}/{id}/external-records | explicit bind, correct-kind FK; no rebind/update/delete |
@@ -497,20 +480,20 @@ Material, Variant and Listing use optimistic versions. Specs and FiberType use t
 
 ## 14. Required future validation and release boundary
 
-No Phase 1B tests/code are added by this planning commit. Before any future implementation is accepted, require PostgreSQL 18 Testcontainers tests for:
+This initial finalization commit changes the plan only. Subsequent authorized slices must add the tests/code below. Before any future implementation is accepted, require PostgreSQL 18 Testcontainers tests for:
 
 - clean V1→V12 and populated V8→V12, unchanged V1–V8, named-kind constraint extension/rollback and no fake business/admin seeds;
 - immutable catalog supplier/type/parent/listing seller/material, correct-kind bindings, retry reuse, no rebinding and UPDATE/DELETE/TRUNCATE guards;
 - optional variants/specs; wrong subtype and cross-material price/inventory variants rejected by direct SQL;
 - COMPLETE/PARTIAL/UNKNOWN commit-time totals, rollback and concurrent composition writes;
-- multiple ACTIVE same-seller/material listings, manual listing concurrent retry/conflict and retry after later edits/archive;
+- multiple ACTIVE same-seller/material listings, server-generated manual listing IDs and documented retry limitation; imported identity concurrent retry/conflict;
 - every immutable price field, only NULL→valid_to closure, second/no-op closure rejection, DELETE/TRUNCATE, optimistic closure conflict, provider-mismatched evidence rejection;
-- resolver exact/fallback default false, material-only request, listing MOQ before tier MOQ, single-lot MCQ, unknown terms/unit mismatch, tier/null ranking, dates, stable ties and provider/currency/unit separation;
+- resolver exact/fallback default false, material-only request, historical price unaffected by listing edits/archive, separate current MOQ eligibility, MCQ not implicitly compared, base-only absent quantity, tier/null ranking, dates, stable ties and provider/currency/unit separation;
 - imported NULL variant/facility duplicates, different observation at same timestamp, manual key scope/conflicting fact retry, server Actor spoof rejection, third-party facility, known zero vs missing quantity, immutable snapshots;
 - same-Material physical and same-Listing commercial search, same-variant prices, bound SQL/cursors and archive behavior;
 - platform grant/revoke/ORG_OWNER/linked-account denials, audit atomicity, module boundaries, generated OpenAPI/client consistency and the existing Phase 0/1A regression suite.
 
-Then run the full repository script, frontend typechecks/tests/build/browser, Terraform and redacted secret scan. No new dependency/infrastructure/runtime is justified by this plan. Production performance, real source licensing/IDs and live IdP/deployment validation are separate operational work. Architecture review of this document is required **before V9 implementation**.
+Then run the full repository script, frontend typechecks/tests/build/browser, Terraform and redacted secret scan. No new dependency/infrastructure/runtime is justified by this plan. Production performance, real source licensing/IDs and live IdP/deployment validation are separate operational work. The final user specification authorizes V9–V12 implementation after this plan commit, while preserving all stated boundaries.
 
 ## 15. B36 decision register
 
@@ -518,17 +501,17 @@ Then run the full repository script, frontend typechecks/tests/build/browser, Te
 |---:|---|
 | 1 | V9 transaction DROP the exact named data_source_record_kind_check, ADD the same name with the five allowed kinds NOT VALID, then VALIDATE; fail if baseline name is absent. Never edit V6 for MATERIAL_LISTING. Section 4. |
 | 2 | Material immutable: id, catalog_supplier_id, material_type, created_at. Correct supplier/type or a different actual article requires archive + new Material. Article-code representation can be evidence-corrected for the same article. Section 3.1. |
-| 3 | Listing immutable: id, material_id, seller_supplier_id, creation_request_hash, created_at. Mutable: seller_article_number, MOQ, MCQ, unit, both lead times, status and version/update time. Section 3.3. |
-| 4 | No existing generic command store. Reuse PostgreSQL upsert/lock/transaction patterns, UUID command as Listing PK plus immutable creation hash; same retry returns current row, conflict 409. No new table or synthetic external command source. Section 5. |
+| 3 | Listing immutable: id, material_id, seller_supplier_id, created_at. Mutable: seller_article_number, MOQ, MCQ, unit, both lead times, status and version/update time. Section 3.3. |
+| 4 | No existing generic command store. Reuse PostgreSQL source upsert/lock/transaction patterns for imports; use server-generated UUID for manual Listing creates, with no retry-idempotency guarantee; imports reuse typed source identity. No hash/client PK/new table. Section 5. |
 | 5 | seller_article_number is mutable because seller references can be corrected/renamed independently of catalog/seller identity; preserve audit/evidence and never rebind by that text. Section 3.3. |
 | 6 | Multiple ACTIVE seller/material listings represent independent stock/MTO/channel/programme offers; UUID/external listing identity, not seller/material natural-key uniqueness. Section 3.3. |
 | 7 | Seller-specific variant SKU is deferred because catalog variants suffice for Phase 1B price/inventory and no concrete seller-variant identity use case justifies an extra table. Sections 3.2 and 17. |
-| 8 | Service early validation + small deferred DB constraint triggers; UNKNOWN=no rows, PARTIAL>=1 row and sum<=100, COMPLETE sum exactly 100; parent locking serializes concurrent writes. Section 6. |
+| 8 | Service early validation + small deferred DB constraint triggers; UNKNOWN=no rows, PARTIAL>=1 positive row and 0<sum<=100, COMPLETE sum exactly 100; parent locking serializes concurrent writes. Section 6. |
 | 9 | PriceSource BEFORE INSERT/UPDATE trigger checks observation→record→provider against immutable Price.data_source_id. FK-only propagation would harmfully duplicate provider scope through existing V6 tables. Section 7. |
 | 10 | Price has listing/material and nullable variant/material composite FKs to the two explicit UNIQUE pairs, MATCH SIMPLE; no redundant seller column. Section 3.7. |
 | 11 | DB guard freezes the 12 specified identity/value/time fields, permits only first valid_to closure plus version+1/update timestamp, rejects all further/no-op updates, DELETE and TRUNCATE. Section 7. |
 | 12 | Fallback defaults FALSE; exact requested variant first, NULL-variant only with explicit true; no requested variant means NULL-variant candidates only. Expose VARIANT_EXACT/MATERIAL_FALLBACK/MATERIAL_EXACT. Section 8. |
-| 13 | Exact compatible units and known listing minima first; requested quantity meets listing MOQ (and single-lot MCQ), then eligible price-tier MOQ; unknown listing terms give no resolved commercial price. Section 8. |
+| 13 | Price Match checks immutable price-tier MOQ only (absent quantity means base only); current Listing MOQ eligibility is separate and never suppresses a match. MCQ is exposed, not compared to generic quantity. Section 8. |
 | 14 | Inventory uses the same listing/material and nullable variant/material composite FKs, MATCH SIMPLE; facility is independent location, never seller ownership. Section 3.9. |
 | 15 | CREATE UNIQUE INDEX ... ON material_inventory_snapshot (listing_id,material_variant_id,facility_id,source_observation_id) NULLS NOT DISTINCT WHERE capture_mode='IMPORTED'; position/behavior verified on PostgreSQL 18.3 temporary objects, rolled back. Section 9. |
 | 16 | Manual inventory uniqueness is listing_id + opaque manual_idempotency_key under MANUAL partial predicate; differing immutable facts/Actor on retry produce 409. Section 9. |
@@ -543,13 +526,19 @@ PostgreSQL stores structured facts, stable source identities, hashes, times, per
 
 ## 17. Review risks and deliberate limits
 
-- The detailed plan awaits review; it authorizes no migration or implementation. The accepted core model and exact 16-table count have no structural deviation.
+- This final plan follows the authorized implementation specification; implementation must stop after Phase 1B. The accepted core model and exact 16-table count have no structural deviation.
 - Global ISO currency validation is service-backed with a DB format check; privileged direct SQL must follow the supported ISO registry. A stronger DB currency allowlist can be reviewed without silently adding a seventeenth table.
-- The proposed creation_request_hash and UUID command-as-listing-ID contract must be reviewed with client retry/canonicalization behavior; no existing general idempotency service can be reused verbatim.
-- Conservative resolver behavior needs explicit known listing minima/units; missing terms reduce resolvable coverage. as_of is historical price validity with current listing terms, not historic contract reconstruction. Mixed-color ordering and conversions are excluded.
+- Manual Listing creation intentionally lacks retry idempotency; clients must handle uncertain submissions and avoid blind repeated creation. No hash/client-assigned ID is added.
+- Price Match is independent of current commercial eligibility. Historical queries do not reconstruct prior listing terms; unknown terms must not suppress matched price data. Generic MCQ/color-lot ordering and conversions are excluded.
 - Distinct rebranded catalog articles can represent physically identical cloth. Seller-specific variant codes cannot yet be independently mapped; both limitations are intentional, not automatic merge opportunities.
 - Real sources must supply stable catalog/variant/listing and price-line identities and permission to ingest. Repeated imports cannot be made reliable by guessing at article/name similarity.
 - Deferred composition checks, V9 ALTER/validation locking and query/index choices need concurrency/load tests during separately authorized implementation. No production-scale benchmark is claimed here.
 - Snapshot latest views remain per observation/provider/location scope. Unknown location and separate providers cannot be summed into trustworthy available stock.
 
-Stop here for architecture review. No V9/V10/V11/V12 files or Material application/OpenAPI implementation are included.
+Implementation proceeds only through the authorized slices below, then stops without PR/merge or Phase 2.
+
+## 18. Final implementation execution and acceptance
+
+Commit this finalized plan first (`docs: finalize Phase 1B implementation semantics`). Then A: V9/catalog/variant/spec/fiber/composition/listing/bindings/citations; B: V10/immutable positive pricing/provider evidence/independent Price Match + current eligibility; C: V11/immutable inventory/idempotency; D: V12/search/read contracts/OpenAPI/frontend types. Before advancing each slice compile, run relevant PostgreSQL clean/upgrade/module/auth tests and commit only a green slice.
+
+Final validation: full backend verify and scripts/test.sh, frontend typecheck/unit/build/browser, contract regeneration consistency, module/auth/audit tests, Terraform fmt/init/validate, redacted secret scans, V1–V8 byte comparison and clean git status. Push all commits to origin/phase-1-supply-network and wait for SOURCE OS CI; fix only demonstrated failures without weakening checks. Exactly 16 new tables; only V9 extends existing data_source_record’s named CHECK. No raw payload, unauthorized infrastructure, PR, merge, full Phase 1C UI or Phase 2.

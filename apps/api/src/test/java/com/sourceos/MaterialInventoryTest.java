@@ -135,6 +135,21 @@ class MaterialInventoryTest extends CatalogIntegrationSupport {
   }
 
   @Test
+  void manualCommandCannotBeReattributedToAnotherActor() {
+    var l = listing(material().id());
+    var first = inventory.create(manual(l.id(), "actor-command", "1"));
+    String second = admin();
+    actor(second);
+    try {
+      assertThatThrownBy(() -> inventory.create(manual(l.id(), "actor-command", "1")))
+          .hasMessageContaining("conflict");
+    } finally {
+      actor(principal);
+    }
+    assertThat(first.actorSubject()).isEqualTo(principal);
+  }
+
+  @Test
   void compositeForeignKeysProtectMaterialAndVariantButThirdPartyFacilityIsAllowed() {
     var m = material();
     var l = listing(m.id());

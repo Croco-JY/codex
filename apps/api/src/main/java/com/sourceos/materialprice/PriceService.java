@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PriceService {
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceInput")
   public record Input(
       @NotNull UUID listingId,
       UUID materialVariantId,
@@ -37,6 +38,7 @@ public class PriceService {
     }
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceView")
   public record View(
       UUID id,
       UUID listingId,
@@ -54,24 +56,30 @@ public class PriceService {
       Instant updatedAt,
       Instant createdAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceCloseInput")
   public record CloseInput(@NotNull Instant validTo, @Min(0) long version) {
     public CloseInput {
       validTo = micros(validTo);
     }
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceEvidence")
   public record Evidence(@NotNull UUID observationId) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceEvidenceView")
   public record EvidenceView(UUID observationId, Instant createdAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceImportInput")
   public record ImportInput(
       @NotNull UUID observationId,
       @NotBlank @Size(max = 200) String itemKey,
       @NotNull @jakarta.validation.Valid Input price) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceHistoryFilter")
   public record HistoryFilter(
       UUID listingId, UUID dataSourceId, String currency, MeasurementUnit unit) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceMatchRequest")
   public record MatchRequest(
       UUID requestedVariantId,
       BigDecimal requestedQuantity,
@@ -110,6 +118,7 @@ public class PriceService {
     HISTORICAL_TERMS_NOT_RECONSTRUCTED
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceOutcome")
   public record Outcome(
       UUID dataSourceId,
       String currency,
@@ -120,6 +129,7 @@ public class PriceService {
       Eligibility commercialEligibility,
       String eligibilityReason) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "PriceResolution")
   public record Resolution(
       Instant asOf,
       MatchStatus priceMatch,

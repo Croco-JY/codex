@@ -78,7 +78,7 @@ class MigrationUpgradeTest {
     var migration = Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).load();
     migration.migrate();
     migration.validate();
-    assertThat(migration.info().applied()).hasSize(11);
+    assertThat(migration.info().applied()).hasSize(12);
     try (var c = DriverManager.getConnection(url, db.getUsername(), db.getPassword());
         var statement = c.createStatement()) {
       var count = statement.executeQuery("SELECT count(*) FROM platform_role_assignment");
@@ -97,6 +97,29 @@ class MigrationUpgradeTest {
                   + " AND data_type='jsonb'");
       json.next();
       assertThat(json.getInt(1)).isZero();
+      var newTables =
+          List.of(
+              "material",
+              "material_external_record",
+              "material_source",
+              "material_variant",
+              "material_variant_external_record",
+              "material_variant_source",
+              "fabric_spec",
+              "leather_spec",
+              "fiber_type",
+              "material_composition",
+              "supplier_material_listing",
+              "supplier_material_listing_external_record",
+              "supplier_material_listing_source",
+              "material_price",
+              "material_price_source",
+              "material_inventory_snapshot");
+      for (String table : newTables) {
+        var rows = statement.executeQuery("SELECT count(*) FROM " + table);
+        rows.next();
+        assertThat(rows.getLong(1)).as(table).isEqualTo(table.equals("fiber_type") ? 13 : 0);
+      }
       assertNamedRecordKindConstraint(c);
     }
   }

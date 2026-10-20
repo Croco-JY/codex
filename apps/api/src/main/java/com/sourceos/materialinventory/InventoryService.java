@@ -23,6 +23,7 @@ public class InventoryService {
     MANUAL
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "InventoryInput")
   public record Input(
       @NotNull UUID listingId,
       UUID materialVariantId,
@@ -38,6 +39,7 @@ public class InventoryService {
     }
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "InventoryView")
   public record View(
       UUID id,
       UUID listingId,
@@ -55,6 +57,7 @@ public class InventoryService {
       String actorSubject,
       Instant createdAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "InventoryFilter")
   public record Filter(
       UUID listingId,
       UUID variantId,
@@ -162,6 +165,9 @@ public class InventoryService {
             .param("key", v.manualIdempotencyKey(), Types.VARCHAR)
             .query((r, i) -> row(r))
             .single();
+    if (v.captureMode() == Mode.MANUAL
+        && (!found.actorIssuer().equals(actor.issuer())
+            || !found.actorSubject().equals(actor.subject()))) throw ValidationRules.conflict();
     if (!Objects.equals(found.materialVariantId(), v.materialVariantId())
         || !Objects.equals(found.facilityId(), v.facilityId())
         || found.quantity().compareTo(v.quantity()) != 0

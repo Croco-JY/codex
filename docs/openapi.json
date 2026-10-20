@@ -530,6 +530,1193 @@
         ],
         "type": "object"
       },
+      "InventoryInput": {
+        "properties": {
+          "captureMode": {
+            "enum": [
+              "IMPORTED",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "facilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "listingId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "manualIdempotencyKey": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "materialVariantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "quantity": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "sourceObservationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "captureMode",
+          "listingId",
+          "observedAt",
+          "quantity",
+          "unit"
+        ],
+        "type": "object"
+      },
+      "InventoryView": {
+        "properties": {
+          "actorIssuer": {
+            "type": "string"
+          },
+          "actorSubject": {
+            "type": "string"
+          },
+          "captureMode": {
+            "enum": [
+              "IMPORTED",
+              "MANUAL"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "facilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "listingId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "manualIdempotencyKey": {
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialVariantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "recordedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "sourceObservationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ListingBinding": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "ListingCitation": {
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "RECORD",
+              "SELLER_ARTICLE_NUMBER",
+              "MOQ",
+              "MCQ",
+              "UNIT",
+              "STANDARD_LEAD_TIME",
+              "REPRODUCTION_LEAD_TIME"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldName",
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "ListingCitationView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fieldName": {
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ListingIdentityInput": {
+        "properties": {
+          "listing": {
+            "$ref": "#/components/schemas/ListingInput"
+          },
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "listing",
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "ListingInput": {
+        "properties": {
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minimumColorQuantity": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "minimumOrderQuantity": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          },
+          "reproductionLeadTimeDays": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sellerArticleNumber": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "sellerSupplierId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "standardLeadTimeDays": {
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "materialId",
+          "observationId",
+          "sellerSupplierId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "ListingView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minimumColorQuantity": {
+            "type": "number"
+          },
+          "minimumOrderQuantity": {
+            "type": "number"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          },
+          "reproductionLeadTimeDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "sellerArticleNumber": {
+            "type": "string"
+          },
+          "sellerSupplierId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "standardLeadTimeDays": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialBinding": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "MaterialCitation": {
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "RECORD",
+              "CATALOG_ARTICLE_NUMBER",
+              "NAME",
+              "DESCRIPTION",
+              "ORIGIN",
+              "COMPOSITION",
+              "FABRIC_SPEC",
+              "LEATHER_SPEC"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldName",
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "MaterialCitationView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "fieldName": {
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialCompositionInput": {
+        "properties": {
+          "completeness": {
+            "enum": [
+              "UNKNOWN",
+              "PARTIAL",
+              "COMPLETE"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "parts": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialPart"
+            },
+            "type": "array"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "completeness",
+          "observationId",
+          "parts"
+        ],
+        "type": "object"
+      },
+      "MaterialFabricInput": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "construction": {
+            "enum": [
+              "WOVEN",
+              "KNIT",
+              "NONWOVEN",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "drape": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "finish": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "gsm": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "handfeel": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "knitType": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "luster": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "shrinkageWarpPercentage": {
+            "maximum": 100,
+            "minimum": -100,
+            "type": "number"
+          },
+          "shrinkageWeftPercentage": {
+            "maximum": 100,
+            "minimum": -100,
+            "type": "number"
+          },
+          "stretchWarpPercentage": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "stretchWeftPercentage": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "surface": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "thicknessMm": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "weaveType": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "widthMm": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "MaterialFabricView": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "construction": {
+            "enum": [
+              "WOVEN",
+              "KNIT",
+              "NONWOVEN",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "drape": {
+            "type": "string"
+          },
+          "finish": {
+            "type": "string"
+          },
+          "gsm": {
+            "type": "number"
+          },
+          "handfeel": {
+            "type": "string"
+          },
+          "knitType": {
+            "type": "string"
+          },
+          "luster": {
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialType": {
+            "type": "string"
+          },
+          "shrinkageWarpPercentage": {
+            "type": "number"
+          },
+          "shrinkageWeftPercentage": {
+            "type": "number"
+          },
+          "stretchWarpPercentage": {
+            "type": "number"
+          },
+          "stretchWeftPercentage": {
+            "type": "number"
+          },
+          "surface": {
+            "type": "string"
+          },
+          "thicknessMm": {
+            "type": "number"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "weaveType": {
+            "type": "string"
+          },
+          "widthMm": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialFiber": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "code": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "nameEn": {
+            "type": "string"
+          },
+          "nameLocal": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialFiberInput": {
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "code": {
+            "maxLength": 40,
+            "minLength": 0,
+            "pattern": "[A-Z][A-Z0-9_]*",
+            "type": "string"
+          },
+          "nameEn": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nameLocal": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "nameEn"
+        ],
+        "type": "object"
+      },
+      "MaterialIdentityInput": {
+        "properties": {
+          "material": {
+            "$ref": "#/components/schemas/MaterialInput"
+          },
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "material",
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "MaterialInput": {
+        "properties": {
+          "catalogArticleNumber": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "catalogSupplierId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "composition": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialPart"
+            },
+            "type": "array"
+          },
+          "compositionCompleteness": {
+            "enum": [
+              "UNKNOWN",
+              "PARTIAL",
+              "COMPLETE"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "displayName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "materialType": {
+            "enum": [
+              "FABRIC",
+              "LEATHER",
+              "LINING",
+              "INTERLINING",
+              "ZIPPER",
+              "BUTTON",
+              "SNAP",
+              "BUCKLE",
+              "THREAD",
+              "TAPE",
+              "LABEL",
+              "ELASTIC",
+              "FILLING",
+              "PACKAGING",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "originCountryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "catalogSupplierId",
+          "composition",
+          "compositionCompleteness",
+          "displayName",
+          "materialType",
+          "observationId",
+          "status"
+        ],
+        "type": "object"
+      },
+      "MaterialLeatherInput": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "averageHideAreaM2": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "finish": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "handfeel": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "hideType": {
+            "enum": [
+              "BOVINE",
+              "OVINE",
+              "CAPRINE",
+              "PORCINE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "luster": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "surface": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tanningMethod": {
+            "enum": [
+              "CHROME",
+              "VEGETABLE",
+              "COMBINATION",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "thicknessMaxMm": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "thicknessMinMm": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "MaterialLeatherView": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "averageHideAreaM2": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "finish": {
+            "type": "string"
+          },
+          "handfeel": {
+            "type": "string"
+          },
+          "hideType": {
+            "enum": [
+              "BOVINE",
+              "OVINE",
+              "CAPRINE",
+              "PORCINE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "luster": {
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialType": {
+            "type": "string"
+          },
+          "surface": {
+            "type": "string"
+          },
+          "tanningMethod": {
+            "enum": [
+              "CHROME",
+              "VEGETABLE",
+              "COMBINATION",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "thicknessMaxMm": {
+            "type": "number"
+          },
+          "thicknessMinMm": {
+            "type": "number"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialPart": {
+        "properties": {
+          "fiberTypeId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "percentage": {
+            "exclusiveMinimum": 0,
+            "maximum": 100,
+            "type": "number"
+          }
+        },
+        "required": [
+          "fiberTypeId",
+          "percentage"
+        ],
+        "type": "object"
+      },
+      "MaterialPartView": {
+        "properties": {
+          "fiberCode": {
+            "type": "string"
+          },
+          "fiberTypeId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "percentage": {
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialVariantCitation": {
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "RECORD",
+              "CATALOG_VARIANT_SKU",
+              "NAME",
+              "COLOR",
+              "BATCH",
+              "ATTRIBUTES"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldName",
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "MaterialVariantIdentityInput": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "variant": {
+            "$ref": "#/components/schemas/MaterialVariantInput"
+          }
+        },
+        "required": [
+          "sourceRecordId",
+          "variant"
+        ],
+        "type": "object"
+      },
+      "MaterialVariantInput": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "batchNumber": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "catalogVariantSku": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "colorCode": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "colorName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "variantName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "materialId",
+          "observationId",
+          "status",
+          "variantName"
+        ],
+        "type": "object"
+      },
+      "MaterialVariantView": {
+        "properties": {
+          "attributes": {
+            "additionalProperties": {},
+            "type": "object"
+          },
+          "batchNumber": {
+            "type": "string"
+          },
+          "catalogVariantSku": {
+            "type": "string"
+          },
+          "colorCode": {
+            "type": "string"
+          },
+          "colorName": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "variantName": {
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "MaterialView": {
+        "properties": {
+          "catalogArticleNumber": {
+            "type": "string"
+          },
+          "catalogSupplierId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "composition": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialPartView"
+            },
+            "type": "array"
+          },
+          "compositionCompleteness": {
+            "enum": [
+              "UNKNOWN",
+              "PARTIAL",
+              "COMPLETE"
+            ],
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialType": {
+            "enum": [
+              "FABRIC",
+              "LEATHER",
+              "LINING",
+              "INTERLINING",
+              "ZIPPER",
+              "BUTTON",
+              "SNAP",
+              "BUCKLE",
+              "THREAD",
+              "TAPE",
+              "LABEL",
+              "ELASTIC",
+              "FILLING",
+              "PACKAGING",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "originCountryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "Observation": {
         "properties": {
           "contentHash": {
@@ -643,6 +1830,48 @@
         },
         "type": "object"
       },
+      "PageInventoryView": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryView"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PageMaterialView": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MaterialView"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PagePriceView": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PriceView"
+            },
+            "type": "array"
+          },
+          "nextCursor": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "PageSupplierHit": {
         "properties": {
           "items": {
@@ -653,6 +1882,319 @@
           },
           "nextCursor": {
             "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PriceCloseInput": {
+        "properties": {
+          "validTo": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "validTo"
+        ],
+        "type": "object"
+      },
+      "PriceEvidence": {
+        "properties": {
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "PriceEvidenceView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PriceImportInput": {
+        "properties": {
+          "itemKey": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "price": {
+            "$ref": "#/components/schemas/PriceInput"
+          }
+        },
+        "required": [
+          "itemKey",
+          "observationId",
+          "price"
+        ],
+        "type": "object"
+      },
+      "PriceInput": {
+        "properties": {
+          "amount": {
+            "exclusiveMinimum": 0,
+            "type": "number"
+          },
+          "currency": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "dataSourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "listingId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialVariantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "minimum": 0,
+            "type": "number"
+          },
+          "observationIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 0,
+            "type": "array"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "priceUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "amount",
+          "currency",
+          "dataSourceId",
+          "listingId",
+          "observedAt",
+          "priceUnit",
+          "validFrom"
+        ],
+        "type": "object"
+      },
+      "PriceOutcome": {
+        "properties": {
+          "commercialEligibility": {
+            "enum": [
+              "ELIGIBLE",
+              "INELIGIBLE",
+              "UNKNOWN_TERMS",
+              "NOT_EVALUATED_FOR_HISTORICAL_QUERY"
+            ],
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "dataSourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "eligibilityReason": {
+            "type": "string"
+          },
+          "matchScope": {
+            "enum": [
+              "VARIANT_EXACT",
+              "MATERIAL_FALLBACK",
+              "MATERIAL_EXACT",
+              "NO_MATCH"
+            ],
+            "type": "string"
+          },
+          "price": {
+            "$ref": "#/components/schemas/PriceView"
+          },
+          "priceMatch": {
+            "enum": [
+              "MATCHED",
+              "NO_MATCH"
+            ],
+            "type": "string"
+          },
+          "priceUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "PriceResolution": {
+        "properties": {
+          "asOf": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currentListingTerms": {
+            "$ref": "#/components/schemas/ListingView"
+          },
+          "listingTermsScope": {
+            "enum": [
+              "CURRENT_TERMS_ONLY",
+              "HISTORICAL_TERMS_NOT_RECONSTRUCTED"
+            ],
+            "type": "string"
+          },
+          "nextCursor": {
+            "type": "string"
+          },
+          "priceMatch": {
+            "enum": [
+              "MATCHED",
+              "NO_MATCH"
+            ],
+            "type": "string"
+          },
+          "scopes": {
+            "items": {
+              "$ref": "#/components/schemas/PriceOutcome"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "PriceView": {
+        "properties": {
+          "amount": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "dataSourceId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "listingId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialVariantId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "type": "number"
+          },
+          "observedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "priceUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2",
+              "FT2",
+              "ROLL",
+              "HIDE",
+              "SET",
+              "PACK"
+            ],
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validFrom": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "validTo": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
           }
         },
         "type": "object"
@@ -673,7 +2215,8 @@
               "SUPPLIER",
               "FACILITY",
               "MATERIAL",
-              "MATERIAL_VARIANT"
+              "MATERIAL_VARIANT",
+              "MATERIAL_LISTING"
             ],
             "type": "string"
           }
@@ -714,7 +2257,8 @@
               "SUPPLIER",
               "FACILITY",
               "MATERIAL",
-              "MATERIAL_VARIANT"
+              "MATERIAL_VARIANT",
+              "MATERIAL_LISTING"
             ],
             "type": "string"
           }
@@ -1298,7 +2842,7 @@
         ]
       },
       "post": {
-        "operationId": "create_3",
+        "operationId": "create_7",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1398,7 +2942,7 @@
     },
     "/api/v1/admin/capabilities": {
       "post": {
-        "operationId": "create_2",
+        "operationId": "create_6",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1429,7 +2973,7 @@
     },
     "/api/v1/admin/capabilities/{id}": {
       "put": {
-        "operationId": "update_2",
+        "operationId": "update_4",
         "parameters": [
           {
             "in": "path",
@@ -1505,7 +3049,7 @@
     },
     "/api/v1/admin/facilities": {
       "post": {
-        "operationId": "create_1",
+        "operationId": "create_5",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1535,7 +3079,7 @@
     },
     "/api/v1/admin/facilities/{id}": {
       "put": {
-        "operationId": "update_1",
+        "operationId": "update_3",
         "parameters": [
           {
             "in": "path",
@@ -1619,7 +3163,7 @@
     },
     "/api/v1/admin/facilities/{id}/external-records": {
       "post": {
-        "operationId": "bind_1",
+        "operationId": "bind_3",
         "parameters": [
           {
             "in": "path",
@@ -1653,7 +3197,7 @@
     },
     "/api/v1/admin/facilities/{id}/sources": {
       "get": {
-        "operationId": "citations_1",
+        "operationId": "citations_3",
         "parameters": [
           {
             "in": "path",
@@ -1686,7 +3230,7 @@
         ]
       },
       "post": {
-        "operationId": "cite_1",
+        "operationId": "cite_4",
         "parameters": [
           {
             "in": "path",
@@ -1720,7 +3264,7 @@
     },
     "/api/v1/admin/facility-identities": {
       "post": {
-        "operationId": "resolve_1",
+        "operationId": "resolve_4",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1745,6 +3289,79 @@
         },
         "tags": [
           "facility-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/fiber-types": {
+      "post": {
+        "operationId": "fiber_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialFiberInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/fiber-types/{id}": {
+      "put": {
+        "operationId": "fiber",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialFiberInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "format": "uuid",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
         ]
       }
     },
@@ -1818,6 +3435,1031 @@
         },
         "tags": [
           "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-identities": {
+      "post": {
+        "operationId": "resolve_3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialIdentityInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-inventory-snapshots": {
+      "post": {
+        "operationId": "create_4",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inventory-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-listing-identities": {
+      "post": {
+        "operationId": "resolve_2",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingIdentityInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-listings": {
+      "post": {
+        "operationId": "create_3",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-listings/{id}": {
+      "put": {
+        "operationId": "update_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-listings/{id}/external-records": {
+      "post": {
+        "operationId": "bind_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingBinding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-listings/{id}/sources": {
+      "get": {
+        "operationId": "citations_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ListingCitationView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      },
+      "post": {
+        "operationId": "cite_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListingCitation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-price-imports": {
+      "post": {
+        "operationId": "importPrice",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceImportInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-prices": {
+      "post": {
+        "operationId": "create_2",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-prices/{id}/close": {
+      "post": {
+        "operationId": "close",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceCloseInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-prices/{id}/sources": {
+      "get": {
+        "operationId": "evidence",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PriceEvidenceView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      },
+      "post": {
+        "operationId": "cite_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceEvidence"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-variant-identities": {
+      "post": {
+        "operationId": "resolve_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialVariantIdentityInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialVariantView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-variants/{id}": {
+      "put": {
+        "operationId": "updateVariant",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialVariantInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialVariantView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-variants/{id}/external-records": {
+      "post": {
+        "operationId": "bindVariant",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialBinding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/material-variants/{id}/sources": {
+      "get": {
+        "operationId": "variantCitations",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialCitationView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      },
+      "post": {
+        "operationId": "citeVariant",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialVariantCitation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials": {
+      "post": {
+        "operationId": "create_1",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}": {
+      "put": {
+        "operationId": "update_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}/composition": {
+      "put": {
+        "operationId": "composition",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialCompositionInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}/external-records": {
+      "post": {
+        "operationId": "bind_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialBinding"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}/fabric-spec": {
+      "put": {
+        "operationId": "fabric",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialFabricInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialFabricView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}/leather-spec": {
+      "put": {
+        "operationId": "leather",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialLeatherInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialLeatherView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}/sources": {
+      "get": {
+        "operationId": "citations_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialCitationView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      },
+      "post": {
+        "operationId": "cite_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialCitation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/admin/materials/{id}/variants": {
+      "post": {
+        "operationId": "createVariant",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaterialVariantInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialVariantView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
         ]
       }
     },
@@ -2675,7 +5317,7 @@
     },
     "/api/v1/facilities/{id}": {
       "get": {
-        "operationId": "read_2",
+        "operationId": "read_6",
         "parameters": [
           {
             "in": "path",
@@ -2738,6 +5380,51 @@
         ]
       }
     },
+    "/api/v1/fiber-types": {
+      "get": {
+        "operationId": "fibers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialFiber"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
     "/api/v1/industrial-clusters": {
       "get": {
         "operationId": "clusters",
@@ -2789,6 +5476,1049 @@
         },
         "tags": [
           "geography-controller"
+        ]
+      }
+    },
+    "/api/v1/material-listings/{id}": {
+      "get": {
+        "operationId": "read_3",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/material-listings/{id}/effective-prices": {
+      "get": {
+        "operationId": "effective",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestedVariantId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestedQuantity",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priceUnit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asOf",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allowMaterialFallback",
+            "required": false,
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dataSourceId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceResolution"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      }
+    },
+    "/api/v1/material-listings/{id}/inventory": {
+      "get": {
+        "operationId": "read_5",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variantId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "facilityId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "captureMode",
+            "required": false,
+            "schema": {
+              "enum": [
+                "IMPORTED",
+                "MANUAL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asOf",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageInventoryView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inventory-controller"
+        ]
+      }
+    },
+    "/api/v1/material-listings/{id}/inventory-snapshots": {
+      "get": {
+        "operationId": "read_4",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variantId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "facilityId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "unit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "captureMode",
+            "required": false,
+            "schema": {
+              "enum": [
+                "IMPORTED",
+                "MANUAL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asOf",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageInventoryView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "inventory-controller"
+        ]
+      }
+    },
+    "/api/v1/material-listings/{id}/prices": {
+      "get": {
+        "operationId": "prices",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dataSourceId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priceUnit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagePriceView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "price-controller"
+        ]
+      }
+    },
+    "/api/v1/material-variants/{id}": {
+      "get": {
+        "operationId": "variant",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialVariantView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/materials": {
+      "get": {
+        "operationId": "search",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "materialType",
+            "required": false,
+            "schema": {
+              "enum": [
+                "FABRIC",
+                "LEATHER",
+                "LINING",
+                "INTERLINING",
+                "ZIPPER",
+                "BUTTON",
+                "SNAP",
+                "BUCKLE",
+                "THREAD",
+                "TAPE",
+                "LABEL",
+                "ELASTIC",
+                "FILLING",
+                "PACKAGING",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "catalogSupplierId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "originCountryId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fiberTypeId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minFiberPercentage",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxFiberPercentage",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minGsm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxGsm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minWidthMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxWidthMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minThicknessMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxThicknessMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "color",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variantId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "ARCHIVED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sellerSupplierId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxMoq",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxMcq",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "quantityUnit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minLeadTimeDays",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxLeadTimeDays",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "listingStatus",
+            "required": false,
+            "schema": {
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priceDataSourceId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priceUnit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asOf",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestedQuantity",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allowMaterialFallback",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageMaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-search-controller"
+        ]
+      }
+    },
+    "/api/v1/materials/{id}": {
+      "get": {
+        "operationId": "read_2",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/materials/{id}/fabric-spec": {
+      "get": {
+        "operationId": "fabric_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialFabricView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/materials/{id}/leather-spec": {
+      "get": {
+        "operationId": "leather_1",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaterialLeatherView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
+        ]
+      }
+    },
+    "/api/v1/materials/{id}/listings": {
+      "get": {
+        "operationId": "materialListings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ListingView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
+        ]
+      }
+    },
+    "/api/v1/materials/{id}/variants": {
+      "get": {
+        "operationId": "variants",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MaterialVariantView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-controller"
         ]
       }
     },
@@ -3037,6 +6767,360 @@
         ]
       }
     },
+    "/api/v1/suppliers/{id}/catalog-materials": {
+      "get": {
+        "operationId": "catalog",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "materialType",
+            "required": false,
+            "schema": {
+              "enum": [
+                "FABRIC",
+                "LEATHER",
+                "LINING",
+                "INTERLINING",
+                "ZIPPER",
+                "BUTTON",
+                "SNAP",
+                "BUCKLE",
+                "THREAD",
+                "TAPE",
+                "LABEL",
+                "ELASTIC",
+                "FILLING",
+                "PACKAGING",
+                "OTHER"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "catalogSupplierId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "originCountryId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fiberTypeId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minFiberPercentage",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxFiberPercentage",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minGsm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxGsm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minWidthMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxWidthMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minThicknessMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxThicknessMm",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "color",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variantId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "ARCHIVED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sellerSupplierId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxMoq",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxMcq",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "quantityUnit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "minLeadTimeDays",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxLeadTimeDays",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "listingStatus",
+            "required": false,
+            "schema": {
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priceDataSourceId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "priceUnit",
+            "required": false,
+            "schema": {
+              "enum": [
+                "PCS",
+                "METER",
+                "YARD",
+                "KG",
+                "GRAM",
+                "MM",
+                "CM",
+                "M2",
+                "FT2",
+                "ROLL",
+                "HIDE",
+                "SET",
+                "PACK"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "asOf",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "requestedQuantity",
+            "required": false,
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "allowMaterialFallback",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PageMaterialView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "material-search-controller"
+        ]
+      }
+    },
     "/api/v1/suppliers/{id}/facilities": {
       "get": {
         "operationId": "supplierFacilities",
@@ -3083,6 +7167,60 @@
         },
         "tags": [
           "directory-controller"
+        ]
+      }
+    },
+    "/api/v1/suppliers/{id}/material-listings": {
+      "get": {
+        "operationId": "sellerListings",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ListingView"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "listing-controller"
         ]
       }
     },

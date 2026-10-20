@@ -14,6 +14,7 @@ class MaterialController {
     this.service = service;
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialBinding")
   public record Binding(@NotNull UUID sourceRecordId) {}
 
   @GetMapping("/materials/{id}")

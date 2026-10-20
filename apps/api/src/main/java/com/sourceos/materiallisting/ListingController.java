@@ -14,6 +14,7 @@ class ListingController {
     this.service = service;
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "ListingBinding")
   public record Binding(@NotNull UUID sourceRecordId) {}
 
   @GetMapping("/materials/{id}/listings")

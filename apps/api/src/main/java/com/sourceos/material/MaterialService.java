@@ -93,6 +93,7 @@ public class MaterialService {
     ATTRIBUTES
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialPart")
   public record Part(
       @NotNull UUID fiberTypeId,
       @NotNull
@@ -101,8 +102,10 @@ public class MaterialService {
           @Digits(integer = 3, fraction = 4)
           BigDecimal percentage) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialPartView")
   public record PartView(UUID fiberTypeId, String fiberCode, BigDecimal percentage) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialInput")
   public record Input(
       @NotNull UUID catalogSupplierId,
       @Size(max = 160) String catalogArticleNumber,
@@ -116,6 +119,7 @@ public class MaterialService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialView")
   public record View(
       UUID id,
       UUID catalogSupplierId,
@@ -131,6 +135,7 @@ public class MaterialService {
       Instant createdAt,
       Instant updatedAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialVariantInput")
   public record VariantInput(
       @NotNull UUID materialId,
       @Size(max = 160) String catalogVariantSku,
@@ -143,6 +148,7 @@ public class MaterialService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialVariantView")
   public record VariantView(
       UUID id,
       UUID materialId,
@@ -157,23 +163,30 @@ public class MaterialService {
       Instant createdAt,
       Instant updatedAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialIdentityInput")
   public record IdentityInput(@NotNull UUID sourceRecordId, @NotNull @Valid Input material) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialVariantIdentityInput")
   public record VariantIdentityInput(
       @NotNull UUID sourceRecordId, @NotNull @Valid VariantInput variant) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialCompositionInput")
   public record CompositionInput(
       @NotNull Completeness completeness,
       @NotNull List<@Valid Part> parts,
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialCitation")
   public record Citation(@NotNull UUID observationId, @NotNull Fact fieldName) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialVariantCitation")
   public record VariantCitation(@NotNull UUID observationId, @NotNull VariantFact fieldName) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialCitationView")
   public record CitationView(UUID observationId, String fieldName, Instant createdAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialFiberInput")
   public record FiberInput(
       @NotBlank @Pattern(regexp = "[A-Z][A-Z0-9_]*") @Size(max = 40) String code,
       @NotBlank @Size(max = 160) String nameEn,
@@ -181,9 +194,11 @@ public class MaterialService {
       boolean active,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialFiber")
   public record Fiber(
       UUID id, String code, String nameEn, String nameLocal, boolean active, long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialFabricInput")
   public record FabricInput(
       Construction construction,
       @Size(max = 80) String weaveType,
@@ -208,6 +223,7 @@ public class MaterialService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialFabricView")
   public record FabricView(
       UUID materialId,
       String materialType,
@@ -231,6 +247,7 @@ public class MaterialService {
       Instant createdAt,
       Instant updatedAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialLeatherInput")
   public record LeatherInput(
       HideType hideType,
       Tanning tanningMethod,
@@ -248,6 +265,7 @@ public class MaterialService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "MaterialLeatherView")
   public record LeatherView(
       UUID materialId,
       String materialType,

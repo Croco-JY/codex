@@ -363,6 +363,6 @@ class SupplierDirectoryTest extends DirectoryIntegrationSupport {
                         + " installed_rank DESC LIMIT 1")
                 .query(String.class)
                 .single())
-        .isEqualTo("11");
+        .isEqualTo("12");
   }
 }

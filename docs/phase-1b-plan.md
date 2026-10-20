@@ -388,7 +388,7 @@ Manual identity is `(listing_id,manual_idempotency_key)`; the key may be a gener
 
 No snapshot UPDATE, DELETE or TRUNCATE is allowed, including technical-only updates. A correction/new stock observation INSERTs a new row. Imported provenance/idempotency is the direct source_observation_id; manual evidence is server Actor + immutable row + audit + scoped command key. No source join table is justified.
 
-Facility means a location and may be NULL or any known third-party Facility. Do not impose seller ownership. Do not insert unknown quantity as zero. Read history with keyset pagination; a latest-snapshot projection selects by observed_at DESC, recorded_at DESC, id DESC within listing/variant/location/provider/unit (manual capture remains separately identified). Distinct units remain separate, with no implicit conversion. Do not sum historical snapshots or silently combine providers/unknown locations into available stock. No reservation/allocation/available-to-promise logic.
+Facility means a location and may be NULL or any known third-party Facility. Do not impose seller ownership. Do not insert unknown quantity as zero. Read history with keyset pagination; a latest-snapshot projection selects by observed_at DESC, recorded_at DESC, created_at DESC, id DESC within listing/variant/location/provider/unit (manual capture remains separately identified). Distinct units remain separate, with no implicit conversion. Do not sum historical snapshots or silently combine providers/unknown locations into available stock. No reservation/allocation/available-to-promise logic.
 
 ## 10. Search semantics
 
@@ -398,7 +398,7 @@ Example Wool>=80%, GSM 450–550, origin JP and listing MOQ<=50 METER means that
 
 Price-range filtering requires explicit currency and price_unit and uses the same as_of, optional quantity, provider partition and fallback semantics as section 8. Historical price predicates never implicitly add current Listing MOQ/MCQ/status; explicitly requested commercial filters are separate current-term predicates. Evaluate the selected effective price within that candidate Listing/provider; do not match an arbitrary obsolete row or one provider's currency with another provider's amount. A variant/color filter and price filter must refer to the same selected variant, or an explicitly permitted material fallback; unrelated variants cannot satisfy the two halves. No FX/unit conversion.
 
-Normalize names for search only using the existing SearchText policy; preserve catalog/seller codes and source keys. Bound LIKE literals and SQL parameters; no guessed dynamic column/sort SQL. Return material hits with matching listing IDs so the reason for a commercial match is visible. Ordinary catalog discovery can default to ACTIVE materials/listings. Price history/match does not inherit current Listing lifecycle or terms. An explicit MOQ/MCQ/lead-time filter excludes NULL; without that filter missing terms do not exclude discovery.
+Normalize names for search only using the existing SearchText policy; preserve catalog/seller codes and source keys. Use bound literal substring predicates and SQL parameters; no dynamic column/sort SQL from input. Return Material views; bounded listing detail endpoints expose the current offerings. Lifecycle filters are explicit; discovery without a status filter can return DRAFT, ACTIVE and ARCHIVED records. Price history/match does not inherit current Listing lifecycle or terms. An explicit MOQ/MCQ/lead-time filter excludes NULL; without that filter missing terms do not exclude discovery.
 
 Use created_at DESC,id DESC keyset pagination, default 25/max 100. Validate cursor structure, sort and the complete physical/commercial filter hash, including resolver quantities/units/currency/as_of/fallback. Bound child collections and provider-group responses too; provider pagination can order by data_source_id with the full request identity in its cursor. as_of is explicit and stable across pages.
 
@@ -422,13 +422,13 @@ PK/UNIQUE constraints already supply their indexes. Add ordinary FK lookup index
 
 Do not add global price overlap exclusion, seller/material uniqueness or uniqueness on similar names/SKUs. Benchmark query plans and realistic cardinalities before expanding indexes. No pg_trgm by default; an extension would need evidence and explicit review. Default migrations use normal transactional CREATE INDEX; a later live concurrent-index rollout would require its own explicit operational plan, not accidental CONCURRENTLY inside a Flyway transaction.
 
-## 12. Planned API resources — no implementation/contract changes now
+## 12. Implemented API resources
 
 All paths below have `/api/v1` prefix. Read APIs require authentication; every admin command also calls PlatformAuthorization. Resource names deliberately distinguish catalog materials and seller listings.
 
 | Read resources | Meaning |
 |---|---|
-| GET /materials; /materials/{id} | catalog search/detail, physical facts and matching listing references |
+| GET /materials; /materials/{id} | catalog search/detail and physical facts; related offerings through listing endpoints |
 | GET /materials/{id}/variants; /material-variants/{id} | catalog variants; no seller-variant mapping |
 | GET /materials/{id}/listings; /material-listings/{id} | seller offerings and current terms |
 | GET /suppliers/{id}/catalog-materials | catalog_supplier_id scope |
@@ -441,22 +441,23 @@ All paths below have `/api/v1` prefix. Read APIs require authentication; every a
 
 | Admin commands | Transactional behavior |
 |---|---|
-| POST /admin/materials; PUT /admin/materials/{id} | create catalog article; update allowed facts/lifecycle with version; immutable supplier/type absent from update DTO |
+| POST /admin/materials; PUT /admin/materials/{id} | create catalog article; update allowed facts/lifecycle with version; supplied supplier/type must match the existing immutable identity |
 | POST /admin/materials/{id}/variants; PUT /admin/material-variants/{id} | create/update permitted variant facts/lifecycle; immutable parent |
 | PUT /admin/materials/{id}/fabric-spec or /leather-spec | subtype-aware create/update; own version, parent identity/status checked under lock |
 | PUT /admin/materials/{id}/composition | completeness + full component replacement in one Material-version transaction |
 | POST/PUT /admin/fiber-types[/{id}] | platform-controlled reference maintenance; immutable code after creation |
 | POST /admin/material-listings | manual create with server-generated UUID; no retry-idempotency guarantee |
-| PUT /admin/material-listings/{id} | versioned commercial terms/lifecycle only; immutable seller/material absent from update DTO |
+| PUT /admin/material-listings/{id} | versioned commercial terms/lifecycle only; supplied seller/material must match the existing immutable identity |
 | POST /admin/material-identities; /admin/material-variant-identities; /admin/material-listing-identities | typed import resolution, source-record lock, observation evidence, atomic binding/create/audit |
 | POST /admin/{materials,material-variants,material-listings}/{id}/external-records | explicit bind, correct-kind FK; no rebind/update/delete |
 | GET/POST /admin/{materials,material-variants,material-listings}/{id}/sources | typed field citations; append idempotently with audit |
-| POST /admin/material-prices | historical INSERT, required provider/listing scope; server derives material_id from listing |
+| POST /admin/material-prices | historical INSERT, optional UUID Idempotency-Key, required provider/listing scope; derive material_id from listing |
+| POST /admin/material-price-imports | explicit observation/itemKey/provider context; stable row identity, no PRICE record kind |
 | POST /admin/material-prices/{id}/close | valid_to + expected version only; guarded single closure and audit |
 | GET/POST /admin/material-prices/{id}/sources | same-provider observation evidence only |
-| POST /admin/material-listings/{id}/inventory-snapshots | IMPORTED/MANUAL branch, idempotency and server Actor checks; derive material_id from listing |
+| POST /admin/material-inventory-snapshots | IMPORTED/MANUAL branch, idempotency and server Actor checks; derive material_id from listing |
 
-Lifecycle changes use the allowed versioned update route and audit (including archive); no HTTP DELETE, history PUT/PATCH, claim, self-promotion or self-service price endpoint. A wrong immutable identity is archived and recreated with the correct identity. Future Java DTOs own OpenAPI/type generation when implementation is separately authorized. Do not expose client-supplied material_id as proof of a relationship: derive it where possible and retain DB composite FKs regardless.
+Lifecycle changes use the allowed versioned update route and audit (including archive); no HTTP DELETE, history PUT/PATCH, claim, self-promotion or self-service price endpoint. A wrong immutable identity is archived and recreated with the correct identity. Java DTOs own OpenAPI/type generation; Phase 1B DTOs have explicit distinct schema names to prevent nested Input/View collisions. Do not expose client-supplied material_id as proof of a relationship: derive it where possible and retain DB composite FKs regardless.
 
 ## 13. Authorization, audit, modules and concurrency
 
@@ -542,3 +543,27 @@ Implementation proceeds only through the authorized slices below, then stops wit
 Commit this finalized plan first (`docs: finalize Phase 1B implementation semantics`). Then A: V9/catalog/variant/spec/fiber/composition/listing/bindings/citations; B: V10/immutable positive pricing/provider evidence/independent Price Match + current eligibility; C: V11/immutable inventory/idempotency; D: V12/search/read contracts/OpenAPI/frontend types. Before advancing each slice compile, run relevant PostgreSQL clean/upgrade/module/auth tests and commit only a green slice.
 
 Final validation: full backend verify and scripts/test.sh, frontend typecheck/unit/build/browser, contract regeneration consistency, module/auth/audit tests, Terraform fmt/init/validate, redacted secret scans, V1–V8 byte comparison and clean git status. Push all commits to origin/phase-1-supply-network and wait for SOURCE OS CI; fix only demonstrated failures without weakening checks. Exactly 16 new tables; only V9 extends existing data_source_record’s named CHECK. No raw payload, unauthorized infrastructure, PR, merge, full Phase 1C UI or Phase 2.
+
+## 19. Implemented read and validation decisions
+
+V9–V12 now implement the authorized 16-table design. Only existing data_source_record is altered (named CHECK extension in V9). All other new indexes target new Phase 1B tables. V1–V8 remain byte-identical to reviewed commit 51f4a0d.
+
+Price search requires maxPrice plus explicit priceDataSourceId, currency, priceUnit and asOf. requestedQuantity remains optional (absent means base price only), fallback defaults false. The correlated scalar subquery selects the same ranked effective price as the resolver before comparing amount; it does not accept any cheaper losing historical tier. Every commercial predicate, including that selected price, is inside the same Listing EXISTS. No implicit current Listing terms/status filter is applied to a historical price. Color is a physical variant discovery filter; only explicit variantId selects variant pricing, otherwise material-level pricing applies.
+
+Large material/price/inventory reads use created_at/id keysets with complete filter identity. Effective-price provider/currency/unit groups use their deterministic tuple key; a cursor retains the initial asOf across pages. Variants/listings/reference/citation child lists follow existing bounded offset conventions (maximum 100). Inventory latest returns the latest fact per variant/facility/unit/capture-mode/provider, without adding quantities. A manual retry preserves its original Actor and rejects a different authenticated Actor with 409; imported retries preserve the first recording metadata.
+
+V12 indexes the demonstrated catalog/supplier/origin/type-status keysets, composition fiber range, fabric GSM/width, variant color context, correlated listing commercial conditions, seller/material pages, price history and inventory latest scope. V10 already supplies the resolver index. No trigram extension, global price overlap exclusion or seller/material uniqueness is added. Existing proposed index alternatives in section 11 describe review considerations, not extra migration requirements or measured production benchmarks.
+
+PostgreSQL 18 tests cover clean migrations, populated V2 and V8 upgrades, exact new table/reference seed counts, composition final-state and concurrent integrity, immutable price values and single closure, provider-consistent evidence, imported/manual stock uniqueness, concurrent identity retries, same-Listing search and all canonical mutation denials for linked ORG_OWNER. Registered controller mappings have no ordinary destructive history routes. Generated OpenAPI separately identifies Material/Listing/Price/Inventory DTOs; no Phase 1C screens are added.
+
+Production source licensing, stable real external keys, OIDC deployment and workload-scale query measurements remain operational checks; local synthetic data is test/development only. This implementation ends at Phase 1B with no PR, merge or Phase 2.
+
+## 20. Local acceptance evidence (2026-10-20 UTC)
+
+- Latest full `./mvnw -B verify`: 126 tests, zero failures/errors/skips.
+- Full `./scripts/test.sh`: backend 126, frontend 2, browser 1; typecheck and production build passed.
+- PostgreSQL 18.3: clean V1→V12, populated V2→V12 and V8→V12 passed without repair. The populated V8 test compares all existing table rows before/after; the fresh test asserts exactly 16 new tables, 13 reference fibers and no new business/admin seeds.
+- V1–V8 SHA-256 comparison: eight reviewed migrations unchanged. V12 adds indexes only.
+- Backend-owned OpenAPI and generated frontend types reproduce byte-for-byte. All 44 Phase 1B operations have distinct typed models; no DELETE business operation.
+- Terraform fmt, backend-disabled init and validate passed. Staged change and full git-history Gitleaks scans found no leaks (redacted output).
+- Remote SOURCE OS CI remains the final release gate after this slice is committed and pushed. Its exact run/HEAD result is reported separately; no PR or merge is part of this task.

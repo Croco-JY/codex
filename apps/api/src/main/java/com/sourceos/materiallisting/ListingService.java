@@ -32,6 +32,7 @@ public class ListingService {
     REPRODUCTION_LEAD_TIME
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "ListingInput")
   public record Input(
       @NotNull UUID materialId,
       @NotNull UUID sellerSupplierId,
@@ -45,6 +46,7 @@ public class ListingService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "ListingView")
   public record View(
       UUID id,
       UUID materialId,
@@ -60,10 +62,13 @@ public class ListingService {
       Instant createdAt,
       Instant updatedAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "ListingIdentityInput")
   public record IdentityInput(@NotNull UUID sourceRecordId, @NotNull @Valid Input listing) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "ListingCitation")
   public record Citation(@NotNull UUID observationId, @NotNull Fact fieldName) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "ListingCitationView")
   public record CitationView(UUID observationId, String fieldName, Instant createdAt) {}
 
   private final ListingRepository repository;

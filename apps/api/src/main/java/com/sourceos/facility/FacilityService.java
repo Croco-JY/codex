@@ -68,6 +68,7 @@ public class FacilityService {
     EMAIL
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityInput")
   public record Input(
       @NotNull UUID supplierId,
       @NotNull Type facilityType,
@@ -87,6 +88,7 @@ public class FacilityService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityView")
   public record View(
       UUID id,
       UUID supplierId,
@@ -107,10 +109,13 @@ public class FacilityService {
       Instant createdAt,
       Instant updatedAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityIdentityInput")
   public record IdentityInput(@NotNull UUID sourceRecordId, @NotNull @Valid Input facility) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityCitation")
   public record Citation(@NotNull UUID observationId, @NotNull Fact fieldName) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityCapabilityInput")
   public record CapabilityInput(
       Proficiency proficiencyLevel,
       @DecimalMin("0") @Digits(integer = 15, fraction = 4) BigDecimal minimumOrderQuantity,
@@ -121,6 +126,7 @@ public class FacilityService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityCapabilityView")
   public record CapabilityView(
       UUID capabilityId,
       Proficiency proficiencyLevel,

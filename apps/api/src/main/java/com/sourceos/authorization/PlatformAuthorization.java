@@ -15,16 +15,18 @@ public class PlatformAuthorization {
     this.jdbc = jdbc;
   }
 
-  public void requireAdmin() {
+  public boolean isAdmin() {
     var actor = identities.current();
-    boolean allowed =
-        jdbc.sql(
-                "SELECT EXISTS(SELECT 1 FROM platform_role_assignment WHERE issuer=:issuer AND"
-                    + " subject=:subject AND role='PLATFORM_ADMIN' AND status='ACTIVE')")
-            .param("issuer", actor.issuer())
-            .param("subject", actor.subject())
-            .query(Boolean.class)
-            .single();
-    if (!allowed) throw new AccessDeniedException("Platform administrator required");
+    return jdbc.sql(
+            "SELECT EXISTS(SELECT 1 FROM platform_role_assignment WHERE issuer=:issuer AND"
+                + " subject=:subject AND role='PLATFORM_ADMIN' AND status='ACTIVE')")
+        .param("issuer", actor.issuer())
+        .param("subject", actor.subject())
+        .query(Boolean.class)
+        .single();
+  }
+
+  public void requireAdmin() {
+    if (!isAdmin()) throw new AccessDeniedException("Platform administrator required");
   }
 }

@@ -17,6 +17,7 @@ public class CapabilityService {
     PROCESS
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "CapabilityInput")
   public record Input(
       @NotBlank @Pattern(regexp = "[A-Z][A-Z0-9_]{0,79}") String code,
       UUID parentId,
@@ -27,6 +28,7 @@ public class CapabilityService {
       boolean active,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "CapabilityView")
   public record View(
       UUID id,
       String code,

@@ -63,6 +63,7 @@ public class SupplierService {
     VERIFICATION
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierInput")
   public record Input(
       @NotNull UUID countryId,
       @NotBlank @Size(max = 160) String displayName,
@@ -77,6 +78,7 @@ public class SupplierService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierView")
   public record View(
       UUID id,
       UUID countryId,
@@ -94,8 +96,10 @@ public class SupplierService {
       Instant createdAt,
       Instant updatedAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierIdentityInput")
   public record IdentityInput(@NotNull UUID sourceRecordId, @NotNull @Valid Input supplier) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierAliasInput")
   public record AliasInput(
       @NotBlank @Size(max = 160) String alias,
       @Pattern(regexp = "[A-Za-z]{2,8}([-_][A-Za-z0-9]{1,8})*") String languageCode,
@@ -103,14 +107,17 @@ public class SupplierService {
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierAliasView")
   public record AliasView(UUID id, String alias, String languageCode, AliasType aliasType) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierVerificationInput")
   public record VerificationInput(
       @NotNull Verification status,
       @NotBlank @Size(max = 1000) String reason,
       @NotNull UUID observationId,
       @Min(0) long version) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierVerificationEvent")
   public record VerificationEvent(
       UUID id,
       String previousStatus,
@@ -121,6 +128,7 @@ public class SupplierService {
       UUID observationId,
       Instant occurredAt) {}
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierCitation")
   public record Citation(@NotNull UUID observationId, @NotNull Fact fieldName) {}
 
   private final SupplierRepository repository;

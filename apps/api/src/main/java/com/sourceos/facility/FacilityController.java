@@ -13,6 +13,7 @@ class FacilityController {
     this.service = service;
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityBinding")
   public record Binding(@jakarta.validation.constraints.NotNull UUID sourceRecordId) {}
 
   @GetMapping("/facilities/{id}")

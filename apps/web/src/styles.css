@@ -87,6 +87,7 @@ nav a {
   border: 1px solid #3e534c;
   border-radius: 3px;
 }
+nav a[aria-current="page"],
 nav a:hover {
   background: #2d453b;
 }
@@ -300,6 +301,7 @@ footer {
   nav {
     display: flex;
     margin-top: 20px;
+    flex-wrap: wrap;
   }
   nav a {
     padding: 8px 16px;

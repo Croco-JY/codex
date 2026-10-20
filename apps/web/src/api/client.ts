@@ -1,29 +1,47 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./schema";
+import { ApiError, responseError, safeRequestId } from "./errors";
+import { applyCredentials, expireSession, getSession } from "./session";
+export { setAccessToken, setLocalSubject } from "./session";
+
+const requestScopes = new WeakMap<Request, string>();
 export const api = createClient<paths>({
   baseUrl: window.location.origin,
-  fetch: (request) => globalThis.fetch(request),
+  fetch: async (request) => {
+    const scope = requestScopes.get(request);
+    if (scope !== getSession().key || request.signal.aborted)
+      throw new DOMException("Request cancelled", "AbortError");
+    let response: Response;
+    try {
+      response = await globalThis.fetch(request);
+    } catch {
+      if (request.signal.aborted)
+        throw new DOMException("Request cancelled", "AbortError");
+      throw new ApiError(0);
+    }
+    if (scope !== getSession().key)
+      throw new DOMException("Request cancelled", "AbortError");
+    if (!response.ok) {
+      const error = await responseError(response);
+      if (response.status === 401) expireSession(scope, error.requestId);
+      throw error;
+    }
+    return response;
+  },
 });
-let accessToken: string | undefined;
-let localSubject: string | undefined;
-export function setAccessToken(token?: string) {
-  accessToken = token;
-}
-export function setLocalSubject(subject?: string) {
-  if (import.meta.env.DEV) localSubject = subject;
-}
 api.use({
   onRequest({ request }) {
+    requestScopes.set(request, getSession().key);
     request.headers.set("X-Request-ID", crypto.randomUUID());
-    if (accessToken)
-      request.headers.set("Authorization", `Bearer ${accessToken}`);
-    if (import.meta.env.DEV && localSubject)
-      request.headers.set("X-Dev-Subject", localSubject);
+    applyCredentials(request.headers);
     return request;
   },
 });
-export function failure(response: Response): Error {
-  return new Error(
-    `Request failed (${response.status}). Reference: ${response.headers.get("X-Request-ID") ?? "unavailable"}.`,
-  );
+export function requireData<T>(data: T | undefined, response: Response): T {
+  if (data === undefined)
+    throw new ApiError(
+      502,
+      safeRequestId(response.headers.get("X-Request-ID")),
+    );
+  return data;
 }

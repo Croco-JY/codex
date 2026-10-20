@@ -1,6 +1,12 @@
 import type { ComponentProps, ReactNode } from "react";
 export function Button(props: ComponentProps<"button">) {
-  return <button {...props} className={`button ${props.className ?? ""}`} />;
+  return (
+    <button
+      type="button"
+      {...props}
+      className={`button ${props.className ?? ""}`}
+    />
+  );
 }
 export function Input(props: ComponentProps<"input">) {
   return <input {...props} className="input" />;
@@ -23,7 +29,7 @@ export function Surface({ children, ...props }: ComponentProps<"section">) {
 }
 export function PageLayout({ children }: { children: ReactNode }) {
   return (
-    <main id="main" className="page">
+    <main id="main" className="page" tabIndex={-1}>
       {children}
     </main>
   );
@@ -31,10 +37,10 @@ export function PageLayout({ children }: { children: ReactNode }) {
 export function Stack({ children }: { children: ReactNode }) {
   return <div className="stack">{children}</div>;
 }
-export function Skeleton() {
+export function Skeleton({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="skeleton" role="status" aria-label="Loading">
-      Loading…
+    <div className="skeleton" role="status" aria-label={label}>
+      {label}…
     </div>
   );
 }

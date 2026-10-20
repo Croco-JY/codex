@@ -150,9 +150,13 @@ export function MaterialVariants({ id }: { id: string }) {
 export function MaterialListings({
   id,
   returnTo,
+  networkTo,
+  directory,
 }: {
   id: string;
   returnTo: string;
+  networkTo?: string;
+  directory?: string;
 }) {
   const { scope } = useSession();
   const cache = useQueryClient();
@@ -195,7 +199,15 @@ export function MaterialListings({
                   {listing.id ? (
                     <Link
                       to={`/material-listings/${encodeURIComponent(listing.id)}`}
-                      state={{ discoveryReturn: returnTo }}
+                      state={{
+                        discoveryReturn: returnTo,
+                        ...(networkTo
+                          ? {
+                              networkReturn: networkTo,
+                              networkDirectory: directory,
+                            }
+                          : {}),
+                      }}
                     >
                       Open seller Listing
                       {listing.sellerArticleNumber

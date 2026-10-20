@@ -779,3 +779,37 @@ select {
   display: block;
   margin-top: 4px;
 }
+/* Supply Network read views keep source names and exact quantities readable. */
+.network-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.network-filters {
+  max-width: none;
+}
+.read-list h3,
+.read-facts dd,
+.surface h1,
+.surface h3 {
+  overflow-wrap: anywhere;
+}
+.read-facts dd {
+  white-space: pre-line;
+}
+.network-filters select {
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.network-filter-disclosure summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 12px 0;
+}
+.network-filter-disclosure summary .badge {
+  margin-left: 12px;
+}
+.network-heading h1 {
+  overflow-wrap: anywhere;
+}

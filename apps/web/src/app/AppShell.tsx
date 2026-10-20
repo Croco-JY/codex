@@ -30,6 +30,9 @@ export default function AppShell() {
               Overview
             </NavLink>
             <NavLink to="/organization">Organization</NavLink>
+            <span className="nav-group">SUPPLY NETWORK</span>
+            <NavLink to="/suppliers">Suppliers</NavLink>
+            <NavLink to="/facilities">Facilities</NavLink>
             <span className="nav-group">MATERIAL SOURCING</span>
             <NavLink to="/materials">Materials</NavLink>
             {session.status === "authenticated" &&

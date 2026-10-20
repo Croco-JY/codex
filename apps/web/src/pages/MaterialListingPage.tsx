@@ -12,13 +12,24 @@ import { PriceReads } from "../features/commercial/PriceReads";
 import { ListingTerms } from "../features/commercial/ListingTerms";
 import { Skeleton, Stack, Surface } from "../ui";
 import { ApiErrorState } from "../ui/ApiErrorState";
+import {
+  networkReturn,
+  networkDirectory,
+} from "../features/network/navigation";
 export default function MaterialListingPage() {
   const { id = "" } = useParams();
   return <ListingPage key={id} id={id} />;
 }
 function ListingPage({ id }: { id: string }) {
   const { scope } = useSession();
-  const returnTo = discoveryReturn(useLocation().state);
+  const location = useLocation();
+  const returnTo = discoveryReturn(location.state);
+  const networkTo =
+    location.state &&
+    typeof location.state === "object" &&
+    "networkReturn" in location.state
+      ? networkReturn(location.state)
+      : undefined;
   const listing = useQuery({
     queryKey: queryKeys.listing(scope, id),
     queryFn: async ({ signal }) => {
@@ -61,13 +72,29 @@ function ListingPage({ id }: { id: string }) {
   return (
     <Stack>
       <div className="read-navigation">
+        {networkTo && (
+          <Link
+            to={networkTo}
+            state={{ networkReturn: networkDirectory(location.state) }}
+          >
+            Return to Supply Network
+          </Link>
+        )}
         <Link to={returnTo} className="text-link">
           Return to Material search
         </Link>
         {value.materialId && (
           <Link
             to={`/materials/${encodeURIComponent(value.materialId)}`}
-            state={{ discoveryReturn: returnTo }}
+            state={{
+              discoveryReturn: returnTo,
+              ...(networkTo
+                ? {
+                    networkReturn: networkTo,
+                    networkDirectory: networkDirectory(location.state),
+                  }
+                : {}),
+            }}
             className="text-link"
           >
             Return to catalog Material
@@ -111,6 +138,16 @@ function ListingPage({ id }: { id: string }) {
       <Surface aria-label="Listing terms">
         <h2>Listing terms</h2>
         <ListingTerms listing={value} />
+        {value.sellerSupplierId && (
+          <p>
+            <Link
+              to={`/suppliers/${value.sellerSupplierId}`}
+              state={{ networkReturn: `/material-listings/${id}` }}
+            >
+              View Seller profile
+            </Link>
+          </p>
+        )}
       </Surface>
       <PriceReads listing={{ ...value, id }} />
       <InventoryReads listing={{ ...value, id }} />

@@ -21,11 +21,22 @@ import {
 } from "../features/materials/materialQueries";
 import { Skeleton, Stack, StatusBadge, Surface } from "../ui";
 import { ApiErrorState } from "../ui/ApiErrorState";
+import {
+  networkReturn,
+  networkDirectory,
+} from "../features/network/navigation";
 export default function MaterialDetailPage() {
   const { id = "" } = useParams();
   const { scope } = useSession();
   const references = useReferences();
-  const returnTo = discoveryReturn(useLocation().state);
+  const location = useLocation();
+  const returnTo = discoveryReturn(location.state);
+  const networkTo =
+    location.state &&
+    typeof location.state === "object" &&
+    "networkReturn" in location.state
+      ? networkReturn(location.state)
+      : undefined;
   const material = useQuery(detailOptions(scope, id));
   if (material.isPending) return <Skeleton label="Loading material" />;
   if (material.isError)
@@ -49,9 +60,19 @@ export default function MaterialDetailPage() {
   const value = material.data;
   return (
     <Stack>
-      <Link to={returnTo} className="text-link">
-        Browse active materials
-      </Link>
+      <div className="read-navigation">
+        {networkTo && (
+          <Link
+            to={networkTo}
+            state={{ networkReturn: networkDirectory(location.state) }}
+          >
+            Return to Supply Network
+          </Link>
+        )}
+        <Link to={returnTo} className="text-link">
+          Browse active materials
+        </Link>
+      </div>
       <header>
         <p className="eyebrow">MATERIAL · {titleCase(value.materialType)}</p>
         <h1>{value.displayName || "Material name not entered"}</h1>
@@ -70,7 +91,12 @@ export default function MaterialDetailPage() {
       </Surface>
       <div className="stack material-related-records">
         <MaterialVariants id={id} />
-        <MaterialListings id={id} returnTo={returnTo} />
+        <MaterialListings
+          id={id}
+          returnTo={returnTo}
+          networkTo={networkTo}
+          directory={networkDirectory(location.state)}
+        />
       </div>
       <Surface>
         <h2>Description</h2>

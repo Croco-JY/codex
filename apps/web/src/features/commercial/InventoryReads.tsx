@@ -1,3 +1,4 @@
+import { Link, useLocation } from "react-router";
 import { useId, useState } from "react";
 import {
   useInfiniteQuery,
@@ -26,6 +27,7 @@ type Scope = Omit<
 >;
 type Observation = components["schemas"]["InventoryView"];
 export function FacilityLabel({ id }: { id?: string }) {
+  const location = useLocation();
   const { scope } = useSession();
   const query = useQuery({
     queryKey: queryKeys.facility(scope, id ?? ""),
@@ -43,9 +45,14 @@ export function FacilityLabel({ id }: { id?: string }) {
   if (query.isPending) return <>Loading facility label…</>;
   return (
     <>
-      {query.isError || !query.data.name
-        ? "Facility label unavailable"
-        : query.data.name}{" "}
+      <Link
+        to={`/facilities/${id}`}
+        state={{ networkReturn: location.pathname }}
+      >
+        {query.isError || !query.data.name
+          ? "Facility label unavailable"
+          : query.data.name}
+      </Link>{" "}
       <span className="facility-reference">
         <Reference label="Facility reference" value={id} />
       </span>

@@ -10,6 +10,10 @@ const Admin = lazy(() => import("../pages/AdminLandingPage"));
 const Materials = lazy(() => import("../pages/MaterialsPage"));
 const MaterialDetail = lazy(() => import("../pages/MaterialDetailPage"));
 const MaterialListing = lazy(() => import("../pages/MaterialListingPage"));
+const Suppliers = lazy(() => import("../pages/SuppliersPage"));
+const SupplierDetail = lazy(() => import("../pages/SupplierDetailPage"));
+const Facilities = lazy(() => import("../pages/FacilitiesPage"));
+const FacilityDetail = lazy(() => import("../pages/FacilityDetailPage"));
 function Authenticated({ children }: { children: ReactNode }) {
   const session = useSession();
   if (session.status === "pending")
@@ -51,6 +55,38 @@ export function AppRoutes() {
     <Suspense fallback={<Skeleton label="Loading page" />}>
       <Routes>
         <Route path="/" element={<Overview />} />
+        <Route
+          path="/facilities/:id"
+          element={
+            <Authenticated>
+              <FacilityDetail />
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/facilities"
+          element={
+            <Authenticated>
+              <Facilities />
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/suppliers/:id"
+          element={
+            <Authenticated>
+              <SupplierDetail />
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/suppliers"
+          element={
+            <Authenticated>
+              <Suppliers />
+            </Authenticated>
+          }
+        />
         <Route
           path="/materials"
           element={

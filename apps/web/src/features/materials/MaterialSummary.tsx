@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { decimal } from "./decimal";
 import type { components } from "../../api/schema";
 import type { References } from "./materialQueries";
@@ -69,7 +70,20 @@ export function MaterialFacts({
       <div>
         <dt>Catalog supplier</dt>
         <dd>
-          <SupplierLabel id={material.catalogSupplierId} />
+          {material.catalogSupplierId ? (
+            <Link
+              to={`/suppliers/${material.catalogSupplierId}`}
+              state={{
+                networkReturn: material.id
+                  ? `/materials/${material.id}`
+                  : "/materials",
+              }}
+            >
+              <SupplierLabel id={material.catalogSupplierId} />
+            </Link>
+          ) : (
+            <SupplierLabel />
+          )}
         </dd>
       </div>
       <div>

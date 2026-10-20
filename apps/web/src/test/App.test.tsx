@@ -137,8 +137,16 @@ test("preserves overview, authenticated identity, compact working navigation and
     "aria-current",
     "page",
   );
-  for (const name of ["Suppliers", "Facilities", "Curation"])
+  for (const name of ["Curation"])
     expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Suppliers" })).toHaveAttribute(
+    "href",
+    "/suppliers",
+  );
+  expect(screen.getByRole("link", { name: "Facilities" })).toHaveAttribute(
+    "href",
+    "/facilities",
+  );
   expect(screen.getByRole("link", { name: "Materials" })).toHaveAttribute(
     "href",
     "/materials",

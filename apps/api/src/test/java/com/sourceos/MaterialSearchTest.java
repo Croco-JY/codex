@@ -339,4 +339,212 @@ class MaterialSearchTest extends CatalogIntegrationSupport {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.items[0].id").value(m.id().toString()));
   }
+
+  MaterialService.VariantView colored(UUID material, String name) {
+    return materials.createVariant(
+        new MaterialService.VariantInput(
+            material,
+            "exact-sku-" + id(),
+            name,
+            name,
+            null,
+            null,
+            null,
+            MaterialService.VariantStatus.ACTIVE,
+            observation,
+            0));
+  }
+
+  @Test
+  void colorOnlyPriceSearchUsesTheMatchingVariant() {
+    var m = material();
+    var red = colored(m.id(), "Red");
+    var l = listing(m.id());
+    price(l.id(), red.id(), "5", null, "USD", MeasurementUnit.METER);
+    assertThat(ids(priced("10", "color", "Red"))).containsExactly(m.id());
+  }
+
+  @Test
+  void cheapBluePriceCannotSatisfyRedColorSearch() {
+    var m = material();
+    var red = colored(m.id(), "Red");
+    var blue = colored(m.id(), "Blue");
+    var l = listing(m.id());
+    price(l.id(), red.id(), "100", null, "USD", MeasurementUnit.METER);
+    price(l.id(), blue.id(), "1", null, "USD", MeasurementUnit.METER);
+    assertThat(ids(priced("10", "color", "Red"))).isEmpty();
+    assertThat(ids(priced("10", "color", "Blue"))).containsExactly(m.id());
+  }
+
+  @Test
+  void colorPriceSearchRequiresExplicitMaterialFallback() {
+    var m = material();
+    colored(m.id(), "Red");
+    var l = listing(m.id());
+    price(l.id(), null, "1", null, "USD", MeasurementUnit.METER);
+    assertThat(ids(priced("10", "color", "Red"))).isEmpty();
+    assertThat(ids(priced("10", "color", "Red", "allowMaterialFallback", true)))
+        .containsExactly(m.id());
+  }
+
+  @Test
+  void anyColorMatchingVariantMaySatisfyItsCompletePricePredicate() {
+    var m = material();
+    var expensive = colored(m.id(), "Red dark");
+    var cheap = colored(m.id(), "Red light");
+    var l = listing(m.id());
+    price(l.id(), expensive.id(), "100", null, "USD", MeasurementUnit.METER);
+    price(l.id(), cheap.id(), "5", null, "USD", MeasurementUnit.METER);
+    assertThat(ids(priced("10", "color", "Red"))).containsExactly(m.id());
+  }
+
+  @Test
+  void noColorMatchingVariantWithQualifyingPriceMeansNoMatch() {
+    var m = material();
+    var a = colored(m.id(), "Red dark");
+    var b = colored(m.id(), "Red light");
+    var l = listing(m.id());
+    price(l.id(), a.id(), "100", null, "USD", MeasurementUnit.METER);
+    price(l.id(), b.id(), "200", null, "USD", MeasurementUnit.METER);
+    assertThat(ids(priced("10", "color", "Red"))).isEmpty();
+  }
+
+  @Test
+  void explicitVariantAndColorStillShareExactPriceContext() {
+    var m = material();
+    var red = colored(m.id(), "Red");
+    var blue = colored(m.id(), "Blue");
+    var l = listing(m.id());
+    price(l.id(), blue.id(), "1", null, "USD", MeasurementUnit.METER);
+    price(l.id(), null, "2", null, "USD", MeasurementUnit.METER);
+    assertThat(ids(priced("10", "color", "Red", "variantId", red.id()))).isEmpty();
+    assertThat(
+            ids(priced("10", "color", "Red", "variantId", red.id(), "allowMaterialFallback", true)))
+        .containsExactly(m.id());
+    assertThat(
+            ids(
+                priced(
+                    "10", "color", "Red", "variantId", blue.id(), "allowMaterialFallback", true)))
+        .isEmpty();
+    price(l.id(), red.id(), "100", null, "USD", MeasurementUnit.METER);
+    assertThat(
+            ids(priced("10", "color", "Red", "variantId", red.id(), "allowMaterialFallback", true)))
+        .isEmpty();
+    assertThat(ids(priced("200", "color", "Red", "variantId", red.id()))).containsExactly(m.id());
+  }
+
+  @Test
+  void correlatedColorAndPriceStayInsideTheSameCommercialListing() {
+    var m = material();
+    var red = colored(m.id(), "Red");
+    UUID other = supplier(JP, "Synthetic second color seller").id();
+    var a = offer(m.id(), seller, "10", "2", MeasurementUnit.METER, 3);
+    var b = offer(m.id(), other, "1", "1", MeasurementUnit.METER, 1);
+    price(a.id(), red.id(), "100", null, "USD", MeasurementUnit.METER);
+    price(b.id(), red.id(), "1", null, "USD", MeasurementUnit.METER);
+    assertThat(
+            ids(
+                priced(
+                    "10",
+                    "color",
+                    "Red",
+                    "sellerSupplierId",
+                    seller,
+                    "maxMoq",
+                    10,
+                    "maxMcq",
+                    2,
+                    "maxLeadTimeDays",
+                    3)))
+        .isEmpty();
+    assertThat(
+            ids(
+                priced(
+                    "10",
+                    "color",
+                    "Red",
+                    "sellerSupplierId",
+                    other,
+                    "maxMoq",
+                    1,
+                    "maxLeadTimeDays",
+                    1)))
+        .containsExactly(m.id());
+    assertThat(ids(priced("200", "color", "Red", "sellerSupplierId", seller, "maxMoq", 1)))
+        .isEmpty();
+  }
+
+  @Test
+  void colorPriceSearchComparesTheWinningTierAndKeepsProviderUnitCurrencyScope() {
+    var m = material();
+    var red = colored(m.id(), "Red");
+    var l = listing(m.id());
+    price(l.id(), red.id(), "1", null, "USD", MeasurementUnit.METER);
+    price(l.id(), red.id(), "100", "10", "USD", MeasurementUnit.METER);
+    price(l.id(), red.id(), "1", "10", "JPY", MeasurementUnit.METER);
+    price(l.id(), red.id(), "1", "10", "USD", MeasurementUnit.YARD);
+    assertThat(ids(priced("10", "color", "Red", "requestedQuantity", 20))).isEmpty();
+    assertThat(ids(priced("10", "color", "Red"))).containsExactly(m.id());
+    assertThat(ids(priced("200", "color", "Red", "priceDataSourceId", id()))).isEmpty();
+  }
+
+  @Test
+  void materialTextUsesNfkcStripAndRootLowercaseWithoutChangingIdentity() {
+    var m =
+        materials.create(
+            new MaterialService.Input(
+                catalogSupplier,
+                "ＣＡＴ－１２３",
+                MaterialService.Type.FABRIC,
+                "Ｔｅｓｔ Ｃｌｏｔｈ",
+                null,
+                null,
+                MaterialService.Completeness.UNKNOWN,
+                List.of(),
+                MaterialService.Status.ACTIVE,
+                observation,
+                0));
+    UUID external =
+        external(com.sourceos.dataingestion.SourceService.RecordKind.MATERIAL, " ＭiXeＤ ");
+    for (String q : List.of("test cloth", "TEST CLOTH", "  TeSt ClOtH  ", "　ＴＥＳＴ　ＣＬＯＴＨ　"))
+      assertThat(ids("q", q)).containsExactly(m.id());
+    assertThat(ids("q", "  cat-123 ")).containsExactly(m.id());
+    assertThat(materials.read(m.id()).catalogArticleNumber()).isEqualTo("ＣＡＴ－１２３");
+    assertThat(
+            jdbc.sql("SELECT external_record_key FROM data_source_record WHERE id=:id")
+                .param("id", external)
+                .query(String.class)
+                .single())
+        .isEqualTo(" ＭiXeＤ ");
+    assertThat(
+            jdbc.sql("SELECT normalized_external_record_key FROM data_source_record WHERE id=:id")
+                .param("id", external)
+                .query(String.class)
+                .single())
+        .isEqualTo(" ＭiXeＤ ");
+  }
+
+  @Test
+  void colorTextUsesNfkcStripAndRootLowercaseOnBothSearchPaths() {
+    var m = material();
+    var red = colored(m.id(), "　Ｒｅｄ　");
+    var l = listing(m.id());
+    price(l.id(), red.id(), "1", null, "USD", MeasurementUnit.METER);
+    for (String color : List.of("red", "RED", "  ReD  ", "　ＲＥＤ　")) {
+      assertThat(ids("color", color)).containsExactly(m.id());
+      assertThat(ids(priced("10", "color", color))).containsExactly(m.id());
+    }
+    assertThat(materials.variant(red.id()).colorName()).isEqualTo("　Ｒｅｄ　");
+  }
+
+  @Test
+  void normalizedEquivalentTextRetainsTheSameKeysetFilterIdentity() {
+    material();
+    material();
+    var first = catalog.search(filter("q", "  SYNTHETIC  "), 1, null);
+    var next = catalog.search(filter("q", "ＳＹＮＴＨＥＴＩＣ"), 1, first.nextCursor());
+    assertThat(first.items()).hasSize(1);
+    assertThat(next.items()).hasSize(1);
+    assertThat(next.items().getFirst().id()).isNotEqualTo(first.items().getFirst().id());
+  }
 }

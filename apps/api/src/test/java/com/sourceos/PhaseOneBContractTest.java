@@ -40,7 +40,15 @@ class PhaseOneBContractTest extends CatalogIntegrationSupport {
         AT.minusSeconds(10),
         null,
         AT.minusSeconds(5),
-        List.of());
+        List.of(
+            provider.equals(source)
+                ? observation
+                : observation(
+                    sources
+                        .record(
+                            new SourceService.RecordInput(
+                                provider, SourceService.RecordKind.SUPPLIER, "price-evidence"))
+                        .id())));
   }
 
   @Test

@@ -47,6 +47,8 @@ public class MaterialSearch {
       Boolean allowMaterialFallback) {
     public Filters {
       allowMaterialFallback = Boolean.TRUE.equals(allowMaterialFallback);
+      q = q == null ? null : SearchText.normalize(q);
+      color = color == null ? null : SearchText.normalize(color);
     }
 
     public Filters withCatalogSupplier(UUID id) {
@@ -107,6 +109,17 @@ public class MaterialSearch {
     }
   }
 
+  private static void addColor(StringBuilder sql, Map<String, Object> p, String color) {
+    // Search projection only: leave stored color/code and external identities unchanged.
+    add(
+        sql,
+        p,
+        "(strpos(lower(btrim(normalize(coalesce(v.color_name,''),NFKC))),:color)>0 OR"
+            + " strpos(lower(btrim(normalize(coalesce(v.color_code,''),NFKC))),:color)>0)",
+        "color",
+        color);
+  }
+
   @Transactional(readOnly = true)
   public Keysets.Page<MaterialService.View> search(Filters f, int limit, String cursor) {
     range(f.minFiberPercentage(), f.maxFiberPercentage());
@@ -162,8 +175,8 @@ public class MaterialSearch {
     add(
         sql,
         p,
-        "(strpos(lower(m.normalized_name),lower(:q))>0 OR"
-            + " strpos(lower(coalesce(m.catalog_article_number,'')),lower(:q))>0)",
+        "(strpos(m.normalized_name,:q)>0 OR"
+            + " strpos(lower(btrim(normalize(coalesce(m.catalog_article_number,''),NFKC))),:q)>0)",
         "q",
         f.q());
     add(sql, p, "fs.gsm>=:minGsm", "minGsm", f.minGsm());
@@ -191,16 +204,11 @@ public class MaterialSearch {
       add(sql, p, "c.percentage<=:maxFiber", "maxFiber", f.maxFiberPercentage());
       sql.append(")");
     }
-    if (f.variantId() != null || f.color() != null) {
+    boolean colorPrice = price && f.color() != null && f.variantId() == null;
+    if (!colorPrice && (f.variantId() != null || f.color() != null)) {
       sql.append(" AND EXISTS(SELECT 1 FROM material_variant v WHERE v.material_id=m.id");
       add(sql, p, "v.id=:variantFilter", "variantFilter", f.variantId());
-      add(
-          sql,
-          p,
-          "(strpos(lower(coalesce(v.color_name,'')),lower(:color))>0 OR"
-              + " strpos(lower(coalesce(v.color_code,'')),lower(:color))>0)",
-          "color",
-          f.color());
+      addColor(sql, p, f.color());
       sql.append(")");
     }
     boolean commercial =
@@ -222,16 +230,25 @@ public class MaterialSearch {
       add(sql, p, "l.standard_lead_time_days<=:maxLead", "maxLead", f.maxLeadTimeDays());
       add(sql, p, "l.status=:listingStatus", "listingStatus", f.listingStatus());
       if (price) {
+        // Color-only requests test every matching variant inside this same Listing.
+        // The expression is one of two fixed SQL contexts, never caller-supplied SQL.
+        if (colorPrice) {
+          sql.append(" AND EXISTS(SELECT 1 FROM material_variant v WHERE v.material_id=m.id");
+          addColor(sql, p, f.color());
+        }
+        String variant = colorPrice ? "v.id" : "CAST(:priceVariant AS uuid)";
         sql.append(" ");
         sql.append(
             """
             AND (SELECT p.amount FROM material_price p WHERE p.listing_id=l.id
             AND p.data_source_id=:priceSource AND p.currency=:priceCurrency AND p.price_unit=:priceUnit
             AND p.valid_from<=:asOf AND (p.valid_to IS NULL OR p.valid_to>:asOf)
-            AND ((CAST(:priceVariant AS uuid) IS NULL AND p.material_variant_id IS NULL) OR (CAST(:priceVariant AS uuid) IS NOT NULL AND (p.material_variant_id=:priceVariant OR (:fallback AND p.material_variant_id IS NULL))))
+            AND ((%1$s IS NULL AND p.material_variant_id IS NULL) OR (%1$s IS NOT NULL AND (p.material_variant_id=%1$s OR (:fallback AND p.material_variant_id IS NULL))))
             AND (p.minimum_order_quantity IS NULL OR (CAST(:quantity AS numeric) IS NOT NULL AND p.minimum_order_quantity<=:quantity))
-            ORDER BY CASE WHEN p.material_variant_id IS NOT DISTINCT FROM CAST(:priceVariant AS uuid) THEN 0 ELSE 1 END,p.minimum_order_quantity DESC NULLS LAST,p.valid_from DESC,p.observed_at DESC,p.created_at DESC,p.id DESC LIMIT 1)<=:maxPrice
-            """);
+            ORDER BY CASE WHEN p.material_variant_id IS NOT DISTINCT FROM %1$s THEN 0 ELSE 1 END,p.minimum_order_quantity DESC NULLS LAST,p.valid_from DESC,p.observed_at DESC,p.created_at DESC,p.id DESC LIMIT 1)<=:maxPrice
+            """
+                .formatted(variant));
+        if (colorPrice) sql.append(")");
         p.put("priceSource", f.priceDataSourceId());
         p.put("priceCurrency", f.currency());
         p.put("priceUnit", f.priceUnit().name());

@@ -397,6 +397,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description The required import observation is automatically included as evidence; nested price.observationIds may be omitted or empty. */
         post: operations["importPrice"];
         delete?: never;
         options?: never;
@@ -413,6 +414,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Requires 1..100 same-provider observationIds. A matching Idempotency-Key retry appends missing evidence without another price-created event. */
         post: operations["create_2"];
         delete?: never;
         options?: never;

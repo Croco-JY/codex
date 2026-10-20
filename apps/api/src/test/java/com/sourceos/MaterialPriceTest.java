@@ -304,7 +304,7 @@ class MaterialPriceTest extends CatalogIntegrationSupport {
                 FROM.plusSeconds(1),
                 null,
                 FROM,
-                List.of()),
+                List.of(observation)),
             null);
     assertThat(match(l.id(), null, null, false).price().id()).isEqualTo(newer.id());
     var observationWinner =
@@ -320,7 +320,7 @@ class MaterialPriceTest extends CatalogIntegrationSupport {
                 FROM.plusSeconds(1),
                 null,
                 FROM.plusSeconds(1),
-                List.of()),
+                List.of(observation)),
             null);
     assertThat(match(l.id(), null, null, false).price().id()).isEqualTo(observationWinner.id());
   }

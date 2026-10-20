@@ -3721,6 +3721,7 @@
     },
     "/api/v1/admin/material-price-imports": {
       "post": {
+        "description": "The required import observation is automatically included as evidence; nested price.observationIds may be omitted or empty.",
         "operationId": "importPrice",
         "requestBody": {
           "content": {
@@ -3751,6 +3752,7 @@
     },
     "/api/v1/admin/material-prices": {
       "post": {
+        "description": "Requires 1..100 same-provider observationIds. A matching Idempotency-Key retry appends missing evidence without another price-created event.",
         "operationId": "create_2",
         "parameters": [
           {

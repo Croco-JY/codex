@@ -337,7 +337,7 @@ The price BEFORE UPDATE trigger compares all immutable columns with NULL-safe IS
 
 The only successful UPDATE is thus one valid_to closure plus its technical fields. No no-op/technical-only UPDATE; no reopen, extend, shorten or second close, even to the same timestamp. DB guards also reject DELETE and TRUNCATE, reusing the existing rejection function where appropriate. The SQL update itself compares expected version/valid_to IS NULL; service races return 409 rather than overwriting. Closure and PLATFORM audit commit together. A newly inserted historical price may already have valid_to if its interval is valid; it cannot subsequently be edited.
 
-New price knowledge/value/currency/unit/source/tier/variant means INSERT, not UPDATE. Simultaneous valid records remain allowed; no global overlap constraint is introduced. For optional idempotent manual Price creation, accept an Idempotency-Key UUID (and allow that header in CORS for browser calls); otherwise generate the Price UUID server-side. Use that command UUID as the Price ID and compare existing immutable business facts, returning the existing row without altering its closure. Conflicting reuse returns 409. Imported line commands must derive that UUID from stable source observation + provider item identity; not from amount/name similarity. This needs no mutable aggregate wrapper or additional price-idempotency table. A later supporting observation is an idempotent PriceSource association, checked against the same provider and audited.
+New price knowledge/value/currency/unit/source/tier/variant means INSERT, not UPDATE. Simultaneous valid records remain allowed; no global overlap constraint is introduced. For optional idempotent manual Price creation, accept an Idempotency-Key UUID (and allow that header in CORS for browser calls); otherwise generate the Price UUID server-side. Use that command UUID as the Price ID and compare existing immutable business facts, returning the existing row without altering its closure. Conflicting reuse returns 409 before evidence is attached. A matching retry appends missing valid observations idempotently in the same transaction; existing associations emit no audit, a new association emits one source-added audit, and no retry emits another price-created audit. Invalid evidence is rejected even on retry and rolls back all new associations/audit together. Imported line commands must derive that UUID from stable source observation + provider item identity; not from amount/name similarity. This needs no mutable aggregate wrapper or additional price-idempotency table. A later supporting observation is an idempotent PriceSource association, checked against the same provider and audited.
 
 ## 8. Price Match and separate current commercial eligibility
 
@@ -451,7 +451,7 @@ All paths below have `/api/v1` prefix. Read APIs require authentication; every a
 | POST /admin/material-identities; /admin/material-variant-identities; /admin/material-listing-identities | typed import resolution, source-record lock, observation evidence, atomic binding/create/audit |
 | POST /admin/{materials,material-variants,material-listings}/{id}/external-records | explicit bind, correct-kind FK; no rebind/update/delete |
 | GET/POST /admin/{materials,material-variants,material-listings}/{id}/sources | typed field citations; append idempotently with audit |
-| POST /admin/material-prices | historical INSERT, optional UUID Idempotency-Key, required provider/listing scope; derive material_id from listing |
+| POST /admin/material-prices | historical INSERT with 1..100 same-provider observations; optional UUID Idempotency-Key; derive material_id from listing; matching retry appends missing evidence |
 | POST /admin/material-price-imports | explicit observation/itemKey/provider context; stable row identity, no PRICE record kind |
 | POST /admin/material-prices/{id}/close | valid_to + expected version only; guarded single closure and audit |
 | GET/POST /admin/material-prices/{id}/sources | same-provider observation evidence only |
@@ -548,7 +548,7 @@ Final validation: full backend verify and scripts/test.sh, frontend typecheck/un
 
 V9–V12 now implement the authorized 16-table design. Only existing data_source_record is altered (named CHECK extension in V9). All other new indexes target new Phase 1B tables. V1–V8 remain byte-identical to reviewed commit 51f4a0d.
 
-Price search requires maxPrice plus explicit priceDataSourceId, currency, priceUnit and asOf. requestedQuantity remains optional (absent means base price only), fallback defaults false. The correlated scalar subquery selects the same ranked effective price as the resolver before comparing amount; it does not accept any cheaper losing historical tier. Every commercial predicate, including that selected price, is inside the same Listing EXISTS. No implicit current Listing terms/status filter is applied to a historical price. Color is a physical variant discovery filter; only explicit variantId selects variant pricing, otherwise material-level pricing applies.
+Price search requires maxPrice plus explicit priceDataSourceId, currency, priceUnit and asOf. requestedQuantity remains optional (absent means base price only), fallback defaults false. The correlated scalar subquery selects the same ranked effective price as the resolver before comparing amount; it does not accept any cheaper losing historical tier. Every commercial predicate, including that selected price, is inside the same Listing EXISTS. No implicit current Listing terms/status filter is applied to a historical price. Color without variantId correlates every color-matching Variant inside the same Listing EXISTS: at least one such Variant must have a qualifying winning effective price. Material-level fallback is considered only when explicitly enabled, and an exact eligible Variant price still ranks first. Explicit variantId remains the shared identity for both color and price predicates. Without either variantId or color, only material-level prices are selected. No variants are fetched into Java for filtering.
 
 Large material/price/inventory reads use created_at/id keysets with complete filter identity. Effective-price provider/currency/unit groups use their deterministic tuple key; a cursor retains the initial asOf across pages. Variants/listings/reference/citation child lists follow existing bounded offset conventions (maximum 100). Inventory latest returns the latest fact per variant/facility/unit/capture-mode/provider, without adding quantities. A manual retry preserves its original Actor and rejects a different authenticated Actor with 409; imported retries preserve the first recording metadata.
 
@@ -558,12 +558,22 @@ PostgreSQL 18 tests cover clean migrations, populated V2 and V8 upgrades, exact 
 
 Production source licensing, stable real external keys, OIDC deployment and workload-scale query measurements remain operational checks; local synthetic data is test/development only. This implementation ends at Phase 1B with no PR, merge or Phase 2.
 
-## 20. Local acceptance evidence (2026-10-20 UTC)
+## 20. Initial implementation acceptance evidence (2026-10-20 UTC)
 
-- Latest full `./mvnw -B verify`: 126 tests, zero failures/errors/skips.
+- Initial full `./mvnw -B verify`: 126 tests, zero failures/errors/skips.
 - Full `./scripts/test.sh`: backend 126, frontend 2, browser 1; typecheck and production build passed.
 - PostgreSQL 18.3: clean V1→V12, populated V2→V12 and V8→V12 passed without repair. The populated V8 test compares all existing table rows before/after; the fresh test asserts exactly 16 new tables, 13 reference fibers and no new business/admin seeds.
 - V1–V8 SHA-256 comparison: eight reviewed migrations unchanged. V12 adds indexes only.
 - Backend-owned OpenAPI and generated frontend types reproduce byte-for-byte. All 44 Phase 1B operations have distinct typed models; no DELETE business operation.
 - Terraform fmt, backend-disabled init and validate passed. Staged change and full git-history Gitleaks scans found no leaks (redacted output).
 - Remote SOURCE OS CI remains the final release gate after this slice is committed and pushed. Its exact run/HEAD result is reported separately; no PR or merge is part of this task.
+
+## 21. Final hardening contracts
+
+Material q and color inputs use SearchText.normalize (NFKC, Unicode strip, Locale.ROOT lowercase), including cursor filter identity. Material normalized names use that value directly; searchable article/color text is normalized in a PostgreSQL read expression. Stored article codes, UUIDs, external keys and source normalization contracts are unchanged. Color+price search uses a nested correlated Variant EXISTS under the same commercial Listing; it evaluates all matching variants, never an arbitrary variant or an in-memory filtered page.
+
+All application price creation requires 1..100 supporting observations after import normalization. Manual null/empty observationIds is 400. Imports automatically include their mandatory observation, so nested evidence can be null/empty without redundant input. The shared DTO remains optional for this import flow; the manual endpoint documents its stricter rule in generated OpenAPI. The existing DB trigger still rejects every cross-provider association. No migration change or new table is required for this application invariant.
+
+Matching price-create retries attach missing valid evidence, preserve all immutable price facts/closure, and emit only genuinely new source-added audit events. Repeated evidence adds neither rows nor audit; conflicting immutable facts return 409. A provider or audit failure rolls back the whole operation, including earlier evidence additions. The dedicated PriceSource endpoint remains available for append-only support.
+
+Hardening targeted PostgreSQL tests: 56 passed (24 added). The full backend suite now passes 150 tests, including unchanged migration/hash, authorization, audit and module checks. All V1–V12 migration files are unchanged by this pass; no table or index was added.

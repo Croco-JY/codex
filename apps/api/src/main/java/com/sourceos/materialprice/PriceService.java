@@ -240,6 +240,11 @@ public class PriceService {
       throw ValidationRules.bad("Invalid price interval/unit");
     var listing = listings.read(v.listingId());
     materials.requireVariant(v.materialVariantId(), listing.materialId());
+    if (v.observationIds() == null
+        || v.observationIds().isEmpty()
+        || v.observationIds().size() > 100
+        || v.observationIds().stream().anyMatch(Objects::isNull))
+      throw ValidationRules.bad("Price requires 1..100 supporting observations");
     UUID id = commandId == null ? UUID.randomUUID() : commandId;
     int n =
         jdbc.sql(
@@ -263,26 +268,27 @@ public class PriceService {
     var result = read(id);
     if (n == 0) {
       if (!same(result, v, listing.materialId())) throw ValidationRules.conflict();
-      return result;
     }
-    if (v.observationIds() != null)
-      for (UUID observation : v.observationIds()) cite(id, new Evidence(observation));
-    audit.changed(
-        "material.price.created",
-        "MaterialPrice",
-        id,
-        null,
-        Map.of(
-            "listingId",
-            v.listingId(),
-            "sourceId",
-            v.dataSourceId(),
-            "amount",
-            v.amount(),
-            "currency",
-            v.currency(),
-            "unit",
-            v.priceUnit().name()));
+    // Retried facts stay immutable; valid new evidence is append-only and audited once.
+    for (UUID observation : new LinkedHashSet<>(v.observationIds()))
+      cite(id, new Evidence(observation));
+    if (n > 0)
+      audit.changed(
+          "material.price.created",
+          "MaterialPrice",
+          id,
+          null,
+          Map.of(
+              "listingId",
+              v.listingId(),
+              "sourceId",
+              v.dataSourceId(),
+              "amount",
+              v.amount(),
+              "currency",
+              v.currency(),
+              "unit",
+              v.priceUnit().name()));
     return result;
   }
 

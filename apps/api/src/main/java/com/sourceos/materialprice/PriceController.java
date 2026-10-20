@@ -16,6 +16,10 @@ class PriceController {
     this.service = service;
   }
 
+  @io.swagger.v3.oas.annotations.Operation(
+      description =
+          "Requires 1..100 same-provider observationIds. A matching Idempotency-Key retry appends"
+              + " missing evidence without another price-created event.")
   @PostMapping("/admin/material-prices")
   PriceService.View create(
       @RequestHeader(value = "Idempotency-Key", required = false) UUID key,
@@ -23,6 +27,10 @@ class PriceController {
     return service.create(v, key);
   }
 
+  @io.swagger.v3.oas.annotations.Operation(
+      description =
+          "The required import observation is automatically included as evidence; nested"
+              + " price.observationIds may be omitted or empty.")
   @PostMapping("/admin/material-price-imports")
   PriceService.View importPrice(@Valid @RequestBody PriceService.ImportInput v) {
     return service.importPrice(v);

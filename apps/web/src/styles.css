@@ -4,7 +4,7 @@
   --surface-raised: #fff;
   --text-primary: #172f2b;
   --text-secondary: #4c5f58;
-  --text-muted: #65746c;
+  --text-muted: #5c6b63;
   --border-default: #d8dfd6;
   --border-strong: #84958a;
   --action-primary: #244e42;
@@ -327,5 +327,318 @@ footer {
   * {
     transition: none !important;
     animation: none !important;
+  }
+}
+
+/* Material discovery: one responsive filter surface and dense catalog rows. */
+.nav-group {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #b6c7ac;
+  margin: 20px 0 0;
+}
+.material-workspace {
+  display: grid;
+  grid-template-columns: 284px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.filter-panel {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  min-width: 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+summary:focus-visible {
+  outline-offset: 4px;
+}
+.material-filter-form {
+  max-width: none;
+  gap: 18px;
+  margin-top: 20px;
+}
+.filter-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+select {
+  font: inherit;
+  color: var(--text-primary);
+}
+.material-filter-form .input {
+  min-height: 44px;
+}
+.filter-group {
+  border-top: 1px solid var(--border-default);
+  padding-top: 16px;
+  min-width: 0;
+}
+.filter-group[open] > summary {
+  margin-bottom: 16px;
+}
+.filter-group > .filter-field {
+  margin: 14px 0;
+}
+.filter-range,
+.supplier-picker {
+  padding: 0;
+  border: 0;
+  margin: 16px 0;
+  min-width: 0;
+}
+.filter-range legend,
+.supplier-picker legend {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.filter-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.filter-help {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.supplier-search {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+.supplier-options {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.supplier-options .button {
+  text-align: left;
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.selected-supplier {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.button.secondary {
+  background: white;
+  color: var(--action-primary);
+}
+.button.secondary:hover {
+  background: var(--surface-muted);
+}
+.button.small {
+  padding: 6px 10px;
+}
+.filter-actions {
+  position: sticky;
+  top: 12px;
+  z-index: 1;
+  background: var(--surface-raised);
+  padding-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-default);
+}
+.field-error {
+  color: #803b29;
+  font-size: 12px;
+  margin: 0;
+}
+.input[aria-invalid="true"] {
+  border-color: #9c4b35;
+  border-width: 2px;
+}
+.material-results {
+  min-width: 0;
+}
+.material-results > .section-heading {
+  min-height: 40px;
+  margin-bottom: 16px;
+}
+.material-results .section-heading .muted {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+}
+.filter-chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border-default);
+  border-radius: 3px;
+  background: var(--surface-raised);
+  padding-left: 10px;
+  font-size: 12px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.filter-chips li > span {
+  min-width: 0;
+}
+.button.chip-remove {
+  color: var(--text-primary);
+  background: transparent;
+  border: 0;
+  padding: 6px 12px;
+  min-width: 36px;
+  min-height: 40px;
+  font-size: 18px;
+}
+.notice {
+  background: var(--surface-muted);
+  border-left: 3px solid var(--border-strong);
+  padding: 12px 16px;
+  font-size: 13px;
+}
+.material-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 16px;
+}
+.material-card {
+  padding: 24px;
+  border: 1px solid var(--border-default);
+  background: var(--surface-raised);
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+.material-card .eyebrow {
+  margin: 0;
+}
+.material-card .badge {
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  text-align: right;
+}
+.material-card h3 {
+  font-size: 21px;
+  line-height: 1.4;
+  margin: 12px 0 18px;
+  overflow-wrap: anywhere;
+}
+.material-card h3 a {
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.material-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin: 0;
+}
+.material-facts > div {
+  min-width: 0;
+}
+.material-facts dt {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.material-facts dd {
+  margin: 2px 0 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.composition {
+  border-top: 1px solid var(--border-default);
+  padding-top: 14px;
+  margin: 18px 0 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.composition-state {
+  color: var(--text-secondary);
+}
+.material-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.load-more {
+  margin-top: 20px;
+}
+.result-status {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+@media (max-width: 1100px) and (min-width: 901px) {
+  .app-shell {
+    grid-template-columns: 208px minmax(0, 1fr);
+  }
+  .page {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+  .material-workspace {
+    grid-template-columns: 244px minmax(0, 1fr);
+    gap: 20px;
+  }
+  .material-card {
+    padding: 18px;
+  }
+  .material-card .section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+@media (max-width: 900px) {
+  .material-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .filter-panel {
+    width: 100%;
+  }
+  .material-filter-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .material-filter-form > .filter-group,
+  .material-filter-form > .filter-actions,
+  .material-filter-form > .error {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 760px) {
+  .nav-group {
+    display: none;
+  }
+  .material-card {
+    padding: 20px;
+  }
+  .material-card .section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .material-filter-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .material-facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .filter-panel {
+    padding: 16px;
   }
 }

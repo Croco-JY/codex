@@ -7,6 +7,8 @@ import { useSession } from "./session";
 const Overview = lazy(() => import("../pages/OverviewPage"));
 const Organization = lazy(() => import("../pages/OrganizationPage"));
 const Admin = lazy(() => import("../pages/AdminLandingPage"));
+const Materials = lazy(() => import("../pages/MaterialsPage"));
+const MaterialDetail = lazy(() => import("../pages/MaterialDetailPage"));
 function Authenticated({ children }: { children: ReactNode }) {
   const session = useSession();
   if (session.status === "pending")
@@ -48,6 +50,22 @@ export function AppRoutes() {
     <Suspense fallback={<Skeleton label="Loading page" />}>
       <Routes>
         <Route path="/" element={<Overview />} />
+        <Route
+          path="/materials"
+          element={
+            <Authenticated>
+              <Materials />
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/materials/:id"
+          element={
+            <Authenticated>
+              <MaterialDetail />
+            </Authenticated>
+          }
+        />
         <Route
           path="/organization"
           element={

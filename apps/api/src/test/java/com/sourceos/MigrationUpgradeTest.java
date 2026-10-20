@@ -68,7 +68,7 @@ class MigrationUpgradeTest {
   }
 
   @Test
-  void cleanV1ToV8HasOnlyExpectedTablesAndNoAdministratorSeed() throws Exception {
+  void cleanMigrationsHaveOnlyExpectedTablesAndNoAdministratorSeed() throws Exception {
     String name = "fresh_" + UUID.randomUUID().toString().replace("-", "");
     try (var c = DriverManager.getConnection(db.getJdbcUrl(), db.getUsername(), db.getPassword());
         var statement = c.createStatement()) {
@@ -78,7 +78,7 @@ class MigrationUpgradeTest {
     var migration = Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).load();
     migration.migrate();
     migration.validate();
-    assertThat(migration.info().applied()).hasSize(8);
+    assertThat(migration.info().applied()).hasSize(9);
     try (var c = DriverManager.getConnection(url, db.getUsername(), db.getPassword());
         var statement = c.createStatement()) {
       var count = statement.executeQuery("SELECT count(*) FROM platform_role_assignment");
@@ -89,7 +89,7 @@ class MigrationUpgradeTest {
               "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND"
                   + " table_type='BASE TABLE'");
       tables.next();
-      assertThat(tables.getInt(1)).isEqualTo(25);
+      assertThat(tables.getInt(1)).isEqualTo(38);
       var json =
           statement.executeQuery(
               "SELECT count(*) FROM information_schema.columns WHERE table_name IN"

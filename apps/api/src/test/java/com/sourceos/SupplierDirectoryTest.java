@@ -348,12 +348,12 @@ class SupplierDirectoryTest extends DirectoryIntegrationSupport {
   }
 
   @Test
-  void schemaHasNoSecondUsersOrPhaseOneB() {
+  void schemaHasNoSecondUsersOrPhaseTwo() {
     assertThat(
             jdbc.sql(
                     "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND"
                         + " table_name IN"
-                        + " ('app_user','user_identity','user','material','material_variant','material_price','material_inventory_snapshot')")
+                        + " ('app_user','user_identity','user','rfq','quote','production_order','shipment','payment')")
                 .query(Integer.class)
                 .single())
         .isZero();
@@ -363,6 +363,6 @@ class SupplierDirectoryTest extends DirectoryIntegrationSupport {
                         + " installed_rank DESC LIMIT 1")
                 .query(String.class)
                 .single())
-        .isEqualTo("8");
+        .isEqualTo("9");
   }
 }

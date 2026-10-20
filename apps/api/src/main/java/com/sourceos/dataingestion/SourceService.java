@@ -39,7 +39,8 @@ public class SourceService {
     SUPPLIER,
     FACILITY,
     MATERIAL,
-    MATERIAL_VARIANT
+    MATERIAL_VARIANT,
+    MATERIAL_LISTING
   }
 
   public enum ReviewStatus {

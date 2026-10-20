@@ -49,7 +49,28 @@ public class AuditRecorder {
           "recordKind",
           "observationId",
           "reviewStatus",
-          "version");
+          "version",
+          "catalogSupplierId",
+          "materialType",
+          "materialId",
+          "variantId",
+          "listingId",
+          "sellerSupplierId",
+          "compositionCompleteness",
+          "fiberTypeId",
+          "percentage",
+          "minimumOrderQuantity",
+          "minimumColorQuantity",
+          "quantityUnit",
+          "standardLeadTimeDays",
+          "reproductionLeadTimeDays",
+          "sourceId",
+          "amount",
+          "currency",
+          "unit",
+          "validTo",
+          "quantity",
+          "captureMode");
 
   private String state(java.util.Map<String, ?> values) {
     if (values == null) return null;

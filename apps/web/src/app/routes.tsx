@@ -16,6 +16,14 @@ const AdminFacilities = lazy(() => import("../pages/AdminFacilitiesPage"));
 const AdminFacilityDetail = lazy(
   () => import("../pages/AdminFacilityDetailPage"),
 );
+const AdminMaterials = lazy(() => import("../pages/AdminMaterialsPage"));
+const AdminMaterialDetail = lazy(
+  () => import("../pages/AdminMaterialDetailPage"),
+);
+const AdminListings = lazy(() => import("../pages/AdminListingsPage"));
+const AdminListingDetail = lazy(
+  () => import("../pages/AdminListingDetailPage"),
+);
 const Materials = lazy(() => import("../pages/MaterialsPage"));
 const MaterialDetail = lazy(() => import("../pages/MaterialDetailPage"));
 const MaterialListing = lazy(() => import("../pages/MaterialListingPage"));
@@ -184,6 +192,46 @@ export function AppRoutes() {
             <Authenticated>
               <AdminGate>
                 <AdminFacilityDetail />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/materials"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminMaterials />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/materials/:id"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminMaterialDetail />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/listings"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminListings />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/listings/:id"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminListingDetail />
               </AdminGate>
             </Authenticated>
           }

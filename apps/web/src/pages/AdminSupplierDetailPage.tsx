@@ -146,6 +146,20 @@ function SupplierWorkspace({ id }: { id: string }) {
                 Add Facility
               </Link>
             )}
+            <Link
+              className="text-link"
+              to="/admin/materials"
+              state={{ curationCatalogSupplier: id }}
+            >
+              Add Material
+            </Link>
+            <Link
+              className="text-link"
+              to="/admin/listings"
+              state={{ curationSeller: id }}
+            >
+              Add Listing
+            </Link>
             <Link className="text-link" to={`/suppliers/${id}`}>
               Open buyer Supplier view
             </Link>

@@ -37,6 +37,24 @@ export default function AdminLandingPage() {
           Open Facility curation
         </Link>
       </Surface>
+      <Surface>
+        <h2>Materials</h2>
+        <p>
+          Curate catalog identity, composition, specifications and Variants.
+        </p>
+        <Link className="text-link" to="/admin/materials">
+          Open Material curation
+        </Link>
+      </Surface>
+      <Surface>
+        <h2>Listings</h2>
+        <p>
+          Curate Seller Listings within explicit Material or Seller context.
+        </p>
+        <Link className="text-link" to="/admin/listings">
+          Open Listing curation
+        </Link>
+      </Surface>
     </Stack>
   );
 }

@@ -24,8 +24,10 @@ export function useCheckedForm<T extends FieldValues>(
         if (result.success) save(result.data);
         else {
           for (const issue of result.error.issues)
-            form.setError(issue.path[0] as Path<T>, { message: issue.message });
-          const first = result.error.issues[0]?.path[0];
+            form.setError(issue.path.join(".") as Path<T>, {
+              message: issue.message,
+            });
+          const first = result.error.issues[0]?.path.join(".");
           if (typeof first === "string") form.setFocus(first as Path<T>);
         }
       }),

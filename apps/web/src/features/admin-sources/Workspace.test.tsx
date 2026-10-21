@@ -289,7 +289,7 @@ test("Sources landing tool remains actionable and nested entry refreshes capabil
   expect(gets("/api/identity/capabilities").length).toBeGreaterThan(before);
   expect(
     screen.queryByRole("link", {
-      name: /Material curation|Price curation|Identity Binding/,
+      name: /Price curation|Inventory curation|Identity Binding/,
     }),
   ).not.toBeInTheDocument();
 });

@@ -130,7 +130,10 @@ function SessionScope({
         : false,
   });
   useLayoutEffect(() => {
-    if (pathname === "/admin" && status === "authenticated")
+    if (
+      (pathname === "/admin" || pathname.startsWith("/admin/")) &&
+      status === "authenticated"
+    )
       void cache.invalidateQueries({
         queryKey: queryKeys.capabilities(snapshot.key),
       });
@@ -142,6 +145,17 @@ function SessionScope({
       : capabilities.data === true
         ? "ADMIN"
         : "NON_ADMIN";
+  useLayoutEffect(() => {
+    if (status !== "authenticated" || capability !== "ADMIN") {
+      const queryKey = queryKeys.admin(snapshot.key);
+      void cache.cancelQueries({ queryKey });
+      cache.removeQueries({ queryKey });
+      const mutations = cache.getMutationCache();
+      mutations
+        .findAll({ mutationKey: queryKey })
+        .forEach((mutation) => mutations.remove(mutation));
+    }
+  }, [status, capability, cache, snapshot.key]);
   return (
     <Context.Provider
       value={{

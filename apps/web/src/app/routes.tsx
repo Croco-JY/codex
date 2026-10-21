@@ -7,6 +7,7 @@ import { useSession } from "./session";
 const Overview = lazy(() => import("../pages/OverviewPage"));
 const Organization = lazy(() => import("../pages/OrganizationPage"));
 const Admin = lazy(() => import("../pages/AdminLandingPage"));
+const AdminSources = lazy(() => import("../pages/AdminSourcesPage"));
 const Materials = lazy(() => import("../pages/MaterialsPage"));
 const MaterialDetail = lazy(() => import("../pages/MaterialDetailPage"));
 const MaterialListing = lazy(() => import("../pages/MaterialListingPage"));
@@ -32,7 +33,7 @@ function Authenticated({ children }: { children: ReactNode }) {
     );
   return children;
 }
-function AdminGate() {
+function AdminGate({ children }: { children: ReactNode }) {
   const session = useSession();
   if (session.capability === "PENDING")
     return <Skeleton label="Checking curation access" />;
@@ -48,7 +49,7 @@ function AdminGate() {
   if (session.capability === "NON_ADMIN")
     return <ApiErrorState error={new ApiError(403)} page />;
   // Only this successful branch mounts the lazy admin bundle. No admin data is prefetched.
-  return <Admin />;
+  return children;
 }
 export function AppRoutes() {
   return (
@@ -123,7 +124,19 @@ export function AppRoutes() {
           path="/admin"
           element={
             <Authenticated>
-              <AdminGate />
+              <AdminGate>
+                <Admin />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/sources"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminSources />
+              </AdminGate>
             </Authenticated>
           }
         />

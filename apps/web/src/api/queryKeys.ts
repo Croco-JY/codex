@@ -1,4 +1,10 @@
 export const queryKeys = {
+  admin: (scope: string) => ["admin", scope] as const,
+  adminSources: (scope: string) => ["admin", scope, "sources", 25] as const,
+  adminObservations: (scope: string, record: string) =>
+    ["admin", scope, "record", record, "observations", 25] as const,
+  adminReviews: (scope: string, observation: string) =>
+    ["admin", scope, "observation", observation, "reviews", 25] as const,
   health: ["health"] as const,
   identity: (scope: string) => ["session", scope, "identity"] as const,
   capabilities: (scope: string) => ["session", scope, "capabilities"] as const,

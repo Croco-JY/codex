@@ -76,7 +76,7 @@ export default function AppShell() {
               )}
               {session.status === "authenticated" &&
                 session.capability === "ERROR" &&
-                pathname !== "/admin" && (
+                !(pathname === "/admin" || pathname.startsWith("/admin/")) && (
                   <p role="status">
                     Curation access unavailable.{" "}
                     <Button onClick={session.retryCapability}>

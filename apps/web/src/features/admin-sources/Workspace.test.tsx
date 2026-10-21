@@ -278,7 +278,7 @@ test.each([false, "error", "pending"] as const)(
       await act(async () => pending.resolve(reply({ platformAdmin: false })));
   },
 );
-test("only implemented landing tool is actionable and nested entry refreshes capability", async () => {
+test("Sources landing tool remains actionable and nested entry refreshes capability", async () => {
   mount("/admin");
   await screen.findByRole("heading", { name: "Curation workspace" });
   const before = gets("/api/identity/capabilities").length;
@@ -288,7 +288,9 @@ test("only implemented landing tool is actionable and nested entry refreshes cap
   await ready();
   expect(gets("/api/identity/capabilities").length).toBeGreaterThan(before);
   expect(
-    screen.queryByRole("link", { name: /Supplier curation|Price curation/ }),
+    screen.queryByRole("link", {
+      name: /Material curation|Price curation|Identity Binding/,
+    }),
   ).not.toBeInTheDocument();
 });
 test("Source pagination uses bounded offset pages, no total and no per-row history fanout", async () => {

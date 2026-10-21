@@ -1,5 +1,12 @@
 export const queryKeys = {
   admin: (scope: string) => ["admin", scope] as const,
+  adminCitations: (
+    scope: string,
+    kind: "suppliers" | "facilities",
+    id: string,
+  ) => ["admin", scope, kind, id, "citations"] as const,
+  adminAssignment: (scope: string, facility: string, capability: string) =>
+    ["admin", scope, "facility", facility, "capability", capability] as const,
   adminSources: (scope: string) => ["admin", scope, "sources", 25] as const,
   adminObservations: (scope: string, record: string) =>
     ["admin", scope, "record", record, "observations", 25] as const,

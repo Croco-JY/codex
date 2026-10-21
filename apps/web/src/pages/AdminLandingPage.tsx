@@ -20,6 +20,23 @@ export default function AdminLandingPage() {
           Open Sources &amp; Evidence
         </Link>
       </Surface>
+      <Surface>
+        <h2>Suppliers</h2>
+        <p>
+          Curate Supplier profiles, aliases, manual verification and fact
+          citations.
+        </p>
+        <Link className="text-link" to="/admin/suppliers">
+          Open Supplier curation
+        </Link>
+      </Surface>
+      <Surface>
+        <h2>Facilities</h2>
+        <p>Curate physical sites, fact citations and Capability assignments.</p>
+        <Link className="text-link" to="/admin/facilities">
+          Open Facility curation
+        </Link>
+      </Surface>
     </Stack>
   );
 }

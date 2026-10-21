@@ -138,10 +138,12 @@ export function SupplierFacilities({
   id,
   refs,
   directory,
+  curation = false,
 }: {
   id: string;
   refs: NetworkReferences;
   directory: string;
+  curation?: boolean;
 }) {
   const { scope } = useSession(),
     cache = useQueryClient(),
@@ -178,7 +180,7 @@ export function SupplierFacilities({
             <h3>
               {f.id ? (
                 <Link
-                  to={`/facilities/${f.id}`}
+                  to={`${curation ? "/admin" : ""}/facilities/${f.id}`}
                   state={{
                     networkReturn: `/suppliers/${id}`,
                     networkDirectory: directory,
@@ -199,7 +201,13 @@ export function SupplierFacilities({
           </li>
         ))}
       </ul>
-      {!rows.length && <p>No facilities recorded for this Supplier.</p>}
+      {!rows.length && (
+        <p>
+          {curation
+            ? "No Facilities returned in this active-directory view. Known Facility detail links remain usable."
+            : "No facilities recorded for this Supplier."}
+        </p>
+      )}
       <Pagination
         noun="facilities"
         hasNext={!!query.hasNextPage}

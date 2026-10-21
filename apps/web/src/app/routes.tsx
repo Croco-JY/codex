@@ -8,6 +8,14 @@ const Overview = lazy(() => import("../pages/OverviewPage"));
 const Organization = lazy(() => import("../pages/OrganizationPage"));
 const Admin = lazy(() => import("../pages/AdminLandingPage"));
 const AdminSources = lazy(() => import("../pages/AdminSourcesPage"));
+const AdminSuppliers = lazy(() => import("../pages/AdminSuppliersPage"));
+const AdminSupplierDetail = lazy(
+  () => import("../pages/AdminSupplierDetailPage"),
+);
+const AdminFacilities = lazy(() => import("../pages/AdminFacilitiesPage"));
+const AdminFacilityDetail = lazy(
+  () => import("../pages/AdminFacilityDetailPage"),
+);
 const Materials = lazy(() => import("../pages/MaterialsPage"));
 const MaterialDetail = lazy(() => import("../pages/MaterialDetailPage"));
 const MaterialListing = lazy(() => import("../pages/MaterialListingPage"));
@@ -136,6 +144,46 @@ export function AppRoutes() {
             <Authenticated>
               <AdminGate>
                 <AdminSources />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/suppliers"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminSuppliers />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/suppliers/:id"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminSupplierDetail />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/facilities"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminFacilities />
+              </AdminGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/admin/facilities/:id"
+          element={
+            <Authenticated>
+              <AdminGate>
+                <AdminFacilityDetail />
               </AdminGate>
             </Authenticated>
           }

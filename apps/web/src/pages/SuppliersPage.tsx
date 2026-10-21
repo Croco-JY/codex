@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { api, requireData } from "../api/client";
@@ -18,7 +18,10 @@ import {
   useNetworkReferences,
 } from "../features/network/references";
 import { titleCase } from "../features/materials/MaterialSummary";
-export default function SuppliersPage() {
+export default function SuppliersPage({
+  curation = false,
+  children,
+}: { curation?: boolean; children?: ReactNode } = {}) {
   const [search, setSearch] = useSearchParams();
   const parsed = useMemo(
     () => parseDirectory("suppliers", search.toString()),
@@ -70,6 +73,7 @@ export default function SuppliersPage() {
           relationships.
         </p>
       </header>
+      {children}
       {cleaned && (
         <p role="status" className="notice">
           Unsupported or invalid URL filters were removed.
@@ -102,7 +106,7 @@ export default function SuppliersPage() {
                     <h3>
                       {s.id ? (
                         <Link
-                          to={`/suppliers/${s.id}`}
+                          to={`${curation ? "/admin" : ""}/suppliers/${s.id}`}
                           state={{
                             networkReturn: `/suppliers${parsed.canonical ? `?${parsed.canonical}` : ""}`,
                           }}

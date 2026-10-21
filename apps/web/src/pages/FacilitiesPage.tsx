@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { api, requireData } from "../api/client";
@@ -20,7 +20,10 @@ import {
 } from "../features/network/references";
 import { SupplierLabel } from "../features/materials/SupplierPicker";
 import { titleCase } from "../features/materials/MaterialSummary";
-export default function FacilitiesPage() {
+export default function FacilitiesPage({
+  curation = false,
+  children,
+}: { curation?: boolean; children?: ReactNode } = {}) {
   const [search, setSearch] = useSearchParams();
   const parsed = useMemo(
     () => parseDirectory("facilities", search.toString()),
@@ -72,6 +75,7 @@ export default function FacilitiesPage() {
           capabilities.
         </p>
       </header>
+      {children}
       {cleaned && (
         <p role="status" className="notice">
           Unsupported or invalid URL filters were removed.
@@ -105,7 +109,7 @@ export default function FacilitiesPage() {
                     <h3>
                       {f.id ? (
                         <Link
-                          to={`/facilities/${f.id}`}
+                          to={`${curation ? "/admin" : ""}/facilities/${f.id}`}
                           state={{
                             networkReturn: `/facilities${parsed.canonical ? `?${parsed.canonical}` : ""}`,
                           }}
@@ -135,7 +139,7 @@ export default function FacilitiesPage() {
                       <p>
                         Parent Supplier:{" "}
                         <Link
-                          to={`/suppliers/${f.supplierId}`}
+                          to={`${curation ? "/admin" : ""}/suppliers/${f.supplierId}`}
                           state={{
                             networkReturn: `/facilities${parsed.canonical ? `?${parsed.canonical}` : ""}`,
                           }}

@@ -12,28 +12,40 @@
         },
         "type": "object"
       },
-      "AliasInput": {
+      "CapabilityInput": {
         "properties": {
-          "alias": {
+          "active": {
+            "type": "boolean"
+          },
+          "category": {
+            "enum": [
+              "PRODUCT",
+              "MATERIAL_HANDLING",
+              "PROCESS"
+            ],
+            "type": "string"
+          },
+          "code": {
+            "minLength": 1,
+            "pattern": "[A-Z][A-Z0-9_]{0,79}",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nameEn": {
             "maxLength": 160,
             "minLength": 0,
             "type": "string"
           },
-          "aliasType": {
-            "enum": [
-              "ORIGINAL",
-              "ENGLISH",
-              "ROMANIZED",
-              "COMMERCIAL",
-              "OTHER"
-            ],
+          "nameLocal": {
+            "maxLength": 160,
+            "minLength": 0,
             "type": "string"
           },
-          "languageCode": {
-            "pattern": "[A-Za-z]{2,8}([-_][A-Za-z0-9]{1,8})*",
-            "type": "string"
-          },
-          "observationId": {
+          "parentId": {
             "format": "uuid",
             "type": "string"
           },
@@ -44,148 +56,43 @@
           }
         },
         "required": [
-          "alias",
-          "aliasType",
-          "observationId"
+          "category",
+          "code",
+          "nameEn"
         ],
         "type": "object"
       },
-      "AliasView": {
+      "CapabilityView": {
         "properties": {
-          "alias": {
+          "active": {
+            "type": "boolean"
+          },
+          "category": {
+            "enum": [
+              "PRODUCT",
+              "MATERIAL_HANDLING",
+              "PROCESS"
+            ],
             "type": "string"
           },
-          "aliasType": {
-            "enum": [
-              "ORIGINAL",
-              "ENGLISH",
-              "ROMANIZED",
-              "COMMERCIAL",
-              "OTHER"
-            ],
+          "code": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           },
           "id": {
             "format": "uuid",
             "type": "string"
           },
-          "languageCode": {
+          "nameEn": {
             "type": "string"
-          }
-        },
-        "type": "object"
-      },
-      "Binding": {
-        "properties": {
-          "sourceRecordId": {
+          },
+          "nameLocal": {
+            "type": "string"
+          },
+          "parentId": {
             "format": "uuid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "sourceRecordId"
-        ],
-        "type": "object"
-      },
-      "CapabilityInput": {
-        "properties": {
-          "maximumOrderQuantity": {
-            "minimum": 0,
-            "type": "number"
-          },
-          "minimumOrderQuantity": {
-            "minimum": 0,
-            "type": "number"
-          },
-          "notes": {
-            "maxLength": 1000,
-            "minLength": 0,
-            "type": "string"
-          },
-          "observationId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "proficiencyLevel": {
-            "enum": [
-              "SUPPORTED",
-              "EXPERIENCED",
-              "SPECIALIST"
-            ],
-            "type": "string"
-          },
-          "quantityUnit": {
-            "enum": [
-              "PCS",
-              "METER",
-              "YARD",
-              "KG",
-              "GRAM",
-              "MM",
-              "CM",
-              "M2"
-            ],
-            "type": "string"
-          },
-          "verificationStatus": {
-            "enum": [
-              "UNVERIFIED",
-              "DOCUMENTED",
-              "AUDITED"
-            ],
-            "type": "string"
-          },
-          "version": {
-            "format": "int64",
-            "minimum": 0,
-            "type": "integer"
-          }
-        },
-        "required": [
-          "observationId",
-          "verificationStatus"
-        ],
-        "type": "object"
-      },
-      "CapabilityView": {
-        "properties": {
-          "capabilityId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "maximumOrderQuantity": {
-            "type": "number"
-          },
-          "minimumOrderQuantity": {
-            "type": "number"
-          },
-          "proficiencyLevel": {
-            "enum": [
-              "SUPPORTED",
-              "EXPERIENCED",
-              "SPECIALIST"
-            ],
-            "type": "string"
-          },
-          "quantityUnit": {
-            "enum": [
-              "PCS",
-              "METER",
-              "YARD",
-              "KG",
-              "GRAM",
-              "MM",
-              "CM",
-              "M2"
-            ],
-            "type": "string"
-          },
-          "verificationStatus": {
-            "enum": [
-              "UNVERIFIED",
-              "DOCUMENTED",
-              "AUDITED"
-            ],
             "type": "string"
           },
           "version": {
@@ -193,35 +100,6 @@
             "type": "integer"
           }
         },
-        "type": "object"
-      },
-      "Citation": {
-        "properties": {
-          "fieldName": {
-            "enum": [
-              "RECORD",
-              "DISPLAY_NAME",
-              "LEGAL_NAME",
-              "NATIVE_NAME",
-              "ENGLISH_NAME",
-              "COUNTRY",
-              "WEBSITE_URL",
-              "DESCRIPTION",
-              "ROLE",
-              "ALIAS",
-              "VERIFICATION"
-            ],
-            "type": "string"
-          },
-          "observationId": {
-            "format": "uuid",
-            "type": "string"
-          }
-        },
-        "required": [
-          "fieldName",
-          "observationId"
-        ],
         "type": "object"
       },
       "Cluster": {
@@ -374,6 +252,213 @@
         ],
         "type": "object"
       },
+      "FacilityBinding": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "FacilityCapabilityAdminView": {
+        "properties": {
+          "capabilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "facilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maximumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "proficiencyLevel": {
+            "enum": [
+              "SUPPORTED",
+              "EXPERIENCED",
+              "SPECIALIST"
+            ],
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2"
+            ],
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "UNVERIFIED",
+              "DOCUMENTED",
+              "AUDITED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "FacilityCapabilityInput": {
+        "properties": {
+          "maximumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "proficiencyLevel": {
+            "enum": [
+              "SUPPORTED",
+              "EXPERIENCED",
+              "SPECIALIST"
+            ],
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2"
+            ],
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "UNVERIFIED",
+              "DOCUMENTED",
+              "AUDITED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "observationId",
+          "verificationStatus"
+        ],
+        "type": "object"
+      },
+      "FacilityCapabilityView": {
+        "properties": {
+          "capabilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "maximumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "minimumOrderQuantity": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "proficiencyLevel": {
+            "enum": [
+              "SUPPORTED",
+              "EXPERIENCED",
+              "SPECIALIST"
+            ],
+            "type": "string"
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "METER",
+              "YARD",
+              "KG",
+              "GRAM",
+              "MM",
+              "CM",
+              "M2"
+            ],
+            "type": "string"
+          },
+          "verificationStatus": {
+            "enum": [
+              "UNVERIFIED",
+              "DOCUMENTED",
+              "AUDITED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "FacilityCitation": {
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "RECORD",
+              "NAME",
+              "TYPE",
+              "COUNTRY",
+              "REGION",
+              "CLUSTER",
+              "ADDRESS",
+              "COORDINATES",
+              "PHONE",
+              "EMAIL"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldName",
+          "observationId"
+        ],
+        "type": "object"
+      },
       "FacilityHit": {
         "properties": {
           "country": {
@@ -418,6 +503,202 @@
         },
         "type": "object"
       },
+      "FacilityIdentityInput": {
+        "properties": {
+          "facility": {
+            "$ref": "#/components/schemas/FacilityInput"
+          },
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "facility",
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "FacilityInput": {
+        "properties": {
+          "addressLine1": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "addressLine2": {
+            "maxLength": 300,
+            "minLength": 0,
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "minLength": 0,
+            "type": "string"
+          },
+          "facilityType": {
+            "enum": [
+              "OFFICE",
+              "MILL",
+              "FACTORY",
+              "WAREHOUSE",
+              "SHOWROOM",
+              "PROCESSING_PLANT",
+              "QC_SITE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "industrialClusterId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latitude": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "longitude": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 80,
+            "minLength": 0,
+            "type": "string"
+          },
+          "postalCode": {
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "regionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "supplierId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "countryId",
+          "facilityType",
+          "name",
+          "observationId",
+          "status",
+          "supplierId"
+        ],
+        "type": "object"
+      },
+      "FacilityView": {
+        "properties": {
+          "addressLine1": {
+            "type": "string"
+          },
+          "addressLine2": {
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "facilityType": {
+            "enum": [
+              "OFFICE",
+              "MILL",
+              "FACTORY",
+              "WAREHOUSE",
+              "SHOWROOM",
+              "PROCESSING_PLANT",
+              "QC_SITE",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "industrialClusterId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latitude": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "longitude": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "regionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "supplierId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "Health": {
         "properties": {
           "application": {
@@ -429,105 +710,12 @@
         },
         "type": "object"
       },
-      "IdentityInput": {
+      "IdentityCapabilities": {
         "properties": {
-          "sourceRecordId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "supplier": {
-            "$ref": "#/components/schemas/Input"
+          "platformAdmin": {
+            "type": "boolean"
           }
         },
-        "required": [
-          "sourceRecordId",
-          "supplier"
-        ],
-        "type": "object"
-      },
-      "Input": {
-        "properties": {
-          "businessRegistrationNumber": {
-            "maxLength": 100,
-            "minLength": 0,
-            "type": "string"
-          },
-          "countryId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "description": {
-            "maxLength": 4000,
-            "minLength": 0,
-            "type": "string"
-          },
-          "displayName": {
-            "maxLength": 160,
-            "minLength": 0,
-            "type": "string"
-          },
-          "englishName": {
-            "maxLength": 160,
-            "minLength": 0,
-            "type": "string"
-          },
-          "legalName": {
-            "maxLength": 160,
-            "minLength": 0,
-            "type": "string"
-          },
-          "nativeName": {
-            "maxLength": 160,
-            "minLength": 0,
-            "type": "string"
-          },
-          "observationId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "roles": {
-            "items": {
-              "enum": [
-                "MILL",
-                "CONVERTER",
-                "MATERIAL_SUPPLIER",
-                "TRIM_SUPPLIER",
-                "FACTORY",
-                "PROCESSOR",
-                "QC_COMPANY",
-                "LOGISTICS_COMPANY",
-                "OTHER"
-              ],
-              "type": "string"
-            },
-            "type": "array",
-            "uniqueItems": true
-          },
-          "status": {
-            "enum": [
-              "ACTIVE",
-              "ARCHIVED"
-            ],
-            "type": "string"
-          },
-          "version": {
-            "format": "int64",
-            "minimum": 0,
-            "type": "integer"
-          },
-          "websiteUrl": {
-            "maxLength": 2000,
-            "minLength": 0,
-            "type": "string"
-          }
-        },
-        "required": [
-          "countryId",
-          "displayName",
-          "observationId",
-          "roles",
-          "status"
-        ],
         "type": "object"
       },
       "InventoryInput": {
@@ -561,8 +749,8 @@
             "type": "string"
           },
           "quantity": {
-            "minimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "sourceObservationId": {
             "format": "uuid",
@@ -643,7 +831,8 @@
             "type": "string"
           },
           "quantity": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "recordedAt": {
             "format": "date-time",
@@ -750,12 +939,12 @@
             "type": "string"
           },
           "minimumColorQuantity": {
-            "minimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "minimumOrderQuantity": {
-            "minimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "observationId": {
             "format": "uuid",
@@ -834,10 +1023,12 @@
             "type": "string"
           },
           "minimumColorQuantity": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "minimumOrderQuantity": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "quantityUnit": {
             "enum": [
@@ -1003,8 +1194,8 @@
             "type": "string"
           },
           "gsm": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "handfeel": {
             "maxLength": 300,
@@ -1026,22 +1217,20 @@
             "type": "string"
           },
           "shrinkageWarpPercentage": {
-            "maximum": 100,
-            "minimum": -100,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "shrinkageWeftPercentage": {
-            "maximum": 100,
-            "minimum": -100,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "stretchWarpPercentage": {
-            "minimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "stretchWeftPercentage": {
-            "minimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "surface": {
             "maxLength": 300,
@@ -1049,8 +1238,8 @@
             "type": "string"
           },
           "thicknessMm": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "version": {
             "format": "int64",
@@ -1063,8 +1252,8 @@
             "type": "string"
           },
           "widthMm": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           }
         },
         "required": [
@@ -1098,7 +1287,8 @@
             "type": "string"
           },
           "gsm": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "handfeel": {
             "type": "string"
@@ -1117,22 +1307,27 @@
             "type": "string"
           },
           "shrinkageWarpPercentage": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "shrinkageWeftPercentage": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "stretchWarpPercentage": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "stretchWeftPercentage": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "surface": {
             "type": "string"
           },
           "thicknessMm": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "updatedAt": {
             "format": "date-time",
@@ -1146,7 +1341,8 @@
             "type": "string"
           },
           "widthMm": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           }
         },
         "type": "object"
@@ -1320,8 +1516,8 @@
             "type": "object"
           },
           "averageHideAreaM2": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "finish": {
             "maxLength": 300,
@@ -1367,12 +1563,12 @@
             "type": "string"
           },
           "thicknessMaxMm": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "thicknessMinMm": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "version": {
             "format": "int64",
@@ -1392,7 +1588,8 @@
             "type": "object"
           },
           "averageHideAreaM2": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "createdAt": {
             "format": "date-time",
@@ -1437,10 +1634,12 @@
             "type": "string"
           },
           "thicknessMaxMm": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "thicknessMinMm": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "updatedAt": {
             "format": "date-time",
@@ -1460,9 +1659,8 @@
             "type": "string"
           },
           "percentage": {
-            "exclusiveMinimum": 0,
-            "maximum": 100,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           }
         },
         "required": [
@@ -1481,7 +1679,8 @@
             "type": "string"
           },
           "percentage": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           }
         },
         "type": "object"
@@ -1953,8 +2152,8 @@
       "PriceInput": {
         "properties": {
           "amount": {
-            "exclusiveMinimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "currency": {
             "minLength": 1,
@@ -1973,8 +2172,8 @@
             "type": "string"
           },
           "minimumOrderQuantity": {
-            "minimum": 0,
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "observationIds": {
             "items": {
@@ -2126,7 +2325,8 @@
       "PriceView": {
         "properties": {
           "amount": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "createdAt": {
             "format": "date-time",
@@ -2156,7 +2356,8 @@
             "type": "string"
           },
           "minimumOrderQuantity": {
-            "type": "number"
+            "format": "decimal",
+            "type": "string"
           },
           "observedAt": {
             "format": "date-time",
@@ -2584,6 +2785,110 @@
         },
         "type": "object"
       },
+      "SupplierAliasInput": {
+        "properties": {
+          "alias": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "aliasType": {
+            "enum": [
+              "ORIGINAL",
+              "ENGLISH",
+              "ROMANIZED",
+              "COMMERCIAL",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "languageCode": {
+            "pattern": "[A-Za-z]{2,8}([-_][A-Za-z0-9]{1,8})*",
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "alias",
+          "aliasType",
+          "observationId"
+        ],
+        "type": "object"
+      },
+      "SupplierAliasView": {
+        "properties": {
+          "alias": {
+            "type": "string"
+          },
+          "aliasType": {
+            "enum": [
+              "ORIGINAL",
+              "ENGLISH",
+              "ROMANIZED",
+              "COMMERCIAL",
+              "OTHER"
+            ],
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "languageCode": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "SupplierBinding": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceRecordId"
+        ],
+        "type": "object"
+      },
+      "SupplierCitation": {
+        "properties": {
+          "fieldName": {
+            "enum": [
+              "RECORD",
+              "DISPLAY_NAME",
+              "LEGAL_NAME",
+              "NATIVE_NAME",
+              "ENGLISH_NAME",
+              "COUNTRY",
+              "WEBSITE_URL",
+              "DESCRIPTION",
+              "ROLE",
+              "ALIAS",
+              "VERIFICATION"
+            ],
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldName",
+          "observationId"
+        ],
+        "type": "object"
+      },
       "SupplierHit": {
         "properties": {
           "country": {
@@ -2614,7 +2919,108 @@
         },
         "type": "object"
       },
-      "VerificationEvent": {
+      "SupplierIdentityInput": {
+        "properties": {
+          "sourceRecordId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "supplier": {
+            "$ref": "#/components/schemas/SupplierInput"
+          }
+        },
+        "required": [
+          "sourceRecordId",
+          "supplier"
+        ],
+        "type": "object"
+      },
+      "SupplierInput": {
+        "properties": {
+          "businessRegistrationNumber": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "countryId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 4000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "displayName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "englishName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "legalName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "nativeName": {
+            "maxLength": 160,
+            "minLength": 0,
+            "type": "string"
+          },
+          "observationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "roles": {
+            "items": {
+              "enum": [
+                "MILL",
+                "CONVERTER",
+                "MATERIAL_SUPPLIER",
+                "TRIM_SUPPLIER",
+                "FACTORY",
+                "PROCESSOR",
+                "QC_COMPANY",
+                "LOGISTICS_COMPANY",
+                "OTHER"
+              ],
+              "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "websiteUrl": {
+            "maxLength": 2000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "countryId",
+          "displayName",
+          "observationId",
+          "roles",
+          "status"
+        ],
+        "type": "object"
+      },
+      "SupplierVerificationEvent": {
         "properties": {
           "actorIssuer": {
             "type": "string"
@@ -2654,7 +3060,7 @@
         },
         "type": "object"
       },
-      "VerificationInput": {
+      "SupplierVerificationInput": {
         "properties": {
           "observationId": {
             "format": "uuid",
@@ -2689,7 +3095,7 @@
         ],
         "type": "object"
       },
-      "View": {
+      "SupplierView": {
         "properties": {
           "businessRegistrationNumber": {
             "type": "string"
@@ -2816,6 +3222,26 @@
         },
         "tags": [
           "identity-controller"
+        ]
+      }
+    },
+    "/api/identity/capabilities": {
+      "get": {
+        "operationId": "capabilities_1",
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityCapabilities"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "identity-capabilities-controller"
         ]
       }
     },
@@ -2947,7 +3373,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Input"
+                "$ref": "#/components/schemas/CapabilityInput"
               }
             }
           },
@@ -2989,7 +3415,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Input"
+                "$ref": "#/components/schemas/CapabilityInput"
               }
             }
           },
@@ -3054,7 +3480,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Input"
+                "$ref": "#/components/schemas/FacilityInput"
               }
             }
           },
@@ -3065,7 +3491,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/FacilityView"
                 }
               }
             },
@@ -3095,7 +3521,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Input"
+                "$ref": "#/components/schemas/FacilityInput"
               }
             }
           },
@@ -3106,7 +3532,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/FacilityView"
                 }
               }
             },
@@ -3119,8 +3545,8 @@
       }
     },
     "/api/v1/admin/facilities/{id}/capabilities/{capability}": {
-      "put": {
-        "operationId": "assign",
+      "get": {
+        "operationId": "capability",
         "parameters": [
           {
             "in": "path",
@@ -3141,11 +3567,58 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacilityCapabilityAdminView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "facility-controller"
+        ]
+      },
+      "put": {
+        "operationId": "assign",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "capability",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CapabilityInput"
+                "$ref": "#/components/schemas/FacilityCapabilityInput"
               }
             }
           },
@@ -3179,7 +3652,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Binding"
+                "$ref": "#/components/schemas/FacilityBinding"
               }
             }
           },
@@ -3246,7 +3719,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Citation"
+                "$ref": "#/components/schemas/FacilityCitation"
               }
             }
           },
@@ -3269,7 +3742,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IdentityInput"
+                "$ref": "#/components/schemas/FacilityIdentityInput"
               }
             }
           },
@@ -3280,7 +3753,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/FacilityView"
                 }
               }
             },
@@ -4268,6 +4741,15 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -4307,6 +4789,15 @@
             "required": true,
             "schema": {
               "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
               "type": "string"
             }
           }
@@ -4869,7 +5360,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/IdentityInput"
+                "$ref": "#/components/schemas/SupplierIdentityInput"
               }
             }
           },
@@ -4880,7 +5371,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/SupplierView"
                 }
               }
             },
@@ -4899,7 +5390,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Input"
+                "$ref": "#/components/schemas/SupplierInput"
               }
             }
           },
@@ -4910,7 +5401,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/SupplierView"
                 }
               }
             },
@@ -4940,7 +5431,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Input"
+                "$ref": "#/components/schemas/SupplierInput"
               }
             }
           },
@@ -4951,7 +5442,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/SupplierView"
                 }
               }
             },
@@ -4981,7 +5472,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AliasInput"
+                "$ref": "#/components/schemas/SupplierAliasInput"
               }
             }
           },
@@ -5023,7 +5514,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Binding"
+                "$ref": "#/components/schemas/SupplierBinding"
               }
             }
           },
@@ -5090,7 +5581,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Citation"
+                "$ref": "#/components/schemas/SupplierCitation"
               }
             }
           },
@@ -5124,7 +5615,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/VerificationInput"
+                "$ref": "#/components/schemas/SupplierVerificationInput"
               }
             }
           },
@@ -5135,7 +5626,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/SupplierView"
                 }
               }
             },
@@ -5178,7 +5669,7 @@
               "*/*": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/View"
+                    "$ref": "#/components/schemas/CapabilityView"
                   },
                   "type": "array"
                 }
@@ -5336,7 +5827,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/FacilityView"
                 }
               }
             },
@@ -5368,7 +5859,7 @@
               "*/*": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/CapabilityView"
+                    "$ref": "#/components/schemas/FacilityCapabilityView"
                   },
                   "type": "array"
                 }
@@ -5539,7 +6030,8 @@
             "name": "requestedQuantity",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6039,7 +6531,8 @@
             "name": "minFiberPercentage",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6047,7 +6540,8 @@
             "name": "maxFiberPercentage",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6055,7 +6549,8 @@
             "name": "minGsm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6063,7 +6558,8 @@
             "name": "maxGsm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6071,7 +6567,8 @@
             "name": "minWidthMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6079,7 +6576,8 @@
             "name": "maxWidthMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6087,7 +6585,8 @@
             "name": "minThicknessMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6095,7 +6594,8 @@
             "name": "maxThicknessMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6150,7 +6650,8 @@
             "name": "maxMoq",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6158,7 +6659,8 @@
             "name": "maxMcq",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6219,7 +6721,8 @@
             "name": "maxPrice",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6276,7 +6779,8 @@
             "name": "requestedQuantity",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6723,7 +7227,7 @@
             "content": {
               "*/*": {
                 "schema": {
-                  "$ref": "#/components/schemas/View"
+                  "$ref": "#/components/schemas/SupplierView"
                 }
               }
             },
@@ -6755,7 +7259,7 @@
               "*/*": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/AliasView"
+                    "$ref": "#/components/schemas/SupplierAliasView"
                   },
                   "type": "array"
                 }
@@ -6839,7 +7343,8 @@
             "name": "minFiberPercentage",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6847,7 +7352,8 @@
             "name": "maxFiberPercentage",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6855,7 +7361,8 @@
             "name": "minGsm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6863,7 +7370,8 @@
             "name": "maxGsm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6871,7 +7379,8 @@
             "name": "minWidthMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6879,7 +7388,8 @@
             "name": "maxWidthMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6887,7 +7397,8 @@
             "name": "minThicknessMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6895,7 +7406,8 @@
             "name": "maxThicknessMm",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6950,7 +7462,8 @@
             "name": "maxMoq",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -6958,7 +7471,8 @@
             "name": "maxMcq",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -7019,7 +7533,8 @@
             "name": "maxPrice",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -7076,7 +7591,8 @@
             "name": "requestedQuantity",
             "required": false,
             "schema": {
-              "type": "number"
+              "format": "decimal",
+              "type": "string"
             }
           },
           {
@@ -7246,7 +7762,7 @@
               "*/*": {
                 "schema": {
                   "items": {
-                    "$ref": "#/components/schemas/VerificationEvent"
+                    "$ref": "#/components/schemas/SupplierVerificationEvent"
                   },
                   "type": "array"
                 }

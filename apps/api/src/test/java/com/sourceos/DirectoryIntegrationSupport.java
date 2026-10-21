@@ -147,7 +147,8 @@ abstract class DirectoryIntegrationSupport extends SupplyIntegrationSupport {
         facility,
         capability,
         new FacilityService.CapabilityInput(
-            null, null, null, null, null, FacilityService.Verification.UNVERIFIED, observation, 0));
+            null, null, null, null, null, FacilityService.Verification.UNVERIFIED, observation, 0),
+        "*");
   }
 
   protected DirectorySearch.SupplierFilters filter(

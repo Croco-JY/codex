@@ -129,7 +129,8 @@ class FacilitySearchTest extends DirectoryIntegrationSupport {
                         null,
                         FacilityService.Verification.UNVERIFIED,
                         observation,
-                        0)))
+                        0),
+                    null))
         .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
     assertThatThrownBy(
             () ->
@@ -157,13 +158,13 @@ class FacilitySearchTest extends DirectoryIntegrationSupport {
             FacilityService.Verification.DOCUMENTED,
             observation,
             0);
-    facilities.assign(facility.id(), capability, input);
+    facilities.assign(facility.id(), capability, input, null);
     long auditCount =
         jdbc.sql("SELECT count(*) FROM audit_event WHERE entity_id=:id")
             .param("id", facility.id())
             .query(Long.class)
             .single();
-    assertThatThrownBy(() -> facilities.assign(facility.id(), capability, input))
+    assertThatThrownBy(() -> facilities.assign(facility.id(), capability, input, null))
         .isInstanceOfSatisfying(
             org.springframework.web.server.ResponseStatusException.class,
             error -> assertThat(error.getStatusCode().value()).isEqualTo(409));

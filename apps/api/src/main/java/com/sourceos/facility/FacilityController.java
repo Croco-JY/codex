@@ -1,5 +1,7 @@
 package com.sourceos.facility;
 
+import com.sourceos.shared.WritePreconditions;
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import java.util.*;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@ class FacilityController {
     this.service = service;
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "FacilityBinding")
   public record Binding(@jakarta.validation.constraints.NotNull UUID sourceRecordId) {}
 
   @GetMapping("/facilities/{id}")
@@ -23,6 +26,12 @@ class FacilityController {
   @GetMapping("/facilities/{id}/capabilities")
   List<FacilityService.CapabilityView> capabilities(@PathVariable UUID id) {
     return service.capabilities(id);
+  }
+
+  @GetMapping("/admin/facilities/{id}/capabilities/{capability}")
+  FacilityService.CapabilityAdminView capability(
+      @PathVariable UUID id, @PathVariable UUID capability) {
+    return service.capability(id, capability);
   }
 
   @PostMapping("/admin/facilities")
@@ -60,7 +69,10 @@ class FacilityController {
   void assign(
       @PathVariable UUID id,
       @PathVariable UUID capability,
+      @Parameter(description = WritePreconditions.DESCRIPTION)
+          @RequestHeader(name = "If-None-Match", required = false)
+          String ifNoneMatch,
       @Valid @RequestBody FacilityService.CapabilityInput body) {
-    service.assign(id, capability, body);
+    service.assign(id, capability, body, ifNoneMatch);
   }
 }

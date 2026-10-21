@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/identity/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["capabilities_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations": {
         parameters: {
             query?: never;
@@ -155,7 +171,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: operations["capability"];
         put: operations["assign"];
         post?: never;
         delete?: never;
@@ -1326,62 +1342,33 @@ export interface components {
             issuer?: string;
             subject?: string;
         };
-        AliasInput: {
-            alias: string;
-            /** @enum {string} */
-            aliasType: "ORIGINAL" | "ENGLISH" | "ROMANIZED" | "COMMERCIAL" | "OTHER";
-            languageCode?: string;
-            /** Format: uuid */
-            observationId: string;
-            /** Format: int64 */
-            version?: number;
-        };
-        AliasView: {
-            alias?: string;
-            /** @enum {string} */
-            aliasType?: "ORIGINAL" | "ENGLISH" | "ROMANIZED" | "COMMERCIAL" | "OTHER";
-            /** Format: uuid */
-            id?: string;
-            languageCode?: string;
-        };
-        Binding: {
-            /** Format: uuid */
-            sourceRecordId: string;
-        };
         CapabilityInput: {
-            maximumOrderQuantity?: number;
-            minimumOrderQuantity?: number;
-            notes?: string;
+            active?: boolean;
+            /** @enum {string} */
+            category: "PRODUCT" | "MATERIAL_HANDLING" | "PROCESS";
+            code: string;
+            description?: string;
+            nameEn: string;
+            nameLocal?: string;
             /** Format: uuid */
-            observationId: string;
-            /** @enum {string} */
-            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
-            /** @enum {string} */
-            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
-            /** @enum {string} */
-            verificationStatus: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            parentId?: string;
             /** Format: int64 */
             version?: number;
         };
         CapabilityView: {
+            active?: boolean;
+            /** @enum {string} */
+            category?: "PRODUCT" | "MATERIAL_HANDLING" | "PROCESS";
+            code?: string;
+            description?: string;
             /** Format: uuid */
-            capabilityId?: string;
-            maximumOrderQuantity?: number;
-            minimumOrderQuantity?: number;
-            /** @enum {string} */
-            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
-            /** @enum {string} */
-            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
-            /** @enum {string} */
-            verificationStatus?: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            id?: string;
+            nameEn?: string;
+            nameLocal?: string;
+            /** Format: uuid */
+            parentId?: string;
             /** Format: int64 */
             version?: number;
-        };
-        Citation: {
-            /** @enum {string} */
-            fieldName: "RECORD" | "DISPLAY_NAME" | "LEGAL_NAME" | "NATIVE_NAME" | "ENGLISH_NAME" | "COUNTRY" | "WEBSITE_URL" | "DESCRIPTION" | "ROLE" | "ALIAS" | "VERIFICATION";
-            /** Format: uuid */
-            observationId: string;
         };
         Cluster: {
             active?: boolean;
@@ -1432,6 +1419,68 @@ export interface components {
         CreateOrganization: {
             name: string;
         };
+        FacilityBinding: {
+            /** Format: uuid */
+            sourceRecordId: string;
+        };
+        FacilityCapabilityAdminView: {
+            /** Format: uuid */
+            capabilityId?: string;
+            /** Format: uuid */
+            facilityId?: string;
+            /** Format: decimal */
+            maximumOrderQuantity?: string;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
+            notes?: string;
+            /** @enum {string} */
+            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
+            /** @enum {string} */
+            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
+            /** @enum {string} */
+            verificationStatus?: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            /** Format: int64 */
+            version?: number;
+        };
+        FacilityCapabilityInput: {
+            /** Format: decimal */
+            maximumOrderQuantity?: string;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
+            notes?: string;
+            /** Format: uuid */
+            observationId: string;
+            /** @enum {string} */
+            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
+            /** @enum {string} */
+            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
+            /** @enum {string} */
+            verificationStatus: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            /** Format: int64 */
+            version?: number;
+        };
+        FacilityCapabilityView: {
+            /** Format: uuid */
+            capabilityId?: string;
+            /** Format: decimal */
+            maximumOrderQuantity?: string;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
+            /** @enum {string} */
+            proficiencyLevel?: "SUPPORTED" | "EXPERIENCED" | "SPECIALIST";
+            /** @enum {string} */
+            quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2";
+            /** @enum {string} */
+            verificationStatus?: "UNVERIFIED" | "DOCUMENTED" | "AUDITED";
+            /** Format: int64 */
+            version?: number;
+        };
+        FacilityCitation: {
+            /** @enum {string} */
+            fieldName: "RECORD" | "NAME" | "TYPE" | "COUNTRY" | "REGION" | "CLUSTER" | "ADDRESS" | "COORDINATES" | "PHONE" | "EMAIL";
+            /** Format: uuid */
+            observationId: string;
+        };
         FacilityHit: {
             country?: string;
             /** Format: date-time */
@@ -1448,32 +1497,78 @@ export interface components {
             /** Format: uuid */
             supplierId?: string;
         };
+        FacilityIdentityInput: {
+            facility: components["schemas"]["FacilityInput"];
+            /** Format: uuid */
+            sourceRecordId: string;
+        };
+        FacilityInput: {
+            addressLine1?: string;
+            addressLine2?: string;
+            /** Format: uuid */
+            countryId: string;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            facilityType: "OFFICE" | "MILL" | "FACTORY" | "WAREHOUSE" | "SHOWROOM" | "PROCESSING_PLANT" | "QC_SITE" | "OTHER";
+            /** Format: uuid */
+            industrialClusterId?: string;
+            /** Format: decimal */
+            latitude?: string;
+            /** Format: decimal */
+            longitude?: string;
+            name: string;
+            /** Format: uuid */
+            observationId: string;
+            phone?: string;
+            postalCode?: string;
+            /** Format: uuid */
+            regionId?: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            supplierId: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        FacilityView: {
+            addressLine1?: string;
+            addressLine2?: string;
+            /** Format: uuid */
+            countryId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            email?: string;
+            /** @enum {string} */
+            facilityType?: "OFFICE" | "MILL" | "FACTORY" | "WAREHOUSE" | "SHOWROOM" | "PROCESSING_PLANT" | "QC_SITE" | "OTHER";
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            industrialClusterId?: string;
+            /** Format: decimal */
+            latitude?: string;
+            /** Format: decimal */
+            longitude?: string;
+            name?: string;
+            phone?: string;
+            postalCode?: string;
+            /** Format: uuid */
+            regionId?: string;
+            /** @enum {string} */
+            status?: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            supplierId?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: int64 */
+            version?: number;
+        };
         Health: {
             application?: string;
             status?: string;
         };
-        IdentityInput: {
-            /** Format: uuid */
-            sourceRecordId: string;
-            supplier: components["schemas"]["Input"];
-        };
-        Input: {
-            businessRegistrationNumber?: string;
-            /** Format: uuid */
-            countryId: string;
-            description?: string;
-            displayName: string;
-            englishName?: string;
-            legalName?: string;
-            nativeName?: string;
-            /** Format: uuid */
-            observationId: string;
-            roles: ("MILL" | "CONVERTER" | "MATERIAL_SUPPLIER" | "TRIM_SUPPLIER" | "FACTORY" | "PROCESSOR" | "QC_COMPANY" | "LOGISTICS_COMPANY" | "OTHER")[];
-            /** @enum {string} */
-            status: "ACTIVE" | "ARCHIVED";
-            /** Format: int64 */
-            version?: number;
-            websiteUrl?: string;
+        IdentityCapabilities: {
+            platformAdmin?: boolean;
         };
         InventoryInput: {
             /** @enum {string} */
@@ -1487,7 +1582,8 @@ export interface components {
             materialVariantId?: string;
             /** Format: date-time */
             observedAt: string;
-            quantity: number;
+            /** Format: decimal */
+            quantity: string;
             /** Format: uuid */
             sourceObservationId?: string;
             /** @enum {string} */
@@ -1513,7 +1609,8 @@ export interface components {
             materialVariantId?: string;
             /** Format: date-time */
             observedAt?: string;
-            quantity?: number;
+            /** Format: decimal */
+            quantity?: string;
             /** Format: date-time */
             recordedAt?: string;
             /** Format: uuid */
@@ -1546,8 +1643,10 @@ export interface components {
         ListingInput: {
             /** Format: uuid */
             materialId: string;
-            minimumColorQuantity?: number;
-            minimumOrderQuantity?: number;
+            /** Format: decimal */
+            minimumColorQuantity?: string;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
             /** Format: uuid */
             observationId: string;
             /** @enum {string} */
@@ -1571,8 +1670,10 @@ export interface components {
             id?: string;
             /** Format: uuid */
             materialId?: string;
-            minimumColorQuantity?: number;
-            minimumOrderQuantity?: number;
+            /** Format: decimal */
+            minimumColorQuantity?: string;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
             /** @enum {string} */
             quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2" | "FT2" | "ROLL" | "HIDE" | "SET" | "PACK";
             /** Format: int32 */
@@ -1623,22 +1724,29 @@ export interface components {
             construction?: "WOVEN" | "KNIT" | "NONWOVEN" | "OTHER";
             drape?: string;
             finish?: string;
-            gsm?: number;
+            /** Format: decimal */
+            gsm?: string;
             handfeel?: string;
             knitType?: string;
             luster?: string;
             /** Format: uuid */
             observationId: string;
-            shrinkageWarpPercentage?: number;
-            shrinkageWeftPercentage?: number;
-            stretchWarpPercentage?: number;
-            stretchWeftPercentage?: number;
+            /** Format: decimal */
+            shrinkageWarpPercentage?: string;
+            /** Format: decimal */
+            shrinkageWeftPercentage?: string;
+            /** Format: decimal */
+            stretchWarpPercentage?: string;
+            /** Format: decimal */
+            stretchWeftPercentage?: string;
             surface?: string;
-            thicknessMm?: number;
+            /** Format: decimal */
+            thicknessMm?: string;
             /** Format: int64 */
             version?: number;
             weaveType?: string;
-            widthMm?: number;
+            /** Format: decimal */
+            widthMm?: string;
         };
         MaterialFabricView: {
             attributes?: {
@@ -1650,25 +1758,32 @@ export interface components {
             createdAt?: string;
             drape?: string;
             finish?: string;
-            gsm?: number;
+            /** Format: decimal */
+            gsm?: string;
             handfeel?: string;
             knitType?: string;
             luster?: string;
             /** Format: uuid */
             materialId?: string;
             materialType?: string;
-            shrinkageWarpPercentage?: number;
-            shrinkageWeftPercentage?: number;
-            stretchWarpPercentage?: number;
-            stretchWeftPercentage?: number;
+            /** Format: decimal */
+            shrinkageWarpPercentage?: string;
+            /** Format: decimal */
+            shrinkageWeftPercentage?: string;
+            /** Format: decimal */
+            stretchWarpPercentage?: string;
+            /** Format: decimal */
+            stretchWeftPercentage?: string;
             surface?: string;
-            thicknessMm?: number;
+            /** Format: decimal */
+            thicknessMm?: string;
             /** Format: date-time */
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
             weaveType?: string;
-            widthMm?: number;
+            /** Format: decimal */
+            widthMm?: string;
         };
         MaterialFiber: {
             active?: boolean;
@@ -1717,7 +1832,8 @@ export interface components {
             attributes?: {
                 [key: string]: unknown;
             };
-            averageHideAreaM2?: number;
+            /** Format: decimal */
+            averageHideAreaM2?: string;
             finish?: string;
             handfeel?: string;
             /** @enum {string} */
@@ -1728,8 +1844,10 @@ export interface components {
             surface?: string;
             /** @enum {string} */
             tanningMethod?: "CHROME" | "VEGETABLE" | "COMBINATION" | "OTHER";
-            thicknessMaxMm?: number;
-            thicknessMinMm?: number;
+            /** Format: decimal */
+            thicknessMaxMm?: string;
+            /** Format: decimal */
+            thicknessMinMm?: string;
             /** Format: int64 */
             version?: number;
         };
@@ -1737,7 +1855,8 @@ export interface components {
             attributes?: {
                 [key: string]: unknown;
             };
-            averageHideAreaM2?: number;
+            /** Format: decimal */
+            averageHideAreaM2?: string;
             /** Format: date-time */
             createdAt?: string;
             finish?: string;
@@ -1751,8 +1870,10 @@ export interface components {
             surface?: string;
             /** @enum {string} */
             tanningMethod?: "CHROME" | "VEGETABLE" | "COMBINATION" | "OTHER";
-            thicknessMaxMm?: number;
-            thicknessMinMm?: number;
+            /** Format: decimal */
+            thicknessMaxMm?: string;
+            /** Format: decimal */
+            thicknessMinMm?: string;
             /** Format: date-time */
             updatedAt?: string;
             /** Format: int64 */
@@ -1761,13 +1882,15 @@ export interface components {
         MaterialPart: {
             /** Format: uuid */
             fiberTypeId: string;
-            percentage: number;
+            /** Format: decimal */
+            percentage: string;
         };
         MaterialPartView: {
             fiberCode?: string;
             /** Format: uuid */
             fiberTypeId?: string;
-            percentage?: number;
+            /** Format: decimal */
+            percentage?: string;
         };
         MaterialVariantCitation: {
             /** @enum {string} */
@@ -1926,7 +2049,8 @@ export interface components {
             price: components["schemas"]["PriceInput"];
         };
         PriceInput: {
-            amount: number;
+            /** Format: decimal */
+            amount: string;
             currency: string;
             /** Format: uuid */
             dataSourceId: string;
@@ -1934,7 +2058,8 @@ export interface components {
             listingId: string;
             /** Format: uuid */
             materialVariantId?: string;
-            minimumOrderQuantity?: number;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
             observationIds?: string[];
             /** Format: date-time */
             observedAt: string;
@@ -1972,7 +2097,8 @@ export interface components {
             scopes?: components["schemas"]["PriceOutcome"][];
         };
         PriceView: {
-            amount?: number;
+            /** Format: decimal */
+            amount?: string;
             /** Format: date-time */
             createdAt?: string;
             currency?: string;
@@ -1986,7 +2112,8 @@ export interface components {
             materialId?: string;
             /** Format: uuid */
             materialVariantId?: string;
-            minimumOrderQuantity?: number;
+            /** Format: decimal */
+            minimumOrderQuantity?: string;
             /** Format: date-time */
             observedAt?: string;
             /** @enum {string} */
@@ -2112,6 +2239,34 @@ export interface components {
             /** Format: int64 */
             version?: number;
         };
+        SupplierAliasInput: {
+            alias: string;
+            /** @enum {string} */
+            aliasType: "ORIGINAL" | "ENGLISH" | "ROMANIZED" | "COMMERCIAL" | "OTHER";
+            languageCode?: string;
+            /** Format: uuid */
+            observationId: string;
+            /** Format: int64 */
+            version?: number;
+        };
+        SupplierAliasView: {
+            alias?: string;
+            /** @enum {string} */
+            aliasType?: "ORIGINAL" | "ENGLISH" | "ROMANIZED" | "COMMERCIAL" | "OTHER";
+            /** Format: uuid */
+            id?: string;
+            languageCode?: string;
+        };
+        SupplierBinding: {
+            /** Format: uuid */
+            sourceRecordId: string;
+        };
+        SupplierCitation: {
+            /** @enum {string} */
+            fieldName: "RECORD" | "DISPLAY_NAME" | "LEGAL_NAME" | "NATIVE_NAME" | "ENGLISH_NAME" | "COUNTRY" | "WEBSITE_URL" | "DESCRIPTION" | "ROLE" | "ALIAS" | "VERIFICATION";
+            /** Format: uuid */
+            observationId: string;
+        };
         SupplierHit: {
             country?: string;
             /** Format: date-time */
@@ -2122,7 +2277,30 @@ export interface components {
             /** @enum {string} */
             verificationStatus?: "DISCOVERED" | "CLAIMED" | "VERIFIED" | "AUDITED" | "TRANSACTED" | "PROVEN";
         };
-        VerificationEvent: {
+        SupplierIdentityInput: {
+            /** Format: uuid */
+            sourceRecordId: string;
+            supplier: components["schemas"]["SupplierInput"];
+        };
+        SupplierInput: {
+            businessRegistrationNumber?: string;
+            /** Format: uuid */
+            countryId: string;
+            description?: string;
+            displayName: string;
+            englishName?: string;
+            legalName?: string;
+            nativeName?: string;
+            /** Format: uuid */
+            observationId: string;
+            roles: ("MILL" | "CONVERTER" | "MATERIAL_SUPPLIER" | "TRIM_SUPPLIER" | "FACTORY" | "PROCESSOR" | "QC_COMPANY" | "LOGISTICS_COMPANY" | "OTHER")[];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: int64 */
+            version?: number;
+            websiteUrl?: string;
+        };
+        SupplierVerificationEvent: {
             actorIssuer?: string;
             actorSubject?: string;
             /** Format: uuid */
@@ -2136,7 +2314,7 @@ export interface components {
             previousStatus?: string;
             reason?: string;
         };
-        VerificationInput: {
+        SupplierVerificationInput: {
             /** Format: uuid */
             observationId: string;
             reason: string;
@@ -2145,7 +2323,7 @@ export interface components {
             /** Format: int64 */
             version?: number;
         };
-        View: {
+        SupplierView: {
             businessRegistrationNumber?: string;
             /** Format: uuid */
             countryId?: string;
@@ -2214,6 +2392,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Actor"];
+                };
+            };
+        };
+    };
+    capabilities_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["IdentityCapabilities"];
                 };
             };
         };
@@ -2319,7 +2517,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Input"];
+                "application/json": components["schemas"]["CapabilityInput"];
             };
         };
         responses: {
@@ -2345,7 +2543,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Input"];
+                "application/json": components["schemas"]["CapabilityInput"];
             };
         };
         responses: {
@@ -2393,7 +2591,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Input"];
+                "application/json": components["schemas"]["FacilityInput"];
             };
         };
         responses: {
@@ -2403,7 +2601,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["FacilityView"];
                 };
             };
         };
@@ -2419,7 +2617,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Input"];
+                "application/json": components["schemas"]["FacilityInput"];
             };
         };
         responses: {
@@ -2429,12 +2627,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["FacilityView"];
                 };
             };
         };
     };
-    assign: {
+    capability: {
         parameters: {
             query?: never;
             header?: never;
@@ -2444,9 +2642,35 @@ export interface operations {
             };
             cookie?: never;
         };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["FacilityCapabilityAdminView"];
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
+            path: {
+                id: string;
+                capability: string;
+            };
+            cookie?: never;
+        };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CapabilityInput"];
+                "application/json": components["schemas"]["FacilityCapabilityInput"];
             };
         };
         responses: {
@@ -2470,7 +2694,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Binding"];
+                "application/json": components["schemas"]["FacilityBinding"];
             };
         };
         responses: {
@@ -2518,7 +2742,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Citation"];
+                "application/json": components["schemas"]["FacilityCitation"];
             };
         };
         responses: {
@@ -2540,7 +2764,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IdentityInput"];
+                "application/json": components["schemas"]["FacilityIdentityInput"];
             };
         };
         responses: {
@@ -2550,7 +2774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["FacilityView"];
                 };
             };
         };
@@ -3201,7 +3425,10 @@ export interface operations {
     fabric: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -3227,7 +3454,10 @@ export interface operations {
     leather: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
             path: {
                 id: string;
             };
@@ -3581,7 +3811,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["IdentityInput"];
+                "application/json": components["schemas"]["SupplierIdentityInput"];
             };
         };
         responses: {
@@ -3591,7 +3821,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["SupplierView"];
                 };
             };
         };
@@ -3605,7 +3835,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Input"];
+                "application/json": components["schemas"]["SupplierInput"];
             };
         };
         responses: {
@@ -3615,7 +3845,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["SupplierView"];
                 };
             };
         };
@@ -3631,7 +3861,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Input"];
+                "application/json": components["schemas"]["SupplierInput"];
             };
         };
         responses: {
@@ -3641,7 +3871,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["SupplierView"];
                 };
             };
         };
@@ -3657,7 +3887,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AliasInput"];
+                "application/json": components["schemas"]["SupplierAliasInput"];
             };
         };
         responses: {
@@ -3683,7 +3913,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Binding"];
+                "application/json": components["schemas"]["SupplierBinding"];
             };
         };
         responses: {
@@ -3731,7 +3961,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Citation"];
+                "application/json": components["schemas"]["SupplierCitation"];
             };
         };
         responses: {
@@ -3755,7 +3985,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VerificationInput"];
+                "application/json": components["schemas"]["SupplierVerificationInput"];
             };
         };
         responses: {
@@ -3765,7 +3995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["SupplierView"];
                 };
             };
         };
@@ -3788,7 +4018,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"][];
+                    "*/*": components["schemas"]["CapabilityView"][];
                 };
             };
         };
@@ -3859,7 +4089,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["FacilityView"];
                 };
             };
         };
@@ -3881,7 +4111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["CapabilityView"][];
+                    "*/*": components["schemas"]["FacilityCapabilityView"][];
                 };
             };
         };
@@ -3959,7 +4189,7 @@ export interface operations {
         parameters: {
             query?: {
                 requestedVariantId?: string;
-                requestedQuantity?: number;
+                requestedQuantity?: string;
                 currency?: string;
                 priceUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2" | "FT2" | "ROLL" | "HIDE" | "SET" | "PACK";
                 asOf?: string;
@@ -4104,31 +4334,31 @@ export interface operations {
                 catalogSupplierId?: string;
                 originCountryId?: string;
                 fiberTypeId?: string;
-                minFiberPercentage?: number;
-                maxFiberPercentage?: number;
-                minGsm?: number;
-                maxGsm?: number;
-                minWidthMm?: number;
-                maxWidthMm?: number;
-                minThicknessMm?: number;
-                maxThicknessMm?: number;
+                minFiberPercentage?: string;
+                maxFiberPercentage?: string;
+                minGsm?: string;
+                maxGsm?: string;
+                minWidthMm?: string;
+                maxWidthMm?: string;
+                minThicknessMm?: string;
+                maxThicknessMm?: string;
                 q?: string;
                 color?: string;
                 variantId?: string;
                 status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
                 sellerSupplierId?: string;
-                maxMoq?: number;
-                maxMcq?: number;
+                maxMoq?: string;
+                maxMcq?: string;
                 quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2" | "FT2" | "ROLL" | "HIDE" | "SET" | "PACK";
                 minLeadTimeDays?: number;
                 maxLeadTimeDays?: number;
                 listingStatus?: "ACTIVE" | "ARCHIVED";
-                maxPrice?: number;
+                maxPrice?: string;
                 priceDataSourceId?: string;
                 currency?: string;
                 priceUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2" | "FT2" | "ROLL" | "HIDE" | "SET" | "PACK";
                 asOf?: string;
-                requestedQuantity?: number;
+                requestedQuantity?: string;
                 allowMaterialFallback?: boolean;
                 limit?: number;
                 cursor?: string;
@@ -4338,7 +4568,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["View"];
+                    "*/*": components["schemas"]["SupplierView"];
                 };
             };
         };
@@ -4360,7 +4590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AliasView"][];
+                    "*/*": components["schemas"]["SupplierAliasView"][];
                 };
             };
         };
@@ -4372,31 +4602,31 @@ export interface operations {
                 catalogSupplierId?: string;
                 originCountryId?: string;
                 fiberTypeId?: string;
-                minFiberPercentage?: number;
-                maxFiberPercentage?: number;
-                minGsm?: number;
-                maxGsm?: number;
-                minWidthMm?: number;
-                maxWidthMm?: number;
-                minThicknessMm?: number;
-                maxThicknessMm?: number;
+                minFiberPercentage?: string;
+                maxFiberPercentage?: string;
+                minGsm?: string;
+                maxGsm?: string;
+                minWidthMm?: string;
+                maxWidthMm?: string;
+                minThicknessMm?: string;
+                maxThicknessMm?: string;
                 q?: string;
                 color?: string;
                 variantId?: string;
                 status?: "DRAFT" | "ACTIVE" | "ARCHIVED";
                 sellerSupplierId?: string;
-                maxMoq?: number;
-                maxMcq?: number;
+                maxMoq?: string;
+                maxMcq?: string;
                 quantityUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2" | "FT2" | "ROLL" | "HIDE" | "SET" | "PACK";
                 minLeadTimeDays?: number;
                 maxLeadTimeDays?: number;
                 listingStatus?: "ACTIVE" | "ARCHIVED";
-                maxPrice?: number;
+                maxPrice?: string;
                 priceDataSourceId?: string;
                 currency?: string;
                 priceUnit?: "PCS" | "METER" | "YARD" | "KG" | "GRAM" | "MM" | "CM" | "M2" | "FT2" | "ROLL" | "HIDE" | "SET" | "PACK";
                 asOf?: string;
-                requestedQuantity?: number;
+                requestedQuantity?: string;
                 allowMaterialFallback?: boolean;
                 limit?: number;
                 cursor?: string;
@@ -4487,7 +4717,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["VerificationEvent"][];
+                    "*/*": components["schemas"]["SupplierVerificationEvent"][];
                 };
             };
         };

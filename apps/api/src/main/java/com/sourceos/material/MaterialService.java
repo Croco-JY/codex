@@ -826,8 +826,9 @@ public class MaterialService {
   }
 
   @Transactional
-  public FabricView fabric(UUID id, FabricInput v) {
+  public FabricView fabric(UUID id, FabricInput v, String ifNoneMatch) {
     auth.requireAdmin();
+    boolean createOnly = WritePreconditions.createOnly(ifNoneMatch, v.version());
     lock(id);
     sources.requireObservation(v.observationId());
     PhysicalAttributes.json(v.attributes());
@@ -836,15 +837,18 @@ public class MaterialService {
             .param("id", id)
             .query(Boolean.class)
             .single();
-    if (!exists && v.version() != 0) throw ValidationRules.conflict();
+    if (!createOnly && !exists) throw ValidationRules.missing();
     int n =
         jdbc.sql(
-                "INSERT INTO"
-                    + " fabric_spec(material_id,construction,weave_type,knit_type,gsm,width_mm,thickness_mm,stretch_warp_percentage,stretch_weft_percentage,shrinkage_warp_percentage,shrinkage_weft_percentage,finish,surface,handfeel,drape,luster,attributes)"
-                    + " VALUES(:id,:construction,:weaveType,:knitType,:gsm,:widthMm,:thicknessMm,:stretchWarpPercentage,:stretchWeftPercentage,:shrinkageWarpPercentage,:shrinkageWeftPercentage,:finish,:surface,:handfeel,:drape,:luster,CAST(:attributes"
-                    + " AS jsonb)) ON CONFLICT(material_id) DO UPDATE SET"
-                    + " construction=EXCLUDED.construction,weave_type=EXCLUDED.weave_type,knit_type=EXCLUDED.knit_type,gsm=EXCLUDED.gsm,width_mm=EXCLUDED.width_mm,thickness_mm=EXCLUDED.thickness_mm,stretch_warp_percentage=EXCLUDED.stretch_warp_percentage,stretch_weft_percentage=EXCLUDED.stretch_weft_percentage,shrinkage_warp_percentage=EXCLUDED.shrinkage_warp_percentage,shrinkage_weft_percentage=EXCLUDED.shrinkage_weft_percentage,finish=EXCLUDED.finish,surface=EXCLUDED.surface,handfeel=EXCLUDED.handfeel,drape=EXCLUDED.drape,luster=EXCLUDED.luster,attributes=EXCLUDED.attributes,version=fabric_spec.version+1,updated_at=now()"
-                    + " WHERE fabric_spec.version=:version")
+                createOnly
+                    ? "INSERT INTO"
+                          + " fabric_spec(material_id,construction,weave_type,knit_type,gsm,width_mm,thickness_mm,stretch_warp_percentage,stretch_weft_percentage,shrinkage_warp_percentage,shrinkage_weft_percentage,finish,surface,handfeel,drape,luster,attributes)"
+                          + " VALUES(:id,:construction,:weaveType,:knitType,:gsm,:widthMm,:thicknessMm,:stretchWarpPercentage,:stretchWeftPercentage,:shrinkageWarpPercentage,:shrinkageWeftPercentage,:finish,:surface,:handfeel,:drape,:luster,CAST(:attributes"
+                          + " AS jsonb)) ON CONFLICT(material_id) DO NOTHING"
+                    : "UPDATE fabric_spec SET"
+                          + " construction=:construction,weave_type=:weaveType,knit_type=:knitType,gsm=:gsm,width_mm=:widthMm,thickness_mm=:thicknessMm,stretch_warp_percentage=:stretchWarpPercentage,stretch_weft_percentage=:stretchWeftPercentage,shrinkage_warp_percentage=:shrinkageWarpPercentage,shrinkage_weft_percentage=:shrinkageWeftPercentage,finish=:finish,surface=:surface,handfeel=:handfeel,drape=:drape,luster=:luster,attributes=CAST(:attributes"
+                          + " AS jsonb),version=version+1,updated_at=now() WHERE material_id=:id"
+                          + " AND version=:version")
             .param("id", id)
             .param("version", v.version())
             .param("construction", (v.construction() == null ? null : v.construction().name()))
@@ -864,7 +868,10 @@ public class MaterialService {
             .param("luster", v.luster())
             .param("attributes", PhysicalAttributes.json(v.attributes()))
             .update();
-    if (n != 1) throw ValidationRules.conflict();
+    if (n != 1) {
+      if (createOnly) throw WritePreconditions.failed();
+      throw ValidationRules.conflict();
+    }
     cite(id, new Citation(v.observationId(), Fact.FABRIC_SPEC));
     audit.changed("material.fabric.saved", "Material", id, null, null);
     return fabric(id);
@@ -901,8 +908,9 @@ public class MaterialService {
   }
 
   @Transactional
-  public LeatherView leather(UUID id, LeatherInput v) {
+  public LeatherView leather(UUID id, LeatherInput v, String ifNoneMatch) {
     auth.requireAdmin();
+    boolean createOnly = WritePreconditions.createOnly(ifNoneMatch, v.version());
     lock(id);
     sources.requireObservation(v.observationId());
     PhysicalAttributes.json(v.attributes());
@@ -911,15 +919,18 @@ public class MaterialService {
             .param("id", id)
             .query(Boolean.class)
             .single();
-    if (!exists && v.version() != 0) throw ValidationRules.conflict();
+    if (!createOnly && !exists) throw ValidationRules.missing();
     int n =
         jdbc.sql(
-                "INSERT INTO"
-                    + " leather_spec(material_id,hide_type,tanning_method,thickness_min_mm,thickness_max_mm,average_hide_area_m2,finish,surface,handfeel,luster,attributes)"
-                    + " VALUES(:id,:hideType,:tanningMethod,:thicknessMinMm,:thicknessMaxMm,:averageHideAreaM2,:finish,:surface,:handfeel,:luster,CAST(:attributes"
-                    + " AS jsonb)) ON CONFLICT(material_id) DO UPDATE SET"
-                    + " hide_type=EXCLUDED.hide_type,tanning_method=EXCLUDED.tanning_method,thickness_min_mm=EXCLUDED.thickness_min_mm,thickness_max_mm=EXCLUDED.thickness_max_mm,average_hide_area_m2=EXCLUDED.average_hide_area_m2,finish=EXCLUDED.finish,surface=EXCLUDED.surface,handfeel=EXCLUDED.handfeel,luster=EXCLUDED.luster,attributes=EXCLUDED.attributes,version=leather_spec.version+1,updated_at=now()"
-                    + " WHERE leather_spec.version=:version")
+                createOnly
+                    ? "INSERT INTO"
+                          + " leather_spec(material_id,hide_type,tanning_method,thickness_min_mm,thickness_max_mm,average_hide_area_m2,finish,surface,handfeel,luster,attributes)"
+                          + " VALUES(:id,:hideType,:tanningMethod,:thicknessMinMm,:thicknessMaxMm,:averageHideAreaM2,:finish,:surface,:handfeel,:luster,CAST(:attributes"
+                          + " AS jsonb)) ON CONFLICT(material_id) DO NOTHING"
+                    : "UPDATE leather_spec SET"
+                          + " hide_type=:hideType,tanning_method=:tanningMethod,thickness_min_mm=:thicknessMinMm,thickness_max_mm=:thicknessMaxMm,average_hide_area_m2=:averageHideAreaM2,finish=:finish,surface=:surface,handfeel=:handfeel,luster=:luster,attributes=CAST(:attributes"
+                          + " AS jsonb),version=version+1,updated_at=now() WHERE material_id=:id"
+                          + " AND version=:version")
             .param("id", id)
             .param("version", v.version())
             .param("hideType", (v.hideType() == null ? null : v.hideType().name()))
@@ -933,7 +944,10 @@ public class MaterialService {
             .param("luster", v.luster())
             .param("attributes", PhysicalAttributes.json(v.attributes()))
             .update();
-    if (n != 1) throw ValidationRules.conflict();
+    if (n != 1) {
+      if (createOnly) throw WritePreconditions.failed();
+      throw ValidationRules.conflict();
+    }
     cite(id, new Citation(v.observationId(), Fact.LEATHER_SPEC));
     audit.changed("material.leather.saved", "Material", id, null, null);
     return leather(id);

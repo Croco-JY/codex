@@ -1,0 +1,37 @@
+@import "../admin-sources/workspace.css";
+.curation-network .role-choices {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  border: 1px solid var(--border-default);
+  padding: 12px;
+  min-width: 0;
+}
+.curation-network .evidence-field {
+  grid-column: 1/-1;
+  min-width: 0;
+}
+.curation-network .admin-fields {
+  align-items: start;
+}
+.curation-network .admin-panel {
+  margin-top: 16px;
+}
+.curation-network .role-choices label {
+  overflow-wrap: anywhere;
+}
+.curation-network details {
+  margin: 12px 0;
+}
+.curation-network .read-list {
+  margin: 12px 0;
+}
+.curation-network h4 {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 650px) {
+  .curation-network .role-choices {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

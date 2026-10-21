@@ -13,6 +13,7 @@ class SupplierController {
     this.service = service;
   }
 
+  @io.swagger.v3.oas.annotations.media.Schema(name = "SupplierBinding")
   public record Binding(@jakarta.validation.constraints.NotNull UUID sourceRecordId) {}
 
   @GetMapping("/suppliers/{id}")

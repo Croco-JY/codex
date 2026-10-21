@@ -234,6 +234,7 @@ class MaterialCatalogTest extends CatalogIntegrationSupport {
         "{\"gsm\":500,\"widthMm\":1500,\"observationId\":\"" + observation + "\",\"version\":0}";
     mvc.perform(
             put("/api/v1/admin/materials/" + m.id() + "/fabric-spec")
+                .header("If-None-Match", "*")
                 .header("X-Dev-Subject", principal)
                 .contentType("application/json")
                 .content(body))

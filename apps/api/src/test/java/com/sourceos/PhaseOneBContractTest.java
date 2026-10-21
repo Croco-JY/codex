@@ -102,10 +102,12 @@ class PhaseOneBContractTest extends CatalogIntegrationSupport {
                 new MaterialService.CompositionInput(
                     MaterialService.Completeness.UNKNOWN, List.of(), observation, 0)),
             new Command(
-                put("/api/v1/admin/materials/" + m.id() + "/fabric-spec"),
+                put("/api/v1/admin/materials/" + m.id() + "/fabric-spec")
+                    .header("If-None-Match", "*"),
                 Map.of("observationId", observation, "version", 0)),
             new Command(
-                put("/api/v1/admin/materials/" + m.id() + "/leather-spec"),
+                put("/api/v1/admin/materials/" + m.id() + "/leather-spec")
+                    .header("If-None-Match", "*"),
                 Map.of("observationId", observation, "version", 0)),
             new Command(
                 post("/api/v1/admin/fiber-types"),

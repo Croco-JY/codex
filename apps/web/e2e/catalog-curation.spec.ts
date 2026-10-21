@@ -143,6 +143,7 @@ test("real evidence Material Composition spec Variant citations and Listing read
   ).toBeVisible();
   for (const status of ["DRAFT", "ACTIVE", "ARCHIVED"]) {
     await page.getByLabel("Discovery status").selectOption(status);
+    await expect(page.getByLabel("Discovery status")).toHaveValue(status);
     const appliedRequest =
       status === "DRAFT"
         ? undefined
@@ -154,13 +155,20 @@ test("real evidence Material Composition spec Variant citations and Listing read
               url.searchParams.get("status") === status
             );
           });
-    await page.getByRole("button", { name: "Apply Material filters" }).click();
-    await expect(page).toHaveURL(
-      (url) => url.searchParams.get("status") === status,
-    );
-    // The first DRAFT scope may already be in flight/cached. Later scopes must
-    // issue their own exact-status read before the next filter is entered.
-    if (appliedRequest) await appliedRequest;
+    // Observe request and URL together so a failed assertion cannot leave an
+    // unhandled request waiter. The initial DRAFT scope may already be cached.
+    await Promise.all([
+      appliedRequest,
+      (async () => {
+        await page
+          .getByRole("button", { name: "Apply Material filters" })
+          .click();
+        await expect(page).toHaveURL(
+          (url) => url.searchParams.get("status") === status,
+        );
+      })(),
+    ]);
+    await expect(page.getByLabel("Discovery status")).toHaveValue(status);
     await expect(
       page.getByText(new RegExp(`materials loaded · ${status}`)),
     ).toBeVisible();

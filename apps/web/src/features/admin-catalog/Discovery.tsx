@@ -24,15 +24,18 @@ export function MaterialDiscovery({
   });
   const appliedSearch = search.toString();
   const [draftSearch, setDraftSearch] = useState(appliedSearch);
-  // Synchronize before committing the new URL's controls. A passive effect can
-  // otherwise overwrite a newer operator edit made just after navigation.
+  const [submittedSearch, setSubmittedSearch] = useState<string | null>(null);
+  // Back/Forward restores the URL draft. An Apply navigation must preserve edits
+  // entered while that navigation is still transitioning, as well as afterward.
   if (draftSearch !== appliedSearch) {
     setDraftSearch(appliedSearch);
-    setDraft({
-      q: search.get("q") ?? "",
-      status: validStatus,
-      materialType: search.get("materialType") ?? "",
-    });
+    if (submittedSearch !== appliedSearch)
+      setDraft({
+        q: search.get("q") ?? "",
+        status: validStatus,
+        materialType: search.get("materialType") ?? "",
+      });
+    setSubmittedSearch(null);
   }
   const qText = search.get("q")?.slice(0, 200) || undefined,
     type = materialTypes.find((t) => t === search.get("materialType"));
@@ -75,6 +78,9 @@ export function MaterialDiscovery({
           if (draft.q) p.set("q", draft.q);
           if (materialTypes.some((t) => t === draft.materialType))
             p.set("materialType", draft.materialType);
+          setSubmittedSearch(
+            p.toString() === appliedSearch ? null : p.toString(),
+          );
           setSearch(p);
         }}
       >
@@ -126,6 +132,9 @@ export function MaterialDiscovery({
           className="secondary"
           onClick={() => {
             setDraft({ q: "", status: "DRAFT", materialType: "" });
+            setSubmittedSearch(
+              appliedSearch === "status=DRAFT" ? null : "status=DRAFT",
+            );
             setSearch({ status: "DRAFT" });
           }}
         >

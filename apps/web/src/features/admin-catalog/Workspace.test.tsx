@@ -7,8 +7,8 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, useLocation } from "react-router";
-import { useLayoutEffect, type ReactNode } from "react";
+import { MemoryRouter, useLocation, useNavigate } from "react-router";
+import { Suspense, useLayoutEffect, type ReactNode } from "react";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import App from "../../App";
@@ -211,8 +211,10 @@ function mount(path: string, probe?: ReactNode) {
   render(
     <QueryClientProvider client={cache}>
       <MemoryRouter initialEntries={[path]}>
-        <App />
-        {probe}
+        <Suspense fallback={<p>Navigation suspended</p>}>
+          <App />
+          {probe}
+        </Suspense>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -885,4 +887,120 @@ test("a new status draft entered as navigation commits is not overwritten by a d
       ),
     ).toBe(true),
   );
+});
+
+test.each([
+  { initial: "/admin/materials", applied: "DRAFT" },
+  { initial: "/admin/materials?status=ACTIVE", applied: "ARCHIVED" },
+])(
+  "edits before an applied $applied navigation commits survive that navigation",
+  async ({ initial, applied }) => {
+    let release!: () => void;
+    let blocked = true;
+    const navigation = new Promise<void>((resolve) => {
+      release = () => {
+        blocked = false;
+        resolve();
+      };
+    });
+    function HoldAppliedNavigation() {
+      const { search } = useLocation();
+      if (search === `?status=${applied}` && blocked) throw navigation;
+      return <p data-testid="committed-search">{search || "initial"}</p>;
+    }
+    mount(initial, <HoldAppliedNavigation />);
+    await screen.findByRole("link", {
+      name: "Open Material · Canonical cloth",
+    });
+    fill("Discovery status", applied);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Apply Material filters" }),
+    );
+    expect(screen.getByTestId("committed-search")).toHaveTextContent(
+      initial.includes("?") ? "?status=ACTIVE" : "initial",
+    );
+    fill("Discovery status", "ACTIVE");
+    fill("Material keyword", "newer draft");
+    fill("Material type filter", "BUTTON");
+    await act(async () => release());
+    await waitFor(() =>
+      expect(screen.getByTestId("committed-search")).toHaveTextContent(
+        `?status=${applied}`,
+      ),
+    );
+    expect(screen.getByLabelText("Discovery status")).toHaveValue("ACTIVE");
+    expect(screen.getByLabelText("Material keyword")).toHaveValue(
+      "newer draft",
+    );
+    expect(screen.getByLabelText("Material type filter")).toHaveValue("BUTTON");
+    expect(calls.some((c) => c.url.searchParams.has("q"))).toBe(false);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Apply Material filters" }),
+    );
+    await waitFor(() =>
+      expect(
+        calls.some(
+          (c) =>
+            c.path === "/api/v1/materials" &&
+            c.url.searchParams.get("status") === "ACTIVE" &&
+            c.url.searchParams.get("q") === "newer draft" &&
+            c.url.searchParams.get("materialType") === "BUTTON",
+        ),
+      ).toBe(true),
+    );
+  },
+);
+
+function HistoryControls() {
+  const navigate = useNavigate();
+  const { search } = useLocation();
+  return (
+    <>
+      <p data-testid="committed-search">{search || "initial"}</p>
+      <button onClick={() => navigate(-1)}>Test Back</button>
+      <button onClick={() => navigate(1)}>Test Forward</button>
+    </>
+  );
+}
+test("Back and Forward restore applied filters, and Clear resets them", async () => {
+  mount(
+    "/admin/materials?status=ACTIVE&q=original&materialType=FABRIC",
+    <HistoryControls />,
+  );
+  await screen.findByRole("link", { name: "Open Material · Canonical cloth" });
+  fill("Discovery status", "ARCHIVED");
+  fill("Material keyword", "applied next");
+  fill("Material type filter", "BUTTON");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Apply Material filters" }),
+  );
+  await waitFor(() =>
+    expect(screen.getByTestId("committed-search")).toHaveTextContent(
+      "status=ARCHIVED&q=applied+next&materialType=BUTTON",
+    ),
+  );
+  fill("Material keyword", "unsaved");
+  await userEvent.click(screen.getByRole("button", { name: "Test Back" }));
+  await waitFor(() =>
+    expect(screen.getByLabelText("Discovery status")).toHaveValue("ACTIVE"),
+  );
+  expect(screen.getByLabelText("Material keyword")).toHaveValue("original");
+  expect(screen.getByLabelText("Material type filter")).toHaveValue("FABRIC");
+  await userEvent.click(screen.getByRole("button", { name: "Test Forward" }));
+  await waitFor(() =>
+    expect(screen.getByLabelText("Discovery status")).toHaveValue("ARCHIVED"),
+  );
+  expect(screen.getByLabelText("Material keyword")).toHaveValue("applied next");
+  expect(screen.getByLabelText("Material type filter")).toHaveValue("BUTTON");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Clear Material filters" }),
+  );
+  await waitFor(() =>
+    expect(screen.getByTestId("committed-search")).toHaveTextContent(
+      "?status=DRAFT",
+    ),
+  );
+  expect(screen.getByLabelText("Discovery status")).toHaveValue("DRAFT");
+  expect(screen.getByLabelText("Material keyword")).toHaveValue("");
+  expect(screen.getByLabelText("Material type filter")).toHaveValue("");
 });

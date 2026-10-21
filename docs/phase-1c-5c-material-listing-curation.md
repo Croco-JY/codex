@@ -157,7 +157,7 @@ The new Playwright spec reuses established synthetic local PostgreSQL prerequisi
 
 | Validation | Observed result |
 | --- | --- |
-| Frontend Vitest / RTL | 686 passed, 19 files; includes160 new focused cases |
+| Frontend Vitest / RTL | 689 passed, 19 files; includes163 new focused cases |
 | Backend PostgreSQL / build | 212 passed, 0 failures/errors/skipped; Maven verify BUILD SUCCESS |
 | Accepted5P regression | 17 CurationPreconditionsTest cases passed, including real Fabric/Leather/Capability concurrency and public notes exclusion |
 | Same-origin browser | 21 passed (existing17 + new4) |
@@ -182,3 +182,12 @@ The first pushed commit `927c0fa28dfc8321b98c0a455ce56c852f94d8e1` failed the sa
 A deterministic component regression reproduced an underlying draft synchronization race: an operator selects ACTIVE as a DRAFT URL navigation commits, then a delayed URL `useEffect` resets that new draft to DRAFT. Before the fix the regression fails with Expected ACTIVE / Received DRAFT. The directory now synchronizes changed URL scope before committing its controls, avoiding a passive effect that can overwrite a newer edit. Apply-only query semantics and Back/Forward restoration remain unchanged.
 
 The browser journey also waits for the applied URL and the matching exact-status GET before entering the next scope. Existing result assertions and timeouts remain intact. The first DRAFT query can already be cached/in flight, so no redundant request is required for that identical scope. The regression passes after the fix; frontend validation is686 cases across19 files. Same-origin and separate-origin browser results and the final pushed HEAD's CI are reported in the completion message. Backend, contract, migrations, dependencies, infrastructure and CI configuration are unchanged by this follow-up.
+
+
+### Pending navigation follow-up
+
+The next pushed commit `f0a90912b600a10334d4b4926cd09e870204ab75` also failed the same-origin journey in run39574356197: the ACTIVE Apply URL assertion still saw `?status=DRAFT`;18 tests passed and2 serial follow-ups were not run. This confirms the first correction did not cover the entire transition window. Browser installation completed despite recoverable FFmpeg mirror DNS errors.
+
+A new deterministic regression holds the applied navigation in Suspense, enters the next status/keyword/type draft while the old route is still mounted, then releases the navigation. On `f0a9091` the new ACTIVE draft is overwritten by DRAFT (Expected ACTIVE / Received DRAFT). The earlier regression entered its edit after the navigation committed and could not exercise this case. The final correction tracks the form's own submitted URL: completion of that Apply/Clear navigation preserves newer local edits, while unrelated URL navigation still restores the applied filters. No request is sent for the newer draft until Apply.
+
+Both initial DRAFT URL canonicalization and a genuinely different ARCHIVED query are tested under a deliberately suspended navigation. Additional Back/Forward/Clear coverage verifies restoration of all three filters. These tests pass with the correction. The browser journey retains its original result assertions/timeouts and checks the selected control as well as exact applied URL/request; request and URL observers are awaited together to avoid a dangling request-waiter error obscuring the original failure. Frontend results are689 passed across19 files. Same-origin and separate-origin browser validation, builds, deterministic contracts and the exact final HEAD's CI are reported after validation. No backend, migration, dependency, infrastructure or CI change is part of this correction.

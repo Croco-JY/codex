@@ -1,3 +1,8 @@
+import {
+  useIdentityResolution,
+  ResolutionControls,
+  ResolutionOutcome,
+} from "../admin-identity/Workspace";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,6 +49,7 @@ export function SupplierForm({
     [blocked, block] = useState(false),
     [notice, setNotice] = useState(""),
     [discard, setDiscard] = useState(false);
+  const resolution = useIdentityResolution("supplier");
   const editing = !!initial,
     form = useCheckedForm(supplierFields, initial?.fields ?? supplierDefaults);
   useEffect(() => {
@@ -64,6 +70,12 @@ export function SupplierForm({
     "supplier-profile",
     async (v: SupplierFields, signal) => {
       const body = supplierBody(v, editing ? baseline!.version : 0);
+      if (!editing && resolution.enabled) {
+        const data = await resolution.send(body, signal);
+        const safe = supplierBaseline(data);
+        if (!safe) throw new ApiError(502);
+        return safe;
+      }
       const r = editing
         ? await api.PUT("/api/v1/admin/suppliers/{id}", {
             signal,
@@ -78,6 +90,10 @@ export function SupplierForm({
       return safe;
     },
     async (saved, _v, current) => {
+      if (!editing && resolution.enabled) {
+        await resolution.complete();
+        return;
+      }
       await invalidateSupplier(cache, scope);
       if (!current()) return;
       if (!editing) {
@@ -128,10 +144,16 @@ export function SupplierForm({
           Profile, Alias and Verification commands share this parent version.
         </p>
       )}
+      {!editing && (
+        <ResolutionControls
+          resolution={resolution}
+          pending={mutation.isPending}
+        />
+      )}
       <form
         className="admin-form"
         onSubmit={form.submit((v) => {
-          if (!blocked) {
+          if (!blocked && resolution.canSubmit) {
             setNotice("");
             mutation.mutate(v);
           }
@@ -139,7 +161,7 @@ export function SupplierForm({
       >
         <fieldset
           className="admin-fields"
-          disabled={mutation.isPending || blocked}
+          disabled={mutation.isPending || blocked || resolution.locked}
         >
           <TextField form={form} name="displayName" label="Display name" />
           <CountryField form={form} />
@@ -200,7 +222,9 @@ export function SupplierForm({
                 ? "Saving Supplier…"
                 : editing
                   ? "Save Supplier"
-                  : "Create Supplier"}
+                  : resolution.enabled
+                    ? "Resolve external identity"
+                    : "Create Supplier"}
             </Button>
             <Button
               className="secondary"
@@ -215,8 +239,17 @@ export function SupplierForm({
           </div>
         </fieldset>
       </form>
+      {!editing && (
+        <ResolutionOutcome
+          resolution={resolution}
+          error={mutation.error}
+          pending={mutation.isPending}
+          retry={() => mutation.mutate(form.getValues())}
+          reset={() => mutation.reset()}
+        />
+      )}
       <CommandFeedback
-        error={mutation.error}
+        error={resolution.enabled && !editing ? null : mutation.error}
         success={notice}
         noun={editing ? "Supplier update" : "Supplier creation"}
         conflict="The Supplier changed or conflicts with the current server state."

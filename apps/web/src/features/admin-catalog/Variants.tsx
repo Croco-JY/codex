@@ -1,3 +1,9 @@
+import {
+  useIdentityResolution,
+  ResolutionControls,
+  ResolutionOutcome,
+  PermanentBinding,
+} from "../admin-identity/Workspace";
 import { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import {
@@ -117,6 +123,12 @@ function VariantDetail({
             close={close}
             ready={!!fresh && q.isSuccess}
           />
+          <PermanentBinding
+            type="variant"
+            id={id}
+            label={safe.fields.variantName}
+            ready={!!fresh && q.isSuccess}
+          />
           <CatalogCitations id={id} kind="material-variants" />
         </>
       ) : q.error ? (
@@ -141,6 +153,7 @@ function VariantForm({
   close: () => void;
   ready?: boolean;
 }) {
+  const resolution = useIdentityResolution("variant");
   const form = useCheckedForm(
       variantFields,
       baseline?.fields ?? { ...variantDefaults, materialId: material },
@@ -158,6 +171,7 @@ function VariantForm({
         { ...v, materialId: material },
         current?.version ?? 0,
       );
+      if (!baseline && resolution.enabled) return resolution.send(body, signal);
       const r = baseline
         ? await api.PUT("/api/v1/admin/material-variants/{id}", {
             signal,
@@ -172,6 +186,10 @@ function VariantForm({
       return requireData(r.data, r.response);
     },
     async (data, _v, active) => {
+      if (!baseline && resolution.enabled) {
+        await resolution.complete();
+        return;
+      }
       const safe = variantBaseline(data, material);
       if (!safe) {
         setBlocked(true);
@@ -213,6 +231,7 @@ function VariantForm({
       } else setBlocked(true);
     },
     async (error, _v, active) => {
+      if (!baseline && resolution.enabled) return;
       if (
         (error instanceof ApiError && error.status === 409) ||
         ambiguous(error)
@@ -237,8 +256,16 @@ function VariantForm({
       <p className="record-reference">
         Parent Material (read-only): {material}
       </p>
-      <form className="admin-form" onSubmit={form.submit((v) => m.mutate(v))}>
-        <fieldset disabled={m.isPending || !ready}>
+      {!baseline && (
+        <ResolutionControls resolution={resolution} pending={m.isPending} />
+      )}
+      <form
+        className="admin-form"
+        onSubmit={form.submit((v) => {
+          if (resolution.canSubmit) m.mutate(v);
+        })}
+      >
+        <fieldset disabled={m.isPending || !ready || resolution.locked}>
           <div className="admin-fields">
             {(
               [
@@ -270,7 +297,9 @@ function VariantForm({
           />
           <EvidenceField form={form} />
           <Button type="submit" disabled={blocked}>
-            Save Variant
+            {!baseline && resolution.enabled
+              ? "Resolve external identity"
+              : "Save Variant"}
           </Button>
           <Button className="secondary" onClick={() => form.reset()}>
             Reset Variant
@@ -280,8 +309,17 @@ function VariantForm({
           </Button>
         </fieldset>
       </form>
+      {!baseline && (
+        <ResolutionOutcome
+          resolution={resolution}
+          error={m.error}
+          pending={m.isPending}
+          retry={() => m.mutate(form.getValues())}
+          reset={() => m.reset()}
+        />
+      )}
       <CommandFeedback
-        error={m.error}
+        error={!baseline && resolution.enabled ? null : m.error}
         success={notice}
         noun="Variant"
         conflict="The Variant changed or conflicts with the current server state."

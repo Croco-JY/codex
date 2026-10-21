@@ -1,3 +1,4 @@
+import { PermanentBinding } from "../features/admin-identity/Workspace";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
@@ -57,6 +58,12 @@ function Workspace({ id }: { id: string }) {
             editing.
           </p>
         )}
+        <PermanentBinding
+          type="listing"
+          id={id}
+          label="Seller Listing"
+          ready={!!fresh && q.isSuccess}
+        />
         <CatalogCitations id={id} kind="material-listings" />
         {commercial && (
           <CommercialWorkspace

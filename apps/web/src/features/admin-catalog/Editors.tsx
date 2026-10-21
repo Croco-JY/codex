@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useFieldArray, type UseFormReturn } from "react-hook-form";
 import { useReferences } from "../materials/materialQueries";
 import { ApiErrorState } from "../../ui/ApiErrorState";
@@ -12,11 +13,21 @@ import {
 import { SelectField } from "../admin-network/Fields";
 export function CompositionEditor({
   form,
+  preserved = [],
 }: {
   form: UseFormReturn<CompositionFields>;
+  preserved?: readonly string[];
 }) {
   const rows = useFieldArray({ control: form.control, name: "parts" }),
     refs = useReferences();
+  const originals = useRef(new Map<string, string>());
+  for (const row of rows.fields) {
+    if (!originals.current.has(row.id))
+      originals.current.set(
+        row.id,
+        preserved.includes(row.fiberTypeId) ? row.fiberTypeId : "",
+      );
+  }
   const error = form.formState.errors.parts?.message;
   return (
     <fieldset>
@@ -56,22 +67,43 @@ export function CompositionEditor({
               >
                 <option value="">Choose Fiber</option>
                 {refs.fiberList
-                  .filter((f) => f.id)
+                  .filter(
+                    (f) =>
+                      f.id &&
+                      (f.active === true ||
+                        f.id === originals.current.get(row.id)),
+                  )
                   .map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.nameEn || f.nameLocal || f.code} · {f.code}
                       {f.active === false ? " · inactive" : ""}
                     </option>
                   ))}
-                {row.fiberTypeId &&
-                  !refs.fiberList.some((f) => f.id === row.fiberTypeId) && (
-                    <option value={row.fiberTypeId}>
+                {originals.current.get(row.id) &&
+                  !refs.fiberList.some(
+                    (f) => f.id === originals.current.get(row.id),
+                  ) && (
+                    <option value={originals.current.get(row.id)}>
                       Fiber label unavailable · {row.fiberTypeId}
                     </option>
                   )}
               </select>
             )}
           </Field>
+          {refs.fiberList.some(
+            (f) =>
+              f.id === form.watch(`parts.${i}.fiberTypeId`) &&
+              f.active === false,
+          ) && (
+            <p className="record-reference">
+              Inactive Fiber retained from this row:{" "}
+              {refs.fiberList.find(
+                (f) => f.id === form.watch(`parts.${i}.fiberTypeId`),
+              )?.nameEn || row.fiberTypeId}
+              . This reference can be preserved; new rows offer active Fibers
+              only.
+            </p>
+          )}
           <Field
             name={`parts.${i}.percentage`}
             label="Percentage"

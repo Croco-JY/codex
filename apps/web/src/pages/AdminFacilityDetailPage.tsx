@@ -1,3 +1,4 @@
+import { PermanentBinding } from "../features/admin-identity/Workspace";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
@@ -149,6 +150,12 @@ function FacilityWorkspace({ id }: { id: string }) {
         {editing && (
           <FacilityForm initial={editing} close={() => setEditing(undefined)} />
         )}
+        <PermanentBinding
+          type="facility"
+          id={id}
+          label={text(f.name)}
+          ready={!!usable}
+        />
         {f.id === id && <Citations kind="facilities" id={id} />}
         {(safe?.id === id ? safe : knownParent) ? (
           <Capabilities

@@ -1,3 +1,4 @@
+import { PermanentBinding } from "../features/admin-identity/Workspace";
 import { useState } from "react";
 import { useQuery, useIsMutating } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
@@ -145,6 +146,12 @@ function Workspace({ id }: { id: string }) {
               confirmed={!!ready}
             />
           )}
+        <PermanentBinding
+          type="material"
+          id={id}
+          label={text(q.data.displayName)}
+          ready={!!ready}
+        />
         <CatalogCitations id={id} kind="materials" />
         <Variants material={id} />
         <ListingContext id={id} mode="material" />

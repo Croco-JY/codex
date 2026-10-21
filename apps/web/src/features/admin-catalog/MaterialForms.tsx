@@ -1,3 +1,8 @@
+import {
+  useIdentityResolution,
+  ResolutionControls,
+  ResolutionOutcome,
+} from "../admin-identity/Workspace";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
@@ -82,6 +87,7 @@ export function MaterialForm({
   cancel: () => void;
   ready?: boolean;
 }) {
+  const resolution = useIdentityResolution("material");
   const form = useCheckedForm(
       materialFields,
       baseline ?? {
@@ -132,6 +138,7 @@ export function MaterialForm({
         composition,
         current?.version ?? 0,
       );
+      if (!baseline && resolution.enabled) return resolution.send(body, signal);
       const r = baseline
         ? await api.PUT("/api/v1/admin/materials/{id}", {
             signal,
@@ -142,6 +149,10 @@ export function MaterialForm({
       return requireData(r.data, r.response);
     },
     async (data, _v, active) => {
+      if (!baseline && resolution.enabled) {
+        await resolution.complete();
+        return;
+      }
       const safe = materialBaseline(data);
       if (!safe) {
         setBlocked(true);
@@ -163,6 +174,7 @@ export function MaterialForm({
       else navigate(`/admin/materials/${safe.id}`);
     },
     async (error, _v, active) => {
+      if (!baseline && resolution.enabled) return;
       if (
         (error instanceof ApiError && error.status === 409) ||
         ambiguous(error)
@@ -176,6 +188,7 @@ export function MaterialForm({
     },
   );
   const submit = form.submit((v) => {
+    if (!resolution.canSubmit) return;
     if (baseline) {
       mutation.mutate(v);
       return;
@@ -195,8 +208,14 @@ export function MaterialForm({
   return (
     <section className="admin-panel">
       <h2>{baseline ? "Edit Material profile" : "Create Material"}</h2>
+      {!baseline && (
+        <ResolutionControls
+          resolution={resolution}
+          pending={mutation.isPending}
+        />
+      )}
       <form className="admin-form" onSubmit={submit}>
-        <fieldset disabled={mutation.isPending || !ready}>
+        <fieldset disabled={mutation.isPending || !ready || resolution.locked}>
           <div className="admin-fields">
             {baseline || fixedSupplier ? (
               <p>
@@ -251,7 +270,11 @@ export function MaterialForm({
           <EvidenceField form={form} />
           <div className="scope-actions">
             <Button type="submit" disabled={blocked}>
-              {baseline ? "Save Material profile" : "Create Material"}
+              {baseline
+                ? "Save Material profile"
+                : resolution.enabled
+                  ? "Resolve external identity"
+                  : "Create Material"}
             </Button>
             <Button
               className="secondary"
@@ -265,8 +288,17 @@ export function MaterialForm({
           </div>
         </fieldset>
       </form>
+      {!baseline && (
+        <ResolutionOutcome
+          resolution={resolution}
+          error={mutation.error}
+          pending={mutation.isPending}
+          retry={() => mutation.mutate(form.getValues())}
+          reset={() => mutation.reset()}
+        />
+      )}
       <CommandFeedback
-        error={mutation.error}
+        error={!baseline && resolution.enabled ? null : mutation.error}
         success={notice}
         noun="Material"
         conflict="The Material changed or conflicts with the current server state."
@@ -372,7 +404,10 @@ export function CompositionForm({
         onSubmit={form.submit((v) => mutation.mutate(v))}
       >
         <fieldset disabled={mutation.isPending || !ready}>
-          <CompositionEditor form={form} />
+          <CompositionEditor
+            form={form}
+            preserved={baseline.composition.map((p) => p.fiberTypeId)}
+          />
           <EvidenceField form={form} />
           <Button type="submit" disabled={blocked}>
             Save Composition

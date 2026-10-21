@@ -1,3 +1,8 @@
+import {
+  useIdentityResolution,
+  ResolutionControls,
+  ResolutionOutcome,
+} from "../admin-identity/Workspace";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -46,6 +51,7 @@ export function FacilityForm({
     [blocked, block] = useState(false),
     [notice, setNotice] = useState(""),
     [discard, setDiscard] = useState(false);
+  const resolution = useIdentityResolution("facility");
   const editing = !!initial,
     form = useCheckedForm(
       facilityFields,
@@ -74,6 +80,12 @@ export function FacilityForm({
         editing ? baseline!.version : 0,
         parent ?? v.supplierId,
       );
+      if (!editing && resolution.enabled) {
+        const data = await resolution.send(body, signal);
+        const safe = facilityBaseline(data);
+        if (!safe) throw new ApiError(502);
+        return safe;
+      }
       const r = editing
         ? await api.PUT("/api/v1/admin/facilities/{id}", {
             signal,
@@ -92,6 +104,10 @@ export function FacilityForm({
       return safe;
     },
     async (saved, _v, current) => {
+      if (!editing && resolution.enabled) {
+        await resolution.complete();
+        return;
+      }
       await invalidateFacility(cache, scope, saved.fields.supplierId);
       if (!current()) return;
       if (!editing) {
@@ -130,17 +146,23 @@ export function FacilityForm({
       aria-label={editing ? "Edit Facility form" : "Create Facility form"}
     >
       <h2>{editing ? "Edit Facility" : "Create Facility"}</h2>
+      {!editing && (
+        <ResolutionControls
+          resolution={resolution}
+          pending={mutation.isPending}
+        />
+      )}
       <form
         className="admin-form"
         onSubmit={form.submit((v) => {
-          if (!blocked) {
+          if (!blocked && resolution.canSubmit) {
             setNotice("");
             mutation.mutate(v);
           }
         })}
       >
         <fieldset
-          disabled={mutation.isPending || blocked}
+          disabled={mutation.isPending || blocked || resolution.locked}
           className="admin-fields"
         >
           {parent ? (
@@ -247,7 +269,9 @@ export function FacilityForm({
                 ? "Saving Facility…"
                 : editing
                   ? "Save Facility"
-                  : "Create Facility"}
+                  : resolution.enabled
+                    ? "Resolve external identity"
+                    : "Create Facility"}
             </Button>
             <Button
               className="secondary"
@@ -267,8 +291,17 @@ export function FacilityForm({
           </div>
         </fieldset>
       </form>
+      {!editing && (
+        <ResolutionOutcome
+          resolution={resolution}
+          error={mutation.error}
+          pending={mutation.isPending}
+          retry={() => mutation.mutate(form.getValues())}
+          reset={() => mutation.reset()}
+        />
+      )}
       <CommandFeedback
-        error={mutation.error}
+        error={resolution.enabled && !editing ? null : mutation.error}
         success={notice}
         noun={editing ? "Facility update" : "Facility creation"}
         conflict="The Facility changed or conflicts with the current server state."

@@ -1,3 +1,4 @@
+import { PermanentBinding } from "../features/admin-identity/Workspace";
 import { useState } from "react";
 import { useQuery, useIsMutating } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
@@ -198,6 +199,12 @@ function SupplierWorkspace({ id }: { id: string }) {
             )}
           </div>
         )}
+        <PermanentBinding
+          type="supplier"
+          id={id}
+          label={text(s.displayName)}
+          ready={!!usable}
+        />
         <SupplierHistories id={id} />
         {s.id === id && <Citations kind="suppliers" id={id} />}
         <SupplierFacilities

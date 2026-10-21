@@ -1004,3 +1004,59 @@ test("Back and Forward restore applied filters, and Clear resets them", async ()
   expect(screen.getByLabelText("Material keyword")).toHaveValue("");
   expect(screen.getByLabelText("Material type filter")).toHaveValue("");
 });
+
+test("Composition preserves only each originally loaded inactive Fiber; new/other rows offer active Fibers", async () => {
+  const cotton = id(40),
+    otherInactive = id(41);
+  overrides["GET /api/v1/fiber-types"] = () =>
+    reply([
+      { id: fiber, code: "WOOL", nameEn: "Wool", active: false },
+      { id: cotton, code: "COTTON", nameEn: "Cotton", active: true },
+      {
+        id: otherInactive,
+        code: "OLD",
+        nameEn: "Other historical Fiber",
+        active: false,
+      },
+    ]);
+  mount(`/admin/materials/${mid}`);
+  await ready();
+  fireEvent.click(screen.getByRole("button", { name: "Replace Composition" }));
+  const panel = area("Replace Composition");
+  await within(panel).findByRole("option", { name: "Wool · WOOL · inactive" });
+  const original = within(panel).getByLabelText("Fiber", { exact: true });
+  expect(original).toHaveValue(fiber);
+  expect(
+    within(original).queryByRole("option", { name: /Other historical/ }),
+  ).toBeNull();
+  fireEvent.click(
+    within(panel).getByRole("button", { name: "Add Fiber part" }),
+  );
+  const added = within(panel).getAllByLabelText("Fiber", { exact: true })[1]!;
+  expect(within(added).queryByRole("option", { name: /Wool/ })).toBeNull();
+  expect(
+    within(added).getByRole("option", { name: "Cotton · COTTON" }),
+  ).toBeVisible();
+  fill(
+    "Fiber",
+    cotton,
+    within(panel).getByRole("group", { name: "Fiber part 2" }),
+  );
+  expect(within(added).queryByRole("option", { name: /inactive/ })).toBeNull();
+  // Switching the original row may still restore that row's own preserved reference.
+  fireEvent.change(original, { target: { value: cotton } });
+  fireEvent.change(original, { target: { value: fiber } });
+  fireEvent.click(
+    within(panel).getByRole("button", { name: "Remove Fiber part 2" }),
+  );
+  fill("Observation UUID", oid, panel);
+  fireEvent.click(
+    within(panel).getByRole("button", { name: "Save Composition" }),
+  );
+  await waitFor(() =>
+    expect(puts(`/api/v1/admin/materials/${mid}/composition`)).toHaveLength(1),
+  );
+  expect(
+    puts(`/api/v1/admin/materials/${mid}/composition`)[0]!.body.parts,
+  ).toEqual([{ fiberTypeId: fiber, percentage: "100.0000" }]);
+});

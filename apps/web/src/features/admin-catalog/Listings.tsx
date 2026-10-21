@@ -1,3 +1,8 @@
+import {
+  useIdentityResolution,
+  ResolutionControls,
+  ResolutionOutcome,
+} from "../admin-identity/Workspace";
 import { useState } from "react";
 import {
   useInfiniteQuery,
@@ -98,6 +103,7 @@ export function ListingForm({
   cancel: () => void;
   ready?: boolean;
 }) {
+  const resolution = useIdentityResolution("listing");
   const form = useCheckedForm(
       listingFields,
       baseline?.fields ?? {
@@ -129,6 +135,7 @@ export function ListingForm({
         },
         current?.version ?? 0,
       );
+      if (!baseline && resolution.enabled) return resolution.send(body, signal);
       const r = baseline
         ? await api.PUT("/api/v1/admin/material-listings/{id}", {
             signal,
@@ -139,6 +146,10 @@ export function ListingForm({
       return requireData(r.data, r.response);
     },
     async (data, _v, active) => {
+      if (!baseline && resolution.enabled) {
+        await resolution.complete();
+        return;
+      }
       const safe = listingBaseline(data);
       if (!safe) {
         setBlocked(true);
@@ -192,6 +203,7 @@ export function ListingForm({
       } else navigate(`/admin/listings/${safe.id}`);
     },
     async (error, _v, active) => {
+      if (!baseline && resolution.enabled) return;
       if (
         (error instanceof ApiError && error.status === 409) ||
         ambiguous(error)
@@ -222,8 +234,16 @@ export function ListingForm({
           }}
         />
       )}
-      <form className="admin-form" onSubmit={form.submit((v) => m.mutate(v))}>
-        <fieldset disabled={m.isPending || !ready}>
+      {!baseline && (
+        <ResolutionControls resolution={resolution} pending={m.isPending} />
+      )}
+      <form
+        className="admin-form"
+        onSubmit={form.submit((v) => {
+          if (resolution.canSubmit) m.mutate(v);
+        })}
+      >
+        <fieldset disabled={m.isPending || !ready || resolution.locked}>
           <div className="admin-fields">
             {baseline || fixedMaterial ? (
               <p className="record-reference">
@@ -305,7 +325,9 @@ export function ListingForm({
           </div>
           <EvidenceField form={form} />
           <Button type="submit" disabled={blocked}>
-            Save Listing
+            {!baseline && resolution.enabled
+              ? "Resolve external identity"
+              : "Save Listing"}
           </Button>
           <Button className="secondary" onClick={() => form.reset()}>
             Reset Listing
@@ -315,8 +337,17 @@ export function ListingForm({
           </Button>
         </fieldset>
       </form>
+      {!baseline && (
+        <ResolutionOutcome
+          resolution={resolution}
+          error={m.error}
+          pending={m.isPending}
+          retry={() => m.mutate(form.getValues())}
+          reset={() => m.reset()}
+        />
+      )}
       <CommandFeedback
-        error={m.error}
+        error={!baseline && resolution.enabled ? null : m.error}
         success={notice}
         noun="Listing"
         conflict="The Listing changed or conflicts with the current server state."

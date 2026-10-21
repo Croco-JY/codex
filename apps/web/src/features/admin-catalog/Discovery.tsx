@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { api, requireData } from "../../api/client";
@@ -22,15 +22,18 @@ export function MaterialDiscovery({
     status: validStatus,
     materialType: search.get("materialType") ?? "",
   });
-  useEffect(
-    () =>
-      setDraft({
-        q: search.get("q") ?? "",
-        status: validStatus,
-        materialType: search.get("materialType") ?? "",
-      }),
-    [search.toString()],
-  );
+  const appliedSearch = search.toString();
+  const [draftSearch, setDraftSearch] = useState(appliedSearch);
+  // Synchronize before committing the new URL's controls. A passive effect can
+  // otherwise overwrite a newer operator edit made just after navigation.
+  if (draftSearch !== appliedSearch) {
+    setDraftSearch(appliedSearch);
+    setDraft({
+      q: search.get("q") ?? "",
+      status: validStatus,
+      materialType: search.get("materialType") ?? "",
+    });
+  }
   const qText = search.get("q")?.slice(0, 200) || undefined,
     type = materialTypes.find((t) => t === search.get("materialType"));
   const q = useInfiniteQuery({

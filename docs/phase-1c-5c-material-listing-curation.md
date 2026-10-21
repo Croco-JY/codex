@@ -157,7 +157,7 @@ The new Playwright spec reuses established synthetic local PostgreSQL prerequisi
 
 | Validation | Observed result |
 | --- | --- |
-| Frontend Vitest / RTL | 685 passed, 19 files; includes159 new focused cases |
+| Frontend Vitest / RTL | 686 passed, 19 files; includes160 new focused cases |
 | Backend PostgreSQL / build | 212 passed, 0 failures/errors/skipped; Maven verify BUILD SUCCESS |
 | Accepted5P regression | 17 CurationPreconditionsTest cases passed, including real Fabric/Leather/Capability concurrency and public notes exclusion |
 | Same-origin browser | 21 passed (existing17 + new4) |
@@ -174,3 +174,11 @@ The exact pushed HEAD, final one-commit secret scan and final SOURCE OS CI resul
 ## Deferred
 
 Not implemented: Phase1C-5D Price/Inventory, Phase1C-5E Identity Binding/final hardening, Fiber/reference mutation, Material/Variant/Listing identity resolution, external-record binding, buyer-friendly Source labels, buyer Material price filtering, delete/unlink and Phase2. No PR or merge is part of this slice.
+
+## CI follow-up — applied-status draft synchronization
+
+The first pushed commit `927c0fa28dfc8321b98c0a455ce56c852f94d8e1` failed the same-origin curation journey in SOURCE OS CI run39569515026 (both attempts). The supplied log identifies the ACTIVE result-status assertion, with18 tests passed,1 failed and2 serial follow-ups not run. Browser download DNS fallback recovered successfully and did not cause this failure.
+
+A deterministic component regression reproduced an underlying draft synchronization race: an operator selects ACTIVE as a DRAFT URL navigation commits, then a delayed URL `useEffect` resets that new draft to DRAFT. Before the fix the regression fails with Expected ACTIVE / Received DRAFT. The directory now synchronizes changed URL scope before committing its controls, avoiding a passive effect that can overwrite a newer edit. Apply-only query semantics and Back/Forward restoration remain unchanged.
+
+The browser journey also waits for the applied URL and the matching exact-status GET before entering the next scope. Existing result assertions and timeouts remain intact. The first DRAFT query can already be cached/in flight, so no redundant request is required for that identical scope. The regression passes after the fix; frontend validation is686 cases across19 files. Same-origin and separate-origin browser results and the final pushed HEAD's CI are reported in the completion message. Backend, contract, migrations, dependencies, infrastructure and CI configuration are unchanged by this follow-up.

@@ -7,7 +7,8 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
+import { useLayoutEffect, type ReactNode } from "react";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import App from "../../App";
@@ -203,7 +204,7 @@ afterEach(() => {
   endSession();
   vi.unstubAllGlobals();
 });
-function mount(path: string) {
+function mount(path: string, probe?: ReactNode) {
   const cache = createQueryClient();
   cache.setDefaultOptions({ queries: { retry: false } });
   clients.push(cache);
@@ -211,6 +212,7 @@ function mount(path: string) {
     <QueryClientProvider client={cache}>
       <MemoryRouter initialEntries={[path]}>
         <App />
+        {probe}
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -852,4 +854,35 @@ test("citations paginate and malformed typed rows never render raw fields", asyn
       .at(-1)!
       .url.searchParams.get("offset"),
   ).toBe("25");
+});
+
+function EditAtAppliedNavigationCommit() {
+  const { search } = useLocation();
+  useLayoutEffect(() => {
+    if (search === "?status=DRAFT")
+      fireEvent.change(screen.getByLabelText("Discovery status"), {
+        target: { value: "ACTIVE" },
+      });
+  }, [search]);
+  return null;
+}
+test("a new status draft entered as navigation commits is not overwritten by a delayed URL effect", async () => {
+  mount("/admin/materials", <EditAtAppliedNavigationCommit />);
+  await screen.findByRole("link", { name: "Open Material · Canonical cloth" });
+  await userEvent.click(
+    screen.getByRole("button", { name: "Apply Material filters" }),
+  );
+  expect(screen.getByLabelText("Discovery status")).toHaveValue("ACTIVE");
+  await userEvent.click(
+    screen.getByRole("button", { name: "Apply Material filters" }),
+  );
+  await waitFor(() =>
+    expect(
+      calls.some(
+        (c) =>
+          c.path === "/api/v1/materials" &&
+          c.url.searchParams.get("status") === "ACTIVE",
+      ),
+    ).toBe(true),
+  );
 });

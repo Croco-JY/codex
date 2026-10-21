@@ -11,6 +11,8 @@ import { listingBaseline } from "../features/admin-catalog/model";
 import { ListingForm } from "../features/admin-catalog/Listings";
 import { CatalogCitations } from "../features/admin-catalog/Citations";
 import "../features/admin-network/workspace.css";
+import { CommercialWorkspace } from "../features/admin-commercial/Workspace";
+import { listingContext } from "../features/admin-commercial/model";
 export default function AdminListingDetailPage() {
   const { id = "" } = useParams();
   return <Workspace key={id} id={id} />;
@@ -19,6 +21,10 @@ function Workspace({ id }: { id: string }) {
   const { scope } = useSession(),
     q = useQuery({ ...listingOptions(scope, id), enabled: isUuid(id) });
   const [opened, setOpened] = useState<ReturnType<typeof listingBaseline>>();
+  const [commercial, setCommercial] =
+    useState<ReturnType<typeof listingContext>>();
+  const context = listingContext(q.data);
+  if (!commercial && context?.id === id) setCommercial(context);
   const fresh = listingBaseline(q.data);
   if (!opened && fresh) setOpened(fresh);
   if (!isUuid(id)) return <ApiErrorState error={new ApiError(404)} page />;
@@ -52,6 +58,17 @@ function Workspace({ id }: { id: string }) {
           </p>
         )}
         <CatalogCitations id={id} kind="material-listings" />
+        {commercial && (
+          <CommercialWorkspace
+            listing={commercial}
+            ready={
+              q.isSuccess &&
+              context?.id === commercial.id &&
+              context.materialId === commercial.materialId &&
+              context.sellerSupplierId === commercial.sellerSupplierId
+            }
+          />
+        )}
       </Stack>
     </div>
   );

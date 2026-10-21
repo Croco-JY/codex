@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { api, requireData } from "../../api/client";
 import { ApiError } from "../../api/errors";
@@ -19,7 +19,16 @@ import {
   type HistoryScope,
 } from "./priceScope";
 
-export function PriceReads({ listing }: { listing: Listing & { id: string } }) {
+export function PriceReads({
+  listing,
+  renderHistoryPrice,
+}: {
+  listing: Listing & { id: string };
+  renderHistoryPrice?: (
+    price: import("../../api/schema").components["schemas"]["PriceView"],
+    variants: import("./PriceFacts").Variant[],
+  ) => ReactNode;
+}) {
   const { scope: session } = useSession();
   const cache = useQueryClient();
   const prefix = useId();
@@ -635,7 +644,11 @@ export function PriceReads({ listing }: { listing: Listing & { id: string } }) {
                 <ul className="read-list">
                   {historyRows.map((price, index) => (
                     <li key={price.id ?? index}>
-                      <PriceFacts price={price} variants={variants} />
+                      {renderHistoryPrice ? (
+                        renderHistoryPrice(price, variants)
+                      ) : (
+                        <PriceFacts price={price} variants={variants} />
+                      )}
                     </li>
                   ))}
                 </ul>

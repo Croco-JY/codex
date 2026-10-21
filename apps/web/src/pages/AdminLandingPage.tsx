@@ -49,7 +49,8 @@ export default function AdminLandingPage() {
       <Surface>
         <h2>Listings</h2>
         <p>
-          Curate Seller Listings within explicit Material or Seller context.
+          Curate Seller Listings within explicit Material or Seller context,
+          including Price facts and manual Inventory observations.
         </p>
         <Link className="text-link" to="/admin/listings">
           Open Listing curation

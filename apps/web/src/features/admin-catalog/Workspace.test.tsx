@@ -591,7 +591,7 @@ test("Listing exact quantities, independent version, immutable identities and ze
     },
   );
   expect(
-    screen
+    within(area("Edit Seller Listing"))
       .getAllByRole("option")
       .filter((o) =>
         ["FT2", "ROLL", "HIDE", "SET", "PACK"].includes(o.textContent ?? ""),

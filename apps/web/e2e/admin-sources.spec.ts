@@ -57,6 +57,9 @@ async function selectLoaded(page: Page, name: string, edit = false) {
   const button = page.getByRole("button", {
     name: new RegExp(`^${edit ? "Edit" : "Select"} Source ${name}`),
   });
+  await expect(
+    page.getByText(/sources loaded/, { exact: false }).first(),
+  ).not.toContainText("refreshing");
   for (
     let attempt = 0;
     attempt < 4 && (await button.count()) === 0;
@@ -206,10 +209,10 @@ test("real protected Source → Record → Observation → Review workflow prese
     active: true,
   });
   await expect(page.getByText(/Source created\. Reference:/)).toBeVisible();
+  await selectLoaded(page, name, true);
   await expect(
     page.getByRole("button", { name: new RegExp(`^Edit Source ${name}`) }),
   ).toBeVisible();
-  await selectLoaded(page, name, true);
   await expect(page.getByLabel("Source code", { exact: true })).toHaveAttribute(
     "readonly",
     "",

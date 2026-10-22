@@ -813,3 +813,63 @@ select {
 .network-heading h1 {
   overflow-wrap: anywhere;
 }
+
+/* Private Product Workspace shares the existing surface and action system. */
+.product-workspace,
+.product-workspace header,
+.product-workspace form {
+  min-width: 0;
+}
+.product-workspace h1,
+.product-workspace h2,
+.product-workspace h3,
+.product-workspace p,
+.product-workspace a {
+  overflow-wrap: anywhere;
+}
+.workspace-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.workspace-filter {
+  max-width: 260px;
+  margin: 20px 0;
+}
+.workspace-create,
+.workspace-lifecycle {
+  margin-top: 28px;
+  border-top: 1px solid var(--border-default);
+  padding-top: 20px;
+}
+.workspace-metadata {
+  margin-top: 24px;
+}
+.workspace-comparison {
+  margin: 18px 0;
+}
+.product-workspace textarea {
+  font: inherit;
+  resize: vertical;
+}
+.product-workspace .notice {
+  margin: 18px 0;
+}
+.product-workspace .button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.topbar > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .topbar {
+    min-height: 56px;
+    height: auto;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    gap: 12px;
+  }
+}

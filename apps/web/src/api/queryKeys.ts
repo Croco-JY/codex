@@ -1,4 +1,44 @@
 export const queryKeys = {
+  workspace: (scope: string, org: string) => ["workspace", scope, org] as const,
+  projects: (
+    scope: string,
+    org: string,
+    status: string | undefined,
+    limit: number,
+    offset: number,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "projects",
+      status ?? null,
+      limit,
+      offset,
+    ] as const,
+  project: (scope: string, org: string, project: string) =>
+    ["workspace", scope, org, "project", project] as const,
+  styles: (
+    scope: string,
+    org: string,
+    project: string,
+    status: string | undefined,
+    limit: number,
+    offset: number,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "styles",
+      status ?? null,
+      limit,
+      offset,
+    ] as const,
+  style: (scope: string, org: string, project: string, style: string) =>
+    ["workspace", scope, org, "project", project, "style", style] as const,
   admin: (scope: string) => ["admin", scope] as const,
   adminCitations: (
     scope: string,

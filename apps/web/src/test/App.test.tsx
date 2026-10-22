@@ -304,6 +304,7 @@ test("DEV actor switch cancels reads, clears private caches/selection and never 
   await userEvent.click(
     await screen.findByRole("button", { name: "Private Alpha organization" }),
   );
+  await userEvent.click(screen.getByRole("link", { name: "Organization" }));
   expect(await screen.findByRole("link", { name: "Curation" })).toBeVisible();
   const oldScope = getSession().key;
   client.setQueryData(queryKeys.supply(oldScope, "evidence"), {
@@ -356,6 +357,7 @@ test("ending a local session clears cache, organization selection and capability
   await userEvent.click(
     await screen.findByRole("button", { name: "Private Alpha organization" }),
   );
+  await userEvent.click(screen.getByRole("link", { name: "Organization" }));
   const oldScope = getSession().key;
   const count = requests.filter(
     (r) => new URL(r.url).pathname === "/api/identity",
@@ -388,6 +390,7 @@ test("an identity changed by the server rotates the scope and clears selection t
   await userEvent.click(
     await screen.findByRole("button", { name: "Private Alpha organization" }),
   );
+  await userEvent.click(screen.getByRole("link", { name: "Organization" }));
   const oldScope = getSession().key;
   serverActor = "actor-b";
   await act(async () => {
@@ -428,6 +431,7 @@ test("401 on a protected read ends an established session and removes old privat
   await userEvent.click(
     await screen.findByRole("button", { name: "Private Alpha organization" }),
   );
+  await userEvent.click(screen.getByRole("link", { name: "Organization" }));
   capabilityStatus = 401;
   await act(async () => {
     await client.invalidateQueries({
@@ -467,6 +471,7 @@ test("409 preserves the rename draft and reloads the current version without ret
   await userEvent.click(
     await screen.findByRole("button", { name: "Private Alpha organization" }),
   );
+  await userEvent.click(screen.getByRole("link", { name: "Organization" }));
   const field = screen.getByLabelText("New organization name");
   await userEvent.clear(field);
   await userEvent.type(field, "My preserved draft");
@@ -554,6 +559,7 @@ test("selecting an organization as ORG_OWNER does not grant curation access", as
   await userEvent.click(
     await screen.findByRole("button", { name: "Private Alpha organization" }),
   );
+  await userEvent.click(screen.getByRole("link", { name: "Organization" }));
   expect(
     screen.getByRole("heading", { name: "Private Alpha organization" }),
   ).toBeVisible();

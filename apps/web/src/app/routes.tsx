@@ -3,7 +3,11 @@ import { Link, Route, Routes } from "react-router";
 import { ApiError } from "../api/errors";
 import { Skeleton } from "../ui";
 import { ApiErrorState } from "../ui/ApiErrorState";
+import { WorkspaceGate } from "./workspace";
 import { useSession } from "./session";
+const Projects = lazy(() => import("../pages/ProjectsPage"));
+const ProjectDetail = lazy(() => import("../pages/ProjectDetailPage"));
+const StyleDetail = lazy(() => import("../pages/StyleDetailPage"));
 const Overview = lazy(() => import("../pages/OverviewPage"));
 const Organization = lazy(() => import("../pages/OrganizationPage"));
 const Admin = lazy(() => import("../pages/AdminLandingPage"));
@@ -72,6 +76,36 @@ export function AppRoutes() {
     <Suspense fallback={<Skeleton label="Loading page" />}>
       <Routes>
         <Route path="/" element={<Overview />} />
+        <Route
+          path="/organizations/:organizationId/projects"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <Projects />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/projects/:projectId"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <ProjectDetail />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/projects/:projectId/styles/:styleId"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <StyleDetail />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
         <Route
           path="/facilities/:id"
           element={

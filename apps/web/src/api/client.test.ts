@@ -137,3 +137,31 @@ it("keeps a late cross-origin 401 from ending the replacement session", async ()
   expect(session.getSession().ended).toBe(false);
   session.endSession();
 });
+
+it("ignores an aborted request's late 401 within the same Actor session", async () => {
+  const { api, session } = await configuredClient();
+  session.setLocalSubject("synthetic-workspace-actor");
+  const scope = session.getSession().key;
+  let resolve!: (r: Response) => void;
+  let started!: () => void;
+  const entered = new Promise<void>((done) => {
+    started = done;
+  });
+  vi.spyOn(globalThis, "fetch").mockImplementation(() => {
+    started();
+    return new Promise<Response>((done) => {
+      resolve = done;
+    });
+  });
+  const controller = new AbortController();
+  const pending = api
+    .GET("/api/identity", { signal: controller.signal })
+    .catch((error) => error);
+  await entered;
+  controller.abort();
+  resolve(new Response("{}", { status: 401 }));
+  expect(await pending).toMatchObject({ name: "AbortError" });
+  expect(session.getSession().key).toBe(scope);
+  expect(session.getSession().ended).toBe(false);
+  session.endSession();
+});

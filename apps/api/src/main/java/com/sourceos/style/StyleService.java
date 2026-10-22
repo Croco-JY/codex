@@ -23,6 +23,11 @@ public class StyleService {
     ARCHIVED
   }
 
+  public enum ParentStatus {
+    ACTIVE,
+    ARCHIVED
+  }
+
   @Schema(
       name = "StyleCreateInput",
       requiredProperties = {"name"},
@@ -92,7 +97,7 @@ public class StyleService {
       UUID organizationId,
       UUID projectId,
       UUID styleId,
-      ProjectService.Status projectStatus,
+      ParentStatus projectStatus,
       Status styleStatus) {}
 
   static class TextInput extends ValueDeserializer<String> {
@@ -173,14 +178,14 @@ public class StyleService {
   public StyleContext readContext(UUID org, UUID project, UUID id) {
     var parent = projects.readContext(org, project);
     var v = find(project, id, false);
-    return new StyleContext(org, project, id, parent.status(), v.status());
+    return new StyleContext(org, project, id, parentStatus(parent.status()), v.status());
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
   public StyleContext lockContextForWrite(UUID org, UUID project, UUID id) {
     var parent = projects.lockContextForWrite(org, project);
     var v = find(project, id, true);
-    return new StyleContext(org, project, id, parent.status(), v.status());
+    return new StyleContext(org, project, id, parentStatus(parent.status()), v.status());
   }
 
   @Transactional(readOnly = true)
@@ -214,6 +219,13 @@ public class StyleService {
         || (result != null && result.length() > max))
       throw ValidationRules.bad("Invalid workspace text");
     return result;
+  }
+
+  private static ParentStatus parentStatus(ProjectService.Status status) {
+    return switch (status) {
+      case ACTIVE -> ParentStatus.ACTIVE;
+      case ARCHIVED -> ParentStatus.ARCHIVED;
+    };
   }
 
   private void active(ProjectService.Status status) {

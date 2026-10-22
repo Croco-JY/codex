@@ -278,7 +278,7 @@ class ProjectStyleTest extends WorkspaceIntegrationSupport {
     var pc = projects.readContext(org, project.id());
     var sc = styles.readContext(org, project.id(), style.id());
     assertThat(pc.status()).isEqualTo(ProjectService.Status.ARCHIVED);
-    assertThat(sc.projectStatus()).isEqualTo(ProjectService.Status.ARCHIVED);
+    assertThat(sc.projectStatus()).isEqualTo(StyleService.ParentStatus.ARCHIVED);
     assertThat(sc.styleStatus()).isEqualTo(StyleService.Status.ACTIVE);
     assertThat(sc.organizationId()).isEqualTo(org);
     assertThat(sc.projectId()).isEqualTo(project.id());

@@ -55,7 +55,7 @@ Actual allowed dependencies:
 | project | authorization, audit, shared |
 | style | project, audit, shared |
 
-The existing ArchitectureTest remains intact and passes ApplicationModules.verify(). Style→Project is allowed; Project→Style is absent. Neither module accesses OrganizationEntity/Repository or membership SQL. JdbcClient handles only its own table. No JPA entities/repositories or mutable persistence objects are exported.
+The existing ArchitectureTest retains ApplicationModules.verify() and also verifies that StyleContext.projectStatus() returns a type owned by `com.sourceos.style`. Style→Project is allowed; Project→Style is absent. Neither module accesses OrganizationEntity/Repository or membership SQL. JdbcClient handles only its own table. No JPA entities/repositories or mutable persistence objects are exported.
 
 Public application signatures:
 
@@ -67,8 +67,10 @@ ProjectContext ProjectService.lockContextForWrite(UUID org, UUID id);
 StyleContext StyleService.readContext(UUID org, UUID project, UUID id);
 StyleContext StyleService.lockContextForWrite(UUID org, UUID project, UUID id);
 // StyleContext(UUID organizationId, UUID projectId, UUID styleId,
-//              ProjectService.Status projectStatus, Status styleStatus)
+//              ParentStatus projectStatus, Status styleStatus)
 ```
+
+`ParentStatus` is `StyleService.ParentStatus` and contains `ACTIVE` / `ARCHIVED`. Style internally depends on Project, but its public StyleContext does not leak Project-module types to future descendant modules. The Project status is mapped explicitly inside Style; `styleStatus` remains `StyleService.Status` because Style owns that lifecycle.
 
 Read contexts are read-only transactions. Both write-lock contracts require an existing transaction (MANDATORY); they return actual lifecycle states, including ARCHIVED, rather than a fake404 or just a writable boolean. Future descendants must inspect both parent states while retaining these locks through their write. Calling a lock context without a transaction fails; no descendant implementation is added here.
 

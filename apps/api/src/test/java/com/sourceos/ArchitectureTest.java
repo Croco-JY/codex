@@ -8,6 +8,17 @@ import org.springframework.modulith.core.ApplicationModules;
 
 class ArchitectureTest {
   @Test
+  void requirementConsumesStyleWithoutDirectProjectDependency() {
+    var type = com.sourceos.stylerequirement.StyleRequirementService.class;
+    var fields =
+        java.util.Arrays.stream(type.getDeclaredFields())
+            .map(f -> f.getType().getPackageName())
+            .toList();
+    assertThat(fields).doesNotContain("com.sourceos.project");
+    assertThat(fields).contains("com.sourceos.style");
+  }
+
+  @Test
   void boundaries() {
     ApplicationModules.of(SourceOsApplication.class).verify();
   }

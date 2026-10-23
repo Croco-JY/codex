@@ -9,6 +9,7 @@ import {
   type Project,
 } from "../features/workspace/model";
 import { Editor } from "../features/workspace/Editor";
+import { RequirementSection } from "../features/workspace/Requirement";
 export default function StyleDetailPage() {
   const { projectId = "", styleId = "" } = useParams(),
     parent = useProject(projectId);
@@ -82,6 +83,12 @@ function StyleContent({
         project={parent.id}
         parentActive={parent.status === "ACTIVE"}
         refresh={() => Promise.all([refreshParent(), style.refetch()])}
+      />
+      <RequirementSection
+        project={parent}
+        style={style.data}
+        available={parentAvailable && !style.isError}
+        refreshParents={() => Promise.all([refreshParent(), style.refetch()])}
       />
     </Stack>
   );

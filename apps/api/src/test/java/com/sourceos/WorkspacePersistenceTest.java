@@ -126,7 +126,7 @@ class WorkspacePersistenceTest extends WorkspaceIntegrationSupport {
             List.of(
                 "DELETE FROM project WHERE id='" + project.id() + "'",
                 "DELETE FROM style WHERE id='" + style.id() + "'",
-                "TRUNCATE style",
+                "TRUNCATE style CASCADE",
                 // Include referencing tables so PostgreSQL's FK precheck cannot mask the intended
                 // guard.
                 "TRUNCATE project CASCADE")) {

@@ -78,7 +78,7 @@ class MigrationUpgradeTest {
     var migration = Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).load();
     migration.migrate();
     migration.validate();
-    assertThat(migration.info().applied()).hasSize(13);
+    assertThat(migration.info().applied()).hasSize(14);
     try (var c = DriverManager.getConnection(url, db.getUsername(), db.getPassword());
         var statement = c.createStatement()) {
       var count = statement.executeQuery("SELECT count(*) FROM platform_role_assignment");
@@ -89,7 +89,7 @@ class MigrationUpgradeTest {
               "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND"
                   + " table_type='BASE TABLE'");
       tables.next();
-      assertThat(tables.getInt(1)).isEqualTo(43);
+      assertThat(tables.getInt(1)).isEqualTo(44);
       var json =
           statement.executeQuery(
               "SELECT count(*) FROM information_schema.columns WHERE table_name IN"
@@ -116,7 +116,8 @@ class MigrationUpgradeTest {
               "material_price_source",
               "material_inventory_snapshot",
               "project",
-              "style");
+              "style",
+              "style_requirement");
       for (String table : newTables) {
         var rows = statement.executeQuery("SELECT count(*) FROM " + table);
         rows.next();

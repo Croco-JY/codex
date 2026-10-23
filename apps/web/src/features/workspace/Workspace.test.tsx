@@ -253,6 +253,7 @@ test("direct nested route validates membership then parent then Style; display a
   expect(privateCalls().map((r) => new URL(r.url).pathname)).toEqual([
     "/api/v1/organizations/B/projects/P",
     "/api/v1/organizations/B/projects/P/styles/S",
+    "/api/v1/organizations/B/projects/P/styles/S/requirement",
   ]);
 });
 test.each(["pending", "error", "missing"])(

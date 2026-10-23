@@ -185,7 +185,11 @@ test("VIEWER direct nested URL is read-only; PLATFORM_ADMIN without membership h
   await expect(
     page.getByRole("heading", { name: "Access denied", exact: true }),
   ).toBeVisible();
-  expect(privateReads).toHaveLength(2);
+  expect(privateReads.map((read) => new URL(read).pathname)).toEqual([
+    `/api/v1/organizations/${f.a.id}/projects/${f.project.id}`,
+    `/api/v1/organizations/${f.a.id}/projects/${f.project.id}/styles/${f.style.id}`,
+    `/api/v1/organizations/${f.a.id}/projects/${f.project.id}/styles/${f.style.id}/requirement`,
+  ]);
   await shot(page, "10-access-denied-mobile", 390, 844);
 });
 test("Organization A→B→A aborts a delayed real read and never renders old-generation data", async ({

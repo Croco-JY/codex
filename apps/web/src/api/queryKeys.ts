@@ -39,6 +39,17 @@ export const queryKeys = {
     ] as const,
   style: (scope: string, org: string, project: string, style: string) =>
     ["workspace", scope, org, "project", project, "style", style] as const,
+  requirement: (scope: string, org: string, project: string, style: string) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "style",
+      style,
+      "requirement",
+    ] as const,
   admin: (scope: string) => ["admin", scope] as const,
   adminCitations: (
     scope: string,

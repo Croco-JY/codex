@@ -61,7 +61,7 @@ class FoundationIntegrationTest {
             jdbc.sql("SELECT count(*) FROM flyway_schema_history WHERE success")
                 .query(Integer.class)
                 .single())
-        .isEqualTo(13);
+        .isEqualTo(14);
     mvc.perform(get("/actuator/health/readiness"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("UP"));

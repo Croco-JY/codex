@@ -1270,6 +1270,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readStyleRequirement"];
+        put: operations["writeStyleRequirement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/regions": {
         parameters: {
             query?: never;
@@ -2351,6 +2367,42 @@ export interface components {
             limit: number;
             /** Format: int32 */
             offset: number;
+        };
+        StyleRequirementInput: {
+            currency?: string | null;
+            notes?: string | null;
+            productType?: string | null;
+            /** @enum {string|null} */
+            quantityUnit?: "PCS" | "SET" | null;
+            /** Format: decimal */
+            targetCost?: string | null;
+            /** Format: date */
+            targetDeliveryDate?: string | null;
+            /** Format: decimal */
+            targetQuantity?: string | null;
+            /** Format: int64 */
+            version: number;
+        };
+        StyleRequirementView: {
+            /** Format: date-time */
+            createdAt: string;
+            currency: string | null;
+            notes: string | null;
+            productType: string | null;
+            /** @enum {string|null} */
+            quantityUnit: "PCS" | "SET" | null;
+            /** Format: uuid */
+            styleId: string;
+            /** Format: decimal */
+            targetCost: string | null;
+            /** Format: date */
+            targetDeliveryDate: string | null;
+            /** Format: decimal */
+            targetQuantity: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
         };
         StyleUpdateInput: {
             description?: string | null;
@@ -4841,6 +4893,70 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StyleView"];
+                };
+            };
+        };
+    };
+    readStyleRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleRequirementView"];
+                };
+            };
+        };
+    };
+    writeStyleRequirement: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleRequirementInput"];
+            };
+        };
+        responses: {
+            /** @description Existing Requirement replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleRequirementView"];
+                };
+            };
+            /** @description Requirement created, version 0 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleRequirementView"];
                 };
             };
         };

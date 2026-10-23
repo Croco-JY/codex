@@ -2977,6 +2977,161 @@
         ],
         "type": "object"
       },
+      "StyleRequirementInput": {
+        "additionalProperties": false,
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "maxLength": 4000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "productType": {
+            "maxLength": 160,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "SET"
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetCost": {
+            "format": "decimal",
+            "pattern": "^[0-9]{1,15}(\\.[0-9]{1,4})?$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetDeliveryDate": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetQuantity": {
+            "format": "decimal",
+            "pattern": "^[0-9]{1,15}(\\.[0-9]{1,4})?$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "version": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "type": "object"
+      },
+      "StyleRequirementView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "maxLength": 4000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "productType": {
+            "maxLength": 160,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "quantityUnit": {
+            "enum": [
+              "PCS",
+              "SET"
+            ],
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "targetCost": {
+            "format": "decimal",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetDeliveryDate": {
+            "format": "date",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "targetQuantity": {
+            "format": "decimal",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "currency",
+          "notes",
+          "productType",
+          "quantityUnit",
+          "styleId",
+          "targetCost",
+          "targetDeliveryDate",
+          "targetQuantity",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
       "StyleUpdateInput": {
         "additionalProperties": false,
         "properties": {
@@ -7736,6 +7891,131 @@
         },
         "tags": [
           "style-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
+      "get": {
+        "operationId": "readStyleRequirement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleRequirementView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "style-requirement-controller"
+        ]
+      },
+      "put": {
+        "operationId": "writeStyleRequirement",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400.",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StyleRequirementInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleRequirementView"
+                }
+              }
+            },
+            "description": "Existing Requirement replaced"
+          },
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleRequirementView"
+                }
+              }
+            },
+            "description": "Requirement created, version 0"
+          }
+        },
+        "tags": [
+          "style-requirement-controller"
         ]
       }
     },

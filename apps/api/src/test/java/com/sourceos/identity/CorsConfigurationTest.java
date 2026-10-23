@@ -7,18 +7,22 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class CorsConfigurationTest {
   @org.junit.jupiter.api.Test
-  void deleteIsAllowedOnlyForThePrivateSelectionUnlinkPath() {
+  void deleteIsAllowedOnlyForThePrivateEdgeUnlinkPaths() {
     var source = new SecurityConfiguration().cors("https://frontend.example.test");
     for (String path :
         java.util.List.of(
             "/api/v1/organizations/A/projects/P/styles/S/material-selections/X",
-            "/api/v1/materials/X")) {
+            "/api/v1/organizations/A/projects/P/styles/S/facility-candidates/X",
+            "/api/v1/materials/X",
+            "/api/v1/facilities/X",
+            "/api/v1/suppliers/X",
+            "/api/v1/organizations/A/projects/P")) {
       var request = new org.springframework.mock.web.MockHttpServletRequest("OPTIONS", path);
       request.setServletPath(path);
       var config = source.getCorsConfiguration(request);
       assertThat(config.getAllowedOrigins()).containsExactly("https://frontend.example.test");
       assertThat(config.checkHttpMethod(org.springframework.http.HttpMethod.DELETE) != null)
-          .isEqualTo(path.contains("material-selections"));
+          .isEqualTo(path.contains("material-selections") || path.contains("facility-candidates"));
       assertThat(config.getAllowedHeaders())
           .contains("Authorization", "X-Dev-Subject", "If-None-Match");
     }

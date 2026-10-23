@@ -49,11 +49,13 @@ class SecurityConfiguration {
             "If-None-Match"));
     c.setExposedHeaders(List.of("X-Request-ID"));
     var src = new UrlBasedCorsConfigurationSource();
-    // Only the new private draft-edge unlink path gains DELETE support.
+    // Only supported private draft-edge unlink paths gain DELETE support.
     var selection = new CorsConfiguration(c);
     selection.setAllowedMethods(List.of("GET", "POST", "PATCH", "PUT", "OPTIONS", "DELETE"));
     src.registerCorsConfiguration(
         "/api/v1/organizations/*/projects/*/styles/*/material-selections/*", selection);
+    src.registerCorsConfiguration(
+        "/api/v1/organizations/*/projects/*/styles/*/facility-candidates/*", selection);
     src.registerCorsConfiguration("/**", c);
     return src;
   }

@@ -72,7 +72,8 @@ public class AuditRecorder {
           "quantity",
           "captureMode",
           "projectId",
-          "styleId");
+          "styleId",
+          "facilityId");
 
   private String state(java.util.Map<String, ?> values) {
     if (values == null) return null;

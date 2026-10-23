@@ -194,6 +194,7 @@ test("VIEWER direct nested URL is read-only; PLATFORM_ADMIN without membership h
     [
       `/api/v1/organizations/${f.a.id}/projects/${f.project.id}/styles/${f.style.id}/requirement`,
       `/api/v1/organizations/${f.a.id}/projects/${f.project.id}/styles/${f.style.id}/material-selections`,
+      `/api/v1/organizations/${f.a.id}/projects/${f.project.id}/styles/${f.style.id}/facility-candidates`,
     ].sort(),
   );
   await shot(page, "10-access-denied-mobile", 390, 844);

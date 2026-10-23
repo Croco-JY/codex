@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
-import { api, requireData } from "../api/client";
-import { ApiError } from "../api/errors";
 import { useSession } from "../app/session";
 import { Skeleton, Stack } from "../ui";
 import { ApiErrorState } from "../ui/ApiErrorState";
@@ -20,6 +18,10 @@ import {
 } from "../features/network/references";
 import { SupplierLabel } from "../features/materials/SupplierPicker";
 import { titleCase } from "../features/materials/MaterialSummary";
+import {
+  facilityDirectoryKey,
+  facilityDirectoryOptions,
+} from "../features/network/facilityQueries";
 export default function FacilitiesPage({
   curation = false,
   children,
@@ -40,22 +42,11 @@ export default function FacilitiesPage({
     cache = useQueryClient(),
     refs = useNetworkReferences();
   const keyFor = (filters: FacilityFilters) =>
-    ["supply", scope, "facility-directory", filters, 25] as const;
+    facilityDirectoryKey(scope, filters);
   const queryKey = keyFor(parsed.filters);
-  const results = useInfiniteQuery({
-    queryKey,
-    initialPageParam: undefined as string | undefined,
-    queryFn: async ({ signal, pageParam }) => {
-      const { data, response } = await api.GET("/api/v1/facilities", {
-        signal,
-        params: { query: { ...parsed.filters, limit: 25, cursor: pageParam } },
-      });
-      const page = requireData(data, response);
-      if (!Array.isArray(page.items)) throw new ApiError(502);
-      return page;
-    },
-    getNextPageParam: (p) => p.nextCursor || undefined,
-  });
+  const results = useInfiniteQuery(
+    facilityDirectoryOptions(scope, parsed.filters),
+  );
   const apply = (filters: FacilityFilters) => {
     const canonical = serializeDirectory("facilities", filters);
     setCleaned(false);

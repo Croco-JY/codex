@@ -65,7 +65,10 @@ class StyleMaterialSelectionMigrationTest {
       assertThat(before).hasSize(43);
     }
     var upgraded =
-        Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
+        Flyway.configure()
+            .dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword())
+            .target("15")
+            .load();
     upgraded.migrate();
     upgraded.validate();
     assertThat(upgraded.info().applied()).hasSize(15);

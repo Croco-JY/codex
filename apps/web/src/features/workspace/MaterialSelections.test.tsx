@@ -135,6 +135,8 @@ beforeEach(() => {
               })),
         );
       if (p.startsWith("/api/v1/organizations/")) {
+        if (p.endsWith("/facility-candidates"))
+          return reply({ items: [], limit: 25, offset: 0, hasMore: false });
         const org = p.includes("/B/") ? "B" : "A";
         if (p.endsWith("/projects/P"))
           return org === "A" && pDelay ? pDelay : reply(project(org));

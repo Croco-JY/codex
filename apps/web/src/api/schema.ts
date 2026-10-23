@@ -1270,6 +1270,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStyleFacilityCandidates"];
+        put?: never;
+        post: operations["addStyleFacilityCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates/{candidateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeStyleFacilityCandidate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/material-selections": {
         parameters: {
             query?: never;
@@ -2391,6 +2423,28 @@ export interface components {
             description?: string | null;
             name: string;
             styleCode?: string | null;
+        };
+        StyleFacilityCandidateInput: {
+            /** Format: uuid */
+            facilityId: string;
+        };
+        StyleFacilityCandidatePage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleFacilityCandidateView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        StyleFacilityCandidateView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            facilityId: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            styleId: string;
         };
         StyleMaterialSelectionInput: {
             /** Format: uuid */
@@ -4956,6 +5010,84 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["StyleView"];
                 };
+            };
+        };
+    };
+    listStyleFacilityCandidates: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleFacilityCandidatePage"];
+                };
+            };
+        };
+    };
+    addStyleFacilityCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleFacilityCandidateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleFacilityCandidateView"];
+                };
+            };
+        };
+    };
+    removeStyleFacilityCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

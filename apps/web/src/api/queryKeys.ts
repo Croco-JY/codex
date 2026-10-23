@@ -61,6 +61,26 @@ export const queryKeys = {
     ] as const,
   variant: (scope: string, id: string) =>
     ["supply", scope, "material-variant", id] as const,
+  candidates: (
+    scope: string,
+    org: string,
+    project: string,
+    style: string,
+    limit: number,
+    offset: number,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "style",
+      style,
+      "facility-candidates",
+      limit,
+      offset,
+    ] as const,
   requirement: (scope: string, org: string, project: string, style: string) =>
     [
       "workspace",

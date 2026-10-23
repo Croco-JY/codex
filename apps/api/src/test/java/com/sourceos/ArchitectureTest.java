@@ -40,6 +40,25 @@ class ArchitectureTest {
   }
 
   @Test
+  void candidatesUseOnlyPublicStyleAndFacilityContracts() {
+    var fields =
+        java.util.Arrays.stream(
+                com.sourceos.stylefacilitycandidate.StyleFacilityCandidateService.class
+                    .getDeclaredFields())
+            .map(f -> f.getType().getName())
+            .toList();
+    assertThat(fields)
+        .noneMatch(
+            t ->
+                t.startsWith("com.sourceos.project.")
+                    || t.startsWith("com.sourceos.supplier.")
+                    || t.endsWith("Repository")
+                    || t.endsWith("Entity"));
+    assertThat(fields)
+        .contains("com.sourceos.style.StyleService", "com.sourceos.facility.FacilityService");
+  }
+
+  @Test
   void boundaries() {
     ApplicationModules.of(SourceOsApplication.class).verify();
   }

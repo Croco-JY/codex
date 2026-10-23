@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.*;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -199,6 +200,25 @@ public class FacilityService {
 
   public View read(UUID id) {
     return view(find(id));
+  }
+
+  public record FacilityReference(UUID facilityId, UUID supplierId, Status status) {}
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public FacilityReference lockActiveReference(UUID facilityId) {
+    var reference =
+        jdbc.sql("SELECT id,supplier_id,status FROM facility WHERE id=:id FOR SHARE")
+            .param("id", facilityId)
+            .query(
+                (r, n) ->
+                    new FacilityReference(
+                        r.getObject("id", UUID.class),
+                        r.getObject("supplier_id", UUID.class),
+                        Status.valueOf(r.getString("status"))))
+            .optional()
+            .orElseThrow(ValidationRules::missing);
+    if (reference.status() != Status.ACTIVE) throw ValidationRules.conflict();
+    return reference;
   }
 
   private void apply(FacilityEntity e, Input v) {

@@ -2949,6 +2949,74 @@
         ],
         "type": "object"
       },
+      "StyleFacilityCandidateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "facilityId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "facilityId"
+        ],
+        "type": "object"
+      },
+      "StyleFacilityCandidatePage": {
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StyleFacilityCandidateView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasMore",
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "StyleFacilityCandidateView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "facilityId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "facilityId",
+          "id",
+          "styleId"
+        ],
+        "type": "object"
+      },
       "StyleMaterialSelectionInput": {
         "additionalProperties": false,
         "properties": {
@@ -7989,6 +8057,183 @@
         },
         "tags": [
           "style-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates": {
+      "get": {
+        "operationId": "listStyleFacilityCandidates",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleFacilityCandidatePage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "style-facility-candidate-controller"
+        ]
+      },
+      "post": {
+        "operationId": "addStyleFacilityCandidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StyleFacilityCandidateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleFacilityCandidateView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "style-facility-candidate-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates/{candidateId}": {
+      "delete": {
+        "operationId": "removeStyleFacilityCandidate",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidateId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "tags": [
+          "style-facility-candidate-controller"
         ]
       }
     },

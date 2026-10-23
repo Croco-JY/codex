@@ -158,6 +158,8 @@ beforeEach(() => {
           return org === "A" && sDelay ? sDelay : reply(style(org));
         if (p.endsWith("/requirement"))
           return reqDelay ?? reply({}, reqStatus === 200 ? 404 : reqStatus);
+        if (p.endsWith("/development-references"))
+          return reply({ items: [], limit: 25, offset: 0, hasMore: false });
         if (p.endsWith("/material-selections"))
           return (
             selectionDelay ??
@@ -706,7 +708,9 @@ test.each(["project", "style"])(
     );
     expect(
       calls.some((r) =>
-        /requirement|material-selections|facility-candidates/.test(r.url),
+        /requirement|material-selections|facility-candidates|development-references/.test(
+          r.url,
+        ),
       ),
     ).toBe(false);
     if (kind === "project")
@@ -719,6 +723,7 @@ test.each(["project", "style"])(
       "requirement",
       "material-selections",
       "facility-candidates",
+      "development-references",
     ])
       expect(
         calls.filter((r) => new URL(r.url).pathname.endsWith(child)),
@@ -748,6 +753,7 @@ test.each(["requirement", "selections", "candidates"])(
       "requirement",
       "material-selections",
       "facility-candidates",
+      "development-references",
     ])
       expect(
         calls.filter((r) => new URL(r.url).pathname.endsWith(name)),
@@ -785,7 +791,9 @@ test.each(["project", "style"])(
     await screen.findByRole("heading", { name: "Not found" });
     expect(
       calls.some((r) =>
-        /requirement|material-selections|facility-candidates/.test(r.url),
+        /requirement|material-selections|facility-candidates|development-references/.test(
+          r.url,
+        ),
       ),
     ).toBe(false);
   },

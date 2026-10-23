@@ -873,3 +873,28 @@ select {
     gap: 12px;
   }
 }
+
+.reference-upload {
+  margin-top: 24px;
+  max-width: 720px;
+}
+.reference-upload fieldset {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--border-default);
+}
+.reference-upload label {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.reference-upload input {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.reference-upload .button {
+  justify-self: start;
+}

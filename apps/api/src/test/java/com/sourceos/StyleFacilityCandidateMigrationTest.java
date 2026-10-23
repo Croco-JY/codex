@@ -73,7 +73,10 @@ class StyleFacilityCandidateMigrationTest {
       assertThat(before).hasSize(44);
     }
     var upgraded =
-        Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
+        Flyway.configure()
+            .dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword())
+            .target("16")
+            .load();
     upgraded.migrate();
     upgraded.validate();
     assertThat(upgraded.info().applied()).hasSize(16);

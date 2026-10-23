@@ -1270,6 +1270,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStyleDevelopmentReferences"];
+        put?: never;
+        post: operations["uploadStyleDevelopmentReference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readStyleDevelopmentReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadStyleDevelopmentReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}/detach": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["detachStyleDevelopmentReference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates": {
         parameters: {
             query?: never;
@@ -2423,6 +2487,45 @@ export interface components {
             description?: string | null;
             name: string;
             styleCode?: string | null;
+        };
+        StyleDevelopmentReferenceDetachInput: {
+            /** Format: int64 */
+            version: number;
+        };
+        StyleDevelopmentReferencePage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleDevelopmentReferenceView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        /** @enum {string} */
+        StyleDevelopmentReferenceState: "PENDING" | "READY" | "FAILED" | "DETACHED";
+        StyleDevelopmentReferenceUpload: {
+            displayName: string;
+            /** Format: binary */
+            file: string;
+        };
+        StyleDevelopmentReferenceView: {
+            /** Format: date-time */
+            createdAt: string;
+            displayName: string;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            mediaType: "application/octet-stream";
+            /** Format: int64 */
+            sizeBytes: number;
+            state: components["schemas"]["StyleDevelopmentReferenceState"];
+            /** Format: uuid */
+            storageObjectId: string;
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
         };
         StyleFacilityCandidateInput: {
             /** Format: uuid */
@@ -5009,6 +5112,141 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["StyleView"];
+                };
+            };
+        };
+    };
+    listStyleDevelopmentReferences: {
+        parameters: {
+            query?: {
+                state?: components["schemas"]["StyleDevelopmentReferenceState"];
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferencePage"];
+                };
+            };
+        };
+    };
+    uploadStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["StyleDevelopmentReferenceUpload"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferenceView"];
+                };
+            };
+        };
+    };
+    readStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                referenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferenceView"];
+                };
+            };
+        };
+    };
+    downloadStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                referenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private attachment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    detachStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                referenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleDevelopmentReferenceDetachInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferenceView"];
                 };
             };
         };

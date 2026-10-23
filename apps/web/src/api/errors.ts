@@ -5,6 +5,7 @@ const messages: Record<number, string> = {
   403: "You do not have access to this workspace.",
   404: "The requested resource could not be found.",
   412: "The create-only precondition no longer holds. Refresh and compare the existing resource before continuing.",
+  413: "The selected file is too large. Maximum file size is 10 MiB.",
   409: "This information has changed. Reload it before trying again.",
 };
 
@@ -94,6 +95,7 @@ export function errorView(error: unknown) {
         404: "Not found",
         409: "Reload required",
         412: "Precondition no longer holds",
+        413: "File too large",
       } as Record<number, string>
     )[safe.status] ?? "Service unavailable";
   return {

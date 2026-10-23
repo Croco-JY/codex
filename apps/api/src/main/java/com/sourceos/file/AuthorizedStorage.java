@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthorizedStorage {
+  public static final int MAX_BYTES = 10 * 1024 * 1024;
+
   private final StoragePort storage;
   private final OrganizationAuthorization authorization;
 
@@ -16,11 +18,16 @@ public class AuthorizedStorage {
   }
 
   public UUID put(UUID org, byte[] bytes) throws IOException {
-    authorization.requireWrite(org);
-    if (bytes.length > 10 * 1024 * 1024) throw new IllegalArgumentException("File too large");
     UUID object = UUID.randomUUID();
-    storage.put(org, object, bytes);
+    putNew(org, object, bytes);
     return object;
+  }
+
+  /** Create-only write using an identity already reserved by the caller. */
+  public void putNew(UUID org, UUID serverObjectId, byte[] bytes) throws IOException {
+    authorization.requireWrite(org);
+    if (bytes.length > MAX_BYTES) throw new IllegalArgumentException("File too large");
+    storage.put(org, serverObjectId, bytes);
   }
 
   public byte[] get(UUID org, UUID object) throws IOException {

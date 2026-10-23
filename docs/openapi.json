@@ -2949,6 +2949,135 @@
         ],
         "type": "object"
       },
+      "StyleDevelopmentReferenceDetachInput": {
+        "additionalProperties": false,
+        "properties": {
+          "version": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "type": "object"
+      },
+      "StyleDevelopmentReferencePage": {
+        "properties": {
+          "hasMore": {
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StyleDevelopmentReferenceView"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "offset": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hasMore",
+          "items",
+          "limit",
+          "offset"
+        ],
+        "type": "object"
+      },
+      "StyleDevelopmentReferenceState": {
+        "enum": [
+          "PENDING",
+          "READY",
+          "FAILED",
+          "DETACHED"
+        ],
+        "type": "string"
+      },
+      "StyleDevelopmentReferenceUpload": {
+        "additionalProperties": false,
+        "properties": {
+          "displayName": {
+            "type": "string"
+          },
+          "file": {
+            "format": "binary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "displayName",
+          "file"
+        ],
+        "type": "object"
+      },
+      "StyleDevelopmentReferenceView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "mediaType": {
+            "enum": [
+              "application/octet-stream"
+            ],
+            "type": "string"
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "maximum": 10485760,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/StyleDevelopmentReferenceState"
+          },
+          "storageObjectId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "displayName",
+          "id",
+          "mediaType",
+          "sizeBytes",
+          "state",
+          "storageObjectId",
+          "styleId",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
       "StyleFacilityCandidateInput": {
         "additionalProperties": false,
         "properties": {
@@ -8057,6 +8186,325 @@
         },
         "tags": [
           "style-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references": {
+      "get": {
+        "operationId": "listStyleDevelopmentReferences",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/StyleDevelopmentReferenceState"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "format": "int32",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleDevelopmentReferencePage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "style-development-reference-controller"
+        ]
+      },
+      "post": {
+        "operationId": "uploadStyleDevelopmentReference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/StyleDevelopmentReferenceUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleDevelopmentReferenceView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "style-development-reference-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}": {
+      "get": {
+        "operationId": "readStyleDevelopmentReference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "referenceId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleDevelopmentReferenceView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "style-development-reference-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}/content": {
+      "get": {
+        "operationId": "downloadStyleDevelopmentReference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "referenceId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Private attachment"
+          }
+        },
+        "tags": [
+          "style-development-reference-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}/detach": {
+      "post": {
+        "operationId": "detachStyleDevelopmentReference",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "referenceId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StyleDevelopmentReferenceDetachInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/StyleDevelopmentReferenceView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "style-development-reference-controller"
         ]
       }
     },

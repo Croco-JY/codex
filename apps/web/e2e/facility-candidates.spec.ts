@@ -343,6 +343,7 @@ for (const held of [
   "requirement",
   "material-selections",
   "facility-candidates",
+  "development-references",
 ] as const)
   test(`real Style-gated siblings stay independent while ${held} is held`, async ({
     page,
@@ -379,9 +380,12 @@ for (const held of [
       const p = new URL(r.url()).pathname;
       if (p === `/api/v1${f.route}`) eligibility.push(projectSucceeded);
       if (
-        ["requirement", "material-selections", "facility-candidates"].some(
-          (child) => p === `/api/v1${f.route}/${child}`,
-        )
+        [
+          "requirement",
+          "material-selections",
+          "facility-candidates",
+          "development-references",
+        ].some((child) => p === `/api/v1${f.route}/${child}`)
       ) {
         reads.push(p);
         eligibility.push(styleSucceeded);
@@ -419,12 +423,21 @@ for (const held of [
             "No Facility candidates have been added for this Style.",
           ),
         ).toBeVisible();
+      if (held !== "development-references")
+        await expect(
+          page.getByText("No Development References in this view."),
+        ).toBeVisible();
       expect(reads.sort()).toEqual(
-        ["requirement", "material-selections", "facility-candidates"]
+        [
+          "requirement",
+          "material-selections",
+          "facility-candidates",
+          "development-references",
+        ]
           .map((child) => `/api/v1${f.route}/${child}`)
           .sort(),
       );
-      expect(eligibility).toEqual([true, true, true, true]);
+      expect(eligibility).toEqual([true, true, true, true, true]);
     } finally {
       releaseStyle();
       releaseChild();

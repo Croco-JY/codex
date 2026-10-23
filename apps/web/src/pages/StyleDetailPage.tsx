@@ -12,6 +12,7 @@ import { Editor } from "../features/workspace/Editor";
 import { RequirementSection } from "../features/workspace/Requirement";
 import { MaterialSelections } from "../features/workspace/MaterialSelections";
 import { FacilityCandidates } from "../features/workspace/FacilityCandidates";
+import { DevelopmentReferences } from "../features/workspace/DevelopmentReferences";
 export default function StyleDetailPage() {
   const { projectId = "", styleId = "" } = useParams(),
     parent = useProject(projectId);
@@ -99,6 +100,12 @@ function StyleContent({
         refreshParents={() => Promise.all([refreshParent(), style.refetch()])}
       />
       <FacilityCandidates
+        project={parent}
+        style={style.data}
+        available={parentAvailable && !style.isError}
+        refreshParents={() => Promise.all([refreshParent(), style.refetch()])}
+      />
+      <DevelopmentReferences
         project={parent}
         style={style.data}
         available={parentAvailable && !style.isError}

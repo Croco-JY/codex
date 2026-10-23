@@ -81,6 +81,46 @@ export const queryKeys = {
       limit,
       offset,
     ] as const,
+  references: (
+    scope: string,
+    org: string,
+    project: string,
+    style: string,
+    state: string | undefined,
+    limit: number,
+    offset: number,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "style",
+      style,
+      "development-references",
+      state ?? null,
+      limit,
+      offset,
+    ] as const,
+  reference: (
+    scope: string,
+    org: string,
+    project: string,
+    style: string,
+    reference: string,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "style",
+      style,
+      "development-reference",
+      reference,
+    ] as const,
   requirement: (scope: string, org: string, project: string, style: string) =>
     [
       "workspace",

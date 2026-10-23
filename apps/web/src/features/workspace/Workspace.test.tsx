@@ -164,6 +164,8 @@ beforeEach(() => {
         if (suffix === "/P/styles")
           return reply({ items: [s], limit: 25, offset: 0, hasMore: false });
         if (suffix === "/P/styles/S") return reply(s);
+        if (suffix === "/P/styles/S/development-references")
+          return reply({ items: [], limit: 25, offset: 0, hasMore: false });
         if (suffix === "/P/styles/S/facility-candidates")
           return reply({ items: [], limit: 25, offset: 0, hasMore: false });
         if (suffix === "/P/styles/S/material-selections")
@@ -264,6 +266,7 @@ test("direct nested route validates membership then parent then Style; display a
       "/api/v1/organizations/B/projects/P/styles/S/requirement",
       "/api/v1/organizations/B/projects/P/styles/S/material-selections",
       "/api/v1/organizations/B/projects/P/styles/S/facility-candidates",
+      "/api/v1/organizations/B/projects/P/styles/S/development-references",
     ].sort(),
   );
 });

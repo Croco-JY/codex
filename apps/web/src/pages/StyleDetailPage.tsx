@@ -10,6 +10,7 @@ import {
 } from "../features/workspace/model";
 import { Editor } from "../features/workspace/Editor";
 import { RequirementSection } from "../features/workspace/Requirement";
+import { MaterialSelections } from "../features/workspace/MaterialSelections";
 export default function StyleDetailPage() {
   const { projectId = "", styleId = "" } = useParams(),
     parent = useProject(projectId);
@@ -85,6 +86,12 @@ function StyleContent({
         refresh={() => Promise.all([refreshParent(), style.refetch()])}
       />
       <RequirementSection
+        project={parent}
+        style={style.data}
+        available={parentAvailable && !style.isError}
+        refreshParents={() => Promise.all([refreshParent(), style.refetch()])}
+      />
+      <MaterialSelections
         project={parent}
         style={style.data}
         available={parentAvailable && !style.isError}

@@ -46,7 +46,10 @@ class StyleRequirementMigrationTest {
       assertThat(before).hasSize(42);
     }
     var upgraded =
-        Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
+        Flyway.configure()
+            .dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword())
+            .target("14")
+            .load();
     upgraded.migrate();
     upgraded.validate();
     assertThat(upgraded.info().applied()).hasSize(14);

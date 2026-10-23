@@ -98,6 +98,8 @@ beforeEach(() => {
                 version: 0,
               })),
         );
+      if (p.endsWith("/material-selections"))
+        return reply({ items: [], limit: 25, offset: 0, hasMore: false });
       if (p.endsWith("/requirement")) {
         if (r.method === "PUT") {
           if (writeDelay) return writeDelay;

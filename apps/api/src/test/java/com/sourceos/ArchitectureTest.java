@@ -19,6 +19,27 @@ class ArchitectureTest {
   }
 
   @Test
+  void selectionsDependOnlyOnPublicStyleAndCatalogContracts() {
+    var fields =
+        java.util.Arrays.stream(
+                com.sourceos.stylematerialselection.StyleMaterialSelectionService.class
+                    .getDeclaredFields())
+            .map(f -> f.getType().getName())
+            .toList();
+    assertThat(fields)
+        .noneMatch(
+            t ->
+                t.startsWith("com.sourceos.project.")
+                    || t.endsWith("Repository")
+                    || t.endsWith("Entity"));
+    assertThat(fields)
+        .contains(
+            "com.sourceos.style.StyleService",
+            "com.sourceos.material.MaterialService",
+            "com.sourceos.materiallisting.ListingService");
+  }
+
+  @Test
   void boundaries() {
     ApplicationModules.of(SourceOsApplication.class).verify();
   }

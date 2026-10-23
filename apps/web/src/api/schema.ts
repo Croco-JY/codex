@@ -1270,6 +1270,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/material-selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStyleMaterialSelections"];
+        put?: never;
+        post: operations["addStyleMaterialSelection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/material-selections/{selectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeStyleMaterialSelection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
         parameters: {
             query?: never;
@@ -2359,6 +2391,36 @@ export interface components {
             description?: string | null;
             name: string;
             styleCode?: string | null;
+        };
+        StyleMaterialSelectionInput: {
+            /** Format: uuid */
+            listingId?: string | null;
+            /** Format: uuid */
+            materialId: string;
+            /** Format: uuid */
+            variantId?: string | null;
+        };
+        StyleMaterialSelectionPage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleMaterialSelectionView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        StyleMaterialSelectionView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            listingId: string | null;
+            /** Format: uuid */
+            materialId: string;
+            /** Format: uuid */
+            styleId: string;
+            /** Format: uuid */
+            variantId: string | null;
         };
         StylePage: {
             hasMore: boolean;
@@ -4894,6 +4956,84 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["StyleView"];
                 };
+            };
+        };
+    };
+    listStyleMaterialSelections: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleMaterialSelectionPage"];
+                };
+            };
+        };
+    };
+    addStyleMaterialSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleMaterialSelectionInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleMaterialSelectionView"];
+                };
+            };
+        };
+    };
+    removeStyleMaterialSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                selectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

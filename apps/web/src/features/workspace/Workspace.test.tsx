@@ -164,6 +164,8 @@ beforeEach(() => {
         if (suffix === "/P/styles")
           return reply({ items: [s], limit: 25, offset: 0, hasMore: false });
         if (suffix === "/P/styles/S") return reply(s);
+        if (suffix === "/P/styles/S/material-selections")
+          return reply({ items: [], limit: 25, offset: 0, hasMore: false });
         return reply({}, 404);
       }
       return reply({}, 404);
@@ -250,11 +252,17 @@ test("direct nested route validates membership then parent then Style; display a
     "/organizations/B/projects",
   );
   expect(document.querySelector(".topbar")).toHaveTextContent("Organization B");
-  expect(privateCalls().map((r) => new URL(r.url).pathname)).toEqual([
+  const reads = privateCalls().map((r) => new URL(r.url).pathname);
+  expect(reads.slice(0, 2)).toEqual([
     "/api/v1/organizations/B/projects/P",
     "/api/v1/organizations/B/projects/P/styles/S",
-    "/api/v1/organizations/B/projects/P/styles/S/requirement",
   ]);
+  expect(reads.slice(2).sort()).toEqual(
+    [
+      "/api/v1/organizations/B/projects/P/styles/S/requirement",
+      "/api/v1/organizations/B/projects/P/styles/S/material-selections",
+    ].sort(),
+  );
 });
 test.each(["pending", "error", "missing"])(
   "membership %s fails closed, including PLATFORM_ADMIN without membership",

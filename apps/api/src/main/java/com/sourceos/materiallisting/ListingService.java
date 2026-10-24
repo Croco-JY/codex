@@ -13,6 +13,7 @@ import java.time.*;
 import java.util.*;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -98,6 +99,36 @@ public class ListingService {
 
   private ListingEntity find(UUID id) {
     return repository.findById(id).orElseThrow(ValidationRules::missing);
+  }
+
+  public record ListingReference(UUID listingId, UUID materialId, Status status) {}
+
+  public ListingReference readReference(UUID listingId) {
+    return reference(listingId, false);
+  }
+
+  private ListingReference reference(UUID id, boolean lock) {
+    return jdbc.sql(
+            "SELECT id,material_id,status FROM supplier_material_listing WHERE id=:id"
+                + (lock ? " FOR SHARE" : ""))
+        .param("id", id)
+        .query(
+            (r, n) ->
+                new ListingReference(
+                    r.getObject("id", UUID.class),
+                    r.getObject("material_id", UUID.class),
+                    Status.valueOf(r.getString("status"))))
+        .optional()
+        .orElseThrow(ValidationRules::missing);
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public ListingReference lockActiveReference(UUID listingId, UUID expectedMaterialId) {
+    var ref = reference(listingId, true);
+    if (!ref.materialId().equals(expectedMaterialId))
+      throw ValidationRules.bad("Listing belongs to another material");
+    if (ref.status() != Status.ACTIVE) throw ValidationRules.conflict();
+    return ref;
   }
 
   public View read(UUID id) {

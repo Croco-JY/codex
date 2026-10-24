@@ -316,6 +316,60 @@ public class MaterialService {
     return variants.findById(id).orElseThrow(ValidationRules::missing);
   }
 
+  public record MaterialReference(UUID materialId, Status status) {}
+
+  public record VariantReference(UUID variantId, UUID materialId, VariantStatus status) {}
+
+  public MaterialReference readReference(UUID materialId) {
+    return materialReference(materialId, false);
+  }
+
+  public VariantReference readVariantReference(UUID variantId) {
+    return variantReference(variantId, false);
+  }
+
+  private MaterialReference materialReference(UUID id, boolean lock) {
+    return jdbc.sql("SELECT id,status FROM material WHERE id=:id" + (lock ? " FOR SHARE" : ""))
+        .param("id", id)
+        .query(
+            (r, n) ->
+                new MaterialReference(
+                    r.getObject("id", UUID.class), Status.valueOf(r.getString("status"))))
+        .optional()
+        .orElseThrow(ValidationRules::missing);
+  }
+
+  private VariantReference variantReference(UUID id, boolean lock) {
+    return jdbc.sql(
+            "SELECT id,material_id,status FROM material_variant WHERE id=:id"
+                + (lock ? " FOR SHARE" : ""))
+        .param("id", id)
+        .query(
+            (r, n) ->
+                new VariantReference(
+                    r.getObject("id", UUID.class),
+                    r.getObject("material_id", UUID.class),
+                    VariantStatus.valueOf(r.getString("status"))))
+        .optional()
+        .orElseThrow(ValidationRules::missing);
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public MaterialReference lockActiveReference(UUID materialId) {
+    var ref = materialReference(materialId, true);
+    if (ref.status() != Status.ACTIVE) throw ValidationRules.conflict();
+    return ref;
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public VariantReference lockActiveVariantReference(UUID variantId, UUID expectedMaterialId) {
+    var ref = variantReference(variantId, true);
+    if (!ref.materialId().equals(expectedMaterialId))
+      throw ValidationRules.bad("Variant belongs to another material");
+    if (ref.status() != VariantStatus.ACTIVE) throw ValidationRules.conflict();
+    return ref;
+  }
+
   public View read(UUID id) {
     return view(find(id));
   }

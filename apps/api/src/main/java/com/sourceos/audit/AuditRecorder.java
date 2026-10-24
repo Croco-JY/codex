@@ -70,7 +70,12 @@ public class AuditRecorder {
           "unit",
           "validTo",
           "quantity",
-          "captureMode");
+          "captureMode",
+          "projectId",
+          "styleId",
+          "facilityId",
+          "state",
+          "sizeBytes");
 
   private String state(java.util.Map<String, ?> values) {
     if (values == null) return null;
@@ -114,6 +119,38 @@ public class AuditRecorder {
         .param("id", UUID.randomUUID())
         .param("issuer", actor.issuer())
         .param("subject", actor.subject())
+        .param("action", action)
+        .param("type", entityType)
+        .param("entity", entityId)
+        .param("request", requestId)
+        .param("before", b)
+        .param("after", a)
+        .update();
+  }
+
+  /** Private workspace audit: the Actor comes only from the authenticated context. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void organizationChanged(
+      UUID organizationId,
+      String action,
+      String entityType,
+      UUID entityId,
+      String requestId,
+      java.util.Map<String, ?> before,
+      java.util.Map<String, ?> after) {
+    if (organizationId == null || entityId == null || entityType == null || entityType.isBlank())
+      throw new IllegalArgumentException("Audit target required");
+    var actor = identities.current();
+    String b = state(before), a = state(after);
+    jdbc.sql(
+            "INSERT INTO audit_event(id,actor_issuer,actor_subject,organization_id,scope,action,"
+                + "entity_type,entity_id,request_id,before_state,after_state)"
+                + " VALUES(:id,:issuer,:subject,:org,'ORGANIZATION',:action,:type,:entity,:request,"
+                + "CAST(:before AS jsonb),CAST(:after AS jsonb))")
+        .param("id", UUID.randomUUID())
+        .param("issuer", actor.issuer())
+        .param("subject", actor.subject())
+        .param("org", organizationId)
         .param("action", action)
         .param("type", entityType)
         .param("entity", entityId)

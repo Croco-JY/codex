@@ -1206,6 +1206,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listProjects"];
+        put?: never;
+        post: operations["createProject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readProject"];
+        put: operations["updateProject"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listProjectStyles"];
+        put?: never;
+        post: operations["createStyle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readStyle"];
+        put: operations["updateStyle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStyleDevelopmentReferences"];
+        put?: never;
+        post: operations["uploadStyleDevelopmentReference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readStyleDevelopmentReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadStyleDevelopmentReference"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/development-references/{referenceId}/detach": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["detachStyleDevelopmentReference"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStyleFacilityCandidates"];
+        put?: never;
+        post: operations["addStyleFacilityCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/facility-candidates/{candidateId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeStyleFacilityCandidate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/material-selections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listStyleMaterialSelections"];
+        put?: never;
+        post: operations["addStyleMaterialSelection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/material-selections/{selectionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["removeStyleMaterialSelection"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readStyleRequirement"];
+        put: operations["writeStyleRequirement"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/regions": {
         parameters: {
             query?: never;
@@ -2127,6 +2335,42 @@ export interface components {
             /** Format: int64 */
             version?: number;
         };
+        ProjectCreateInput: {
+            description?: string | null;
+            name: string;
+        };
+        ProjectPage: {
+            hasMore: boolean;
+            items: components["schemas"]["ProjectView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        ProjectUpdateInput: {
+            description?: string | null;
+            name: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: int64 */
+            version: number;
+        };
+        ProjectView: {
+            /** Format: date-time */
+            createdAt: string;
+            description: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
         RecordInput: {
             /** Format: uuid */
             dataSourceId: string;
@@ -2238,6 +2482,172 @@ export interface components {
             sourceType?: "OFFICIAL_WEBSITE" | "PUBLIC_DIRECTORY" | "PARTNER_FEED" | "MANUAL_ENTRY" | "SUPPLIER_SUBMISSION" | "TRADE_SHOW" | "OTHER";
             /** Format: int64 */
             version?: number;
+        };
+        StyleCreateInput: {
+            description?: string | null;
+            name: string;
+            styleCode?: string | null;
+        };
+        StyleDevelopmentReferenceDetachInput: {
+            /** Format: int64 */
+            version: number;
+        };
+        StyleDevelopmentReferencePage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleDevelopmentReferenceView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        /** @enum {string} */
+        StyleDevelopmentReferenceState: "PENDING" | "READY" | "FAILED" | "DETACHED";
+        StyleDevelopmentReferenceUpload: {
+            displayName: string;
+            /** Format: binary */
+            file: string;
+        };
+        StyleDevelopmentReferenceView: {
+            /** Format: date-time */
+            createdAt: string;
+            displayName: string;
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            mediaType: "application/octet-stream";
+            /** Format: int64 */
+            sizeBytes: number;
+            state: components["schemas"]["StyleDevelopmentReferenceState"];
+            /** Format: uuid */
+            storageObjectId: string;
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        StyleFacilityCandidateInput: {
+            /** Format: uuid */
+            facilityId: string;
+        };
+        StyleFacilityCandidatePage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleFacilityCandidateView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        StyleFacilityCandidateView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            facilityId: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            styleId: string;
+        };
+        StyleMaterialSelectionInput: {
+            /** Format: uuid */
+            listingId?: string | null;
+            /** Format: uuid */
+            materialId: string;
+            /** Format: uuid */
+            variantId?: string | null;
+        };
+        StyleMaterialSelectionPage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleMaterialSelectionView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        StyleMaterialSelectionView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            listingId: string | null;
+            /** Format: uuid */
+            materialId: string;
+            /** Format: uuid */
+            styleId: string;
+            /** Format: uuid */
+            variantId: string | null;
+        };
+        StylePage: {
+            hasMore: boolean;
+            items: components["schemas"]["StyleView"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int32 */
+            offset: number;
+        };
+        StyleRequirementInput: {
+            currency?: string | null;
+            notes?: string | null;
+            productType?: string | null;
+            /** @enum {string|null} */
+            quantityUnit?: "PCS" | "SET" | null;
+            /** Format: decimal */
+            targetCost?: string | null;
+            /** Format: date */
+            targetDeliveryDate?: string | null;
+            /** Format: decimal */
+            targetQuantity?: string | null;
+            /** Format: int64 */
+            version: number;
+        };
+        StyleRequirementView: {
+            /** Format: date-time */
+            createdAt: string;
+            currency: string | null;
+            notes: string | null;
+            productType: string | null;
+            /** @enum {string|null} */
+            quantityUnit: "PCS" | "SET" | null;
+            /** Format: uuid */
+            styleId: string;
+            /** Format: decimal */
+            targetCost: string | null;
+            /** Format: date */
+            targetDeliveryDate: string | null;
+            /** Format: decimal */
+            targetQuantity: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        StyleUpdateInput: {
+            description?: string | null;
+            name: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            styleCode?: string | null;
+            /** Format: int64 */
+            version: number;
+        };
+        StyleView: {
+            /** Format: date-time */
+            createdAt: string;
+            description: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: uuid */
+            projectId: string;
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            styleCode: string | null;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
         };
         SupplierAliasInput: {
             alias: string;
@@ -4492,6 +4902,571 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MaterialVariantView"][];
+                };
+            };
+        };
+    };
+    listProjects: {
+        parameters: {
+            query?: {
+                /** @description Omit to include ACTIVE and ARCHIVED */
+                status?: "ACTIVE" | "ARCHIVED";
+                limit?: string;
+                offset?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProjectPage"];
+                };
+            };
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProjectView"];
+                };
+            };
+        };
+    };
+    readProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProjectView"];
+                };
+            };
+        };
+    };
+    updateProject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProjectView"];
+                };
+            };
+        };
+    };
+    listProjectStyles: {
+        parameters: {
+            query?: {
+                /** @description Omit to include ACTIVE and ARCHIVED */
+                status?: "ACTIVE" | "ARCHIVED";
+                limit?: string;
+                offset?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StylePage"];
+                };
+            };
+        };
+    };
+    createStyle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleView"];
+                };
+            };
+        };
+    };
+    readStyle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleView"];
+                };
+            };
+        };
+    };
+    updateStyle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleUpdateInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleView"];
+                };
+            };
+        };
+    };
+    listStyleDevelopmentReferences: {
+        parameters: {
+            query?: {
+                state?: components["schemas"]["StyleDevelopmentReferenceState"];
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferencePage"];
+                };
+            };
+        };
+    };
+    uploadStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["StyleDevelopmentReferenceUpload"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferenceView"];
+                };
+            };
+        };
+    };
+    readStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                referenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferenceView"];
+                };
+            };
+        };
+    };
+    downloadStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                referenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private attachment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    detachStyleDevelopmentReference: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                referenceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleDevelopmentReferenceDetachInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleDevelopmentReferenceView"];
+                };
+            };
+        };
+    };
+    listStyleFacilityCandidates: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleFacilityCandidatePage"];
+                };
+            };
+        };
+    };
+    addStyleFacilityCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleFacilityCandidateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleFacilityCandidateView"];
+                };
+            };
+        };
+    };
+    removeStyleFacilityCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                candidateId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    listStyleMaterialSelections: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleMaterialSelectionPage"];
+                };
+            };
+        };
+    };
+    addStyleMaterialSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleMaterialSelectionInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleMaterialSelectionView"];
+                };
+            };
+        };
+    };
+    removeStyleMaterialSelection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                selectionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    readStyleRequirement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleRequirementView"];
+                };
+            };
+        };
+    };
+    writeStyleRequirement: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Use * for atomic create-only with body version 0; an existing target returns 412. Omit for update-only: missing target returns 404, stale version returns 409. Blank, multiple, or other values and nonzero create versions return 400. */
+                "If-None-Match"?: string;
+            };
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StyleRequirementInput"];
+            };
+        };
+        responses: {
+            /** @description Existing Requirement replaced */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleRequirementView"];
+                };
+            };
+            /** @description Requirement created, version 0 */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["StyleRequirementView"];
                 };
             };
         };

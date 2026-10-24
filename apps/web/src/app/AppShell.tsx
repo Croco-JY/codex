@@ -3,13 +3,28 @@ import { Link, NavLink, useLocation } from "react-router";
 import { endSession } from "../api/session";
 import { Button, PageLayout, StatusBadge } from "../ui";
 import { AppRoutes } from "./routes";
+import { WorkspaceProvider, useWorkspaceBoundary } from "./workspace";
 import { useSession } from "./session";
 const LocalControls = import.meta.env.DEV
   ? lazy(() => import("./LocalSessionControls"))
   : undefined;
 export default function AppShell() {
+  return (
+    <WorkspaceProvider>
+      <Shell />
+    </WorkspaceProvider>
+  );
+}
+function Shell() {
   const session = useSession();
+  const boundary = useWorkspaceBoundary();
   const { pathname } = useLocation();
+  const routeOrg = /^\/organizations\/([^/]+)\/projects(?:\/|$)/.exec(
+    pathname,
+  )?.[1];
+  const usable =
+    !routeOrg ||
+    (boundary.resolved === routeOrg && boundary.active?.id === routeOrg);
   const content = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     content.current?.focus();
@@ -30,6 +45,16 @@ export default function AppShell() {
               Overview
             </NavLink>
             <NavLink to="/organization">Organization</NavLink>
+            <span className="nav-group">DEVELOP</span>
+            <NavLink
+              to={
+                usable && boundary.active?.id
+                  ? `/organizations/${boundary.active.id}/projects`
+                  : "/organization"
+              }
+            >
+              Projects
+            </NavLink>
             <span className="nav-group">SUPPLY NETWORK</span>
             <NavLink to="/suppliers">Suppliers</NavLink>
             <NavLink to="/facilities">Facilities</NavLink>
@@ -50,7 +75,11 @@ export default function AppShell() {
         </aside>
         <div className="workspace">
           <div className="topbar">
-            <span>{session.selected?.name ?? "Select an organization"}</span>
+            <span>
+              {!usable
+                ? "Organization workspace unavailable"
+                : (session.selected?.name ?? "Select an organization")}
+            </span>
             <StatusBadge>
               {session.status === "authenticated"
                 ? "Authenticated"

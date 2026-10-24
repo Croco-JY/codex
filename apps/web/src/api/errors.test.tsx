@@ -10,6 +10,7 @@ describe("safe HTTP error transport", () => {
     [403, "Access denied"],
     [404, "Not found"],
     [409, "Reload required"],
+    [412, "Precondition no longer holds"],
     [500, "Service unavailable"],
     [0, "Connection unavailable"],
   ])("distinguishes status %s", (status, title) => {
@@ -106,7 +107,7 @@ describe("safe HTTP error transport", () => {
     expect(document.body.textContent).not.toContain("private credential");
   });
 
-  it.each([400, 401, 403, 404, 409])(
+  it.each([400, 401, 403, 404, 409, 412])(
     "never automatically retries %s",
     (status) => {
       expect(retryRead(0, new ApiError(status))).toBe(false);

@@ -348,7 +348,7 @@ class SupplierDirectoryTest extends DirectoryIntegrationSupport {
   }
 
   @Test
-  void schemaHasNoSecondUsersOrPhaseTwo() {
+  void schemaHasNoSecondUsersOrTransactionalWorkflows() {
     assertThat(
             jdbc.sql(
                     "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND"
@@ -363,6 +363,6 @@ class SupplierDirectoryTest extends DirectoryIntegrationSupport {
                         + " installed_rank DESC LIMIT 1")
                 .query(String.class)
                 .single())
-        .isEqualTo("12");
+        .isEqualTo("17");
   }
 }

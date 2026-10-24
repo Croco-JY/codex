@@ -1,3 +1,16 @@
 # Roadmap
 
-Phase 0: foundation only. Phase 1 supply database; Phase 2 product workspace; Phase 3 pattern operations; Phase 4 pattern AI; Phase 5 sourcing; Phase 6 contracts; Phase 7 protected payments; Phase 8 production; Phase 9 intelligence. Stop after Phase 0 acceptance checks. No business data is fabricated.
+| Phase | Product boundary | Current authority/state |
+| --- | --- | --- |
+| 0 | Foundation | Accepted |
+| 1 | Supply Database / Discovery / Curation | Accepted through Phase 1C, merged in PR #3 |
+| 2 | Product Workspace | Contract/documentation planning only; [plan](phase-2-plan.md); stop before 2A |
+| 3 | Product Development / Pattern Operations | Future |
+| 4 | SOURCE Pattern AI | Future |
+| 5 | Sourcing / RFQ / Quotations | Future |
+| 6 | Contracts / Approvals | Future |
+| 7 | Protected Payments | Future |
+| 8 | Production / QC / Shipment | Future |
+| 9 | Intelligence / Reorder | Future |
+
+The workflow is DISCOVER → DEVELOP → SOURCE → TRANSACT → PRODUCE → LEARN. Phase 2 is the first private DEVELOP foundation, not RFQ. Historical Phase 0 execution limits in the original master specification governed that original task; this roadmap and subsequent explicit accepted tasks establish current authority. No business data is fabricated and no next implementation slice starts automatically.

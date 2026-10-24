@@ -5,6 +5,11 @@ import { z } from "zod";
 import { api, requireData } from "../api/client";
 import { queryKeys } from "../api/queryKeys";
 import { getSession } from "../api/session";
+import {
+  useWorkspaceBoundary,
+  organizationsOptions,
+  validOrganization,
+} from "../app/workspace";
 import { useSession } from "../app/session";
 import {
   Button,
@@ -23,21 +28,15 @@ const nameSchema = z
   .max(160, "Use 160 characters or fewer.");
 export default function OrganizationPage() {
   const cache = useQueryClient();
+  const workspace = useWorkspaceBoundary();
   const { selected, select, scope } = useSession();
   const key = queryKeys.organizations(scope);
   const current = () => scope === getSession().key;
   const form = useForm<{ name: string }>({ defaultValues: { name: "" } });
   const [formError, setFormError] = useState("");
-  const organizations = useQuery({
-    queryKey: key,
-    queryFn: async ({ signal }) => {
-      const { data, response } = await api.GET("/api/organizations", {
-        signal,
-      });
-      return requireData(data, response);
-    },
-  });
+  const organizations = useQuery(organizationsOptions(scope));
   const create = useMutation({
+    retry: false,
     mutationFn: async (name: string) => {
       const { data, response } = await api.POST("/api/organizations", {
         body: { name },
@@ -46,12 +45,13 @@ export default function OrganizationPage() {
     },
     onSuccess: (org) => {
       if (!current()) return;
-      select(org);
+      workspace.enter(org);
       form.reset();
       void cache.invalidateQueries({ queryKey: key });
     },
   });
   const rename = useMutation({
+    retry: false,
     mutationFn: async (name: string) => {
       if (!selected?.id) throw new Error("Select an organization.");
       const { data, response } = await api.PATCH("/api/organizations/{id}", {
@@ -95,9 +95,10 @@ export default function OrganizationPage() {
             {organizations.data.map((org) => (
               <li key={org.id}>
                 <Button
+                  disabled={!validOrganization(org)}
                   aria-pressed={selected?.id === org.id}
                   onClick={() => {
-                    select(org);
+                    workspace.choose(org);
                     setRenameName(org.name ?? "");
                   }}
                 >

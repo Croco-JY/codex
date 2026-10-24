@@ -31,10 +31,12 @@ export const api = createClient<paths>({
         throw new DOMException("Request cancelled", "AbortError");
       throw new ApiError(0);
     }
-    if (scope !== getSession().key)
+    if (scope !== getSession().key || request.signal.aborted)
       throw new DOMException("Request cancelled", "AbortError");
     if (!response.ok) {
       const error = await responseError(response);
+      if (scope !== getSession().key || request.signal.aborted)
+        throw new DOMException("Request cancelled", "AbortError");
       if (response.status === 401) expireSession(scope, error.requestId);
       throw error;
     }

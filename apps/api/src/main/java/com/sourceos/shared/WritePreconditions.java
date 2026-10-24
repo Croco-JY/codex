@@ -3,7 +3,7 @@ package com.sourceos.shared;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
-/** Explicit create intent for the three versioned child-resource PUT operations. */
+/** Explicit create intent for versioned child-resource PUT operations. */
 public final class WritePreconditions {
   private WritePreconditions() {}
 

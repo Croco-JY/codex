@@ -20,8 +20,8 @@ export function safeVersion(v: unknown): v is number {
   return typeof v === "number" && Number.isSafeInteger(v) && v >= 0;
 }
 const nullableText = (v: unknown) => v === null || typeof v === "string";
-const timestamp = (v: unknown) =>
-  typeof v === "string" && Number.isFinite(Date.parse(v));
+const timestampSchema = z.iso.datetime({ offset: true });
+const timestamp = (v: unknown) => timestampSchema.safeParse(v).success;
 export function entityValid(v: Entity, parent: string, id?: string): boolean {
   return (
     !!v &&

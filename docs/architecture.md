@@ -1,8 +1,11 @@
 # Architecture
+
 ## Runtime and boundaries
+
 SOURCE OS is a Java 25 / Spring Boot 4.1 modular monolith. React is an SPA; Node is build tooling only. PostgreSQL 18 is the transactional system of record. No Redis, Kafka, search cluster, Kubernetes or microservices are introduced.
 
 Domain packages and public contracts:
+
 - identity: Actor(issuer,subject), IdentityService; local or OIDC security adapter.
 - organization: OrganizationService, immutable OrganizationView; JPA organization and JDBC membership facts.
 - authorization: MembershipLookup port and OrganizationAuthorization policy. Organization implements the lookup, so authorization has no dependency back to organization.
@@ -18,6 +21,11 @@ Domain packages and public contracts:
 - materiallisting: Seller Listings belonging to a Material; a Listing has no Variant parent.
 - materialprice / materialinventory: immutable Price facts with one-time closure and append-only Inventory observations, scoped commercial resolution/history.
 - materialsearch: bounded PostgreSQL Material discovery projections, without owning catalog entities.
+- project / style: private Organization-owned workspace roots; style consumes the public Project boundary.
+- stylerequirement: singular exact planning sheet, consuming Style context only.
+- stylematerialselection: immutable private catalog-reference edges, consuming Style and Material/Listing reference providers.
+- stylefacilitycandidate: immutable private Facility-reference edges, consuming Style and Facility public providers, without Supplier eligibility.
+- styledevelopmentreference: durable private metadata and split upload transactions, consuming Style, AuthorizedStorage and audit.
 
 PlatformAuthorization checks active issuer/subject PLATFORM_ADMIN grants independently of organization policy. Canonical catalog reads require authentication; canonical mutations and source/provenance administration require platform authorization. Grant bootstrap is operator-only; see [runbook](platform-admin-bootstrap.md).
 
@@ -25,7 +33,7 @@ Spring Modulith verifies allowed dependencies and absence of cycles. Other modul
 
 ## Transactions
 Organization creation, owner membership and audit evidence commit together. Rename uses optimistic version checking and audit evidence in the same transaction. Client organization IDs are never trusted: every protected Organization operation resolves active membership and role centrally. Global curation uses the separate platform policy.
-Flyway V1 creates three foundation tables; V2 prevents audit truncation. V3 extends audit with ORGANIZATION/PLATFORM scopes without rewriting old events or disabling append-only guards. V4–V8 add the Phase 1A role/reference/provenance/Supplier/Facility model; V9 adds Materials/Variants/specifications/Composition/Listings, V10 Price/evidence, V11 Inventory snapshots and V12 search indexes. V1–V12 are accepted released history. JPA validates, never generates production schema. No Project/Style or later transaction-workflow tables exist yet.
+Flyway V1 creates three foundation tables; V2 prevents audit truncation. V3 extends audit with ORGANIZATION/PLATFORM scopes without rewriting old events or disabling append-only guards. V4–V8 add the Phase 1A role/reference/provenance/Supplier/Facility model; V9 adds Materials/Variants/specifications/Composition/Listings, V10 Price/evidence, V11 Inventory snapshots and V12 search indexes. V13 adds Project/Style, V14 Requirement, V15 Material Selection, V16 Facility Candidate and V17 Development Reference. V1–V17 are accepted released history. JPA validates, never generates production schema. Phase 3 PLAN creates no V18 or later workflow table.
 
 Supplier and facility ordinary aggregate persistence uses JPA with optimistic versions. Source upserts, recursive integrity checks, typed citations, reference updates and directory search use JdbcClient/explicit SQL where the database operation is clearer. Mutable SQL-backed records compare versions. Identity resolution locks the source record and atomically creates a canonical row, typed binding, citation and audit event. A repeated identity import returns its existing canonical ID, including archived records; it never auto-merges by name.
 
@@ -36,11 +44,25 @@ Java DTOs → springdoc OpenAPI → openapi-typescript schema → openapi-fetch 
 
 Accepted Phase 1C includes the application shell and buyer discovery/detail workspaces for Materials, Suppliers and Facilities. Listing, Price and Inventory reads and PLATFORM_ADMIN provenance/catalog/commercial/typed-identity curation are implemented. Query/cache ownership uses opaque Actor session scopes; capability pending/error fails closed, revocation removes protected state, and Actor changes cancel/clear owned requests and drafts. BigDecimal crosses HTTP as exact plain decimal strings. Capability and Fabric/Leather first writes use explicit `If-None-Match: *`, with failed precondition 412, missing update 404 and stale update 409. See the [cumulative audit](phase-1c-final-pre-merge-audit.md).
 
-## Planned Phase 2 boundary (not implemented)
+## Current accepted Phase 2 boundary
 
-[Phase 2 Product Workspace](phase-2-plan.md) introduces private Organization → Project → Style data, authorized by OrganizationAuthorization. PLATFORM_ADMIN alone grants no private tenant access. Separate top-level project and style modules permit style → project only; descendants use public immutable parent contracts. Global catalog ownership does not move into a Project. Organization-scoped keys and cancellation/remount on Organization switch are new work, not an existing guarantee of the current selected-organization state alone.
+[Phase 2 Product Workspace](phase-2-plan.md) is implemented through [2G](phase-2g-cumulative-hardening.md) and integrated into main. OrganizationAuthorization protects private Organization → Project → Style data; PLATFORM_ADMIN alone grants no tenant access. Top-level modules permit style → project, with descendants consuming StyleService readContext/lockContextForWrite and immutable public provider contracts. No child queries foreign Project/Style persistence. Global catalog ownership never moves into a Project.
 
-Current file storage has organization-authorized binary put/get but no persistent Style attachment relation, upload HTTP endpoint or generic object HTTP getter. Phase 2F's planned metadata/failure protocol and necessary narrow file-contract extension are specified in the plan. No outbox, new dependency or infrastructure is justified by this plan.
+Writes lock Project → Style before the child/provider: Requirement; Material → optional Variant → optional Listing; Facility; or Reference. Catalog registration uses provider-owned MANDATORY/FOR SHARE locks. Private edges survive later global archive. Project/Style archive blocks descendant writes, including unlink/detach, while historical reads and READY content remain authorized-readable. Child writes preserve parent versions and canonical Supply truth.
+
+Style Development References have PENDING/READY/FAILED/DETACHED metadata and Organization-authorized create-only putNew/get. Reservation commits before binary I/O; storage runs outside SQL transaction; finalization reauthorizes and locks parents/reference. Metadata and corresponding retained bytes are not physically collected. Downloads traverse the private hierarchy and use safe attachment/octet-stream headers. There is no generic object HTTP getter or delete, outbox, GC worker or reverse file→workspace dependency.
+
+Private cache ownership includes Actor scope, Organization and monotonic generation. Org switch clears private state but preserves same-Actor Supply; Actor switch clears Actor-owned state. Parent-gated Style detail retains four independent child sections. Current-generation child 403 denies the workspace; other child failures stay local. Strict Project/Style timezone-aware timestamps, exact decimal strings, trusted transport and late binary isolation are accepted baseline.
+
+## Planned Phase 3 — deterministic revision infrastructure
+
+[Phase 3 PLAN](phase-3-plan.md) and [ADR 012](adr/012-pattern-revision-model.md) lock Style-owned stable Measurement/Pattern/Grading identities with complete immutable revisions, atomic revision 1 and server-numbered linear history. New revisions lock the stable aggregate, verify expectedLatestRevisionNumber and produce one N+1 / one 409 under a stale-head race. Latest is derived; no mutable currentRevisionId duplicate. Same-Style Pattern→Measurement revision references require scoped lookup and practical DB-enforceable owner integrity.
+
+Future modules are measurement→style, pattern→style+measurement (artifact path→file), grading→explicit pattern/style providers, patternqa→pattern and patternrelease→pattern/required public authorization/file contracts. No reverse Style/Measurement/File dependency, foreign Repository/Entity/JDBC shortcut or worker-owned transactional truth. Java/PostgreSQL commits business truth; Python may later supply Phase 4 proposals.
+
+Historical 3B artifactless revisions remain artifactless. 3C artifact introduction/replacement creates a new revision with immutable artifact identity; only explicitly modeled upload lifecycle changes afterward. Its separately specified non-XA protocol inherits authorization, retention and create-only lessons from 2F, without silently increasing the 10 MiB cap. QA assesses exact revisions; release grants bounded authorized access, not RFQ/award/production or IP transfer.
+
+Phase 3 uses lazy Style-contextual routes and preserves StyleDetail's four Phase 2 child requests. No runtime, API, parser, geometry, grading, QA/release workflow, schema, dependency or infrastructure is implemented by PLAN. AI remains Phase 4; RFQ Phase 5; Tech Pack/BOM/Sample and paid Pattern pricing require separate decisions.
 
 ## Auxiliary systems
 Workers are README-only. Future Python 3.14 + uv workers call controlled Java interfaces and never independently write transactional truth. Terraform is a valid nondeployed skeleton. Production storage, Cognito browser login and AWS resource provisioning remain configuration-dependent deployment work.

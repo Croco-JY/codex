@@ -1398,6 +1398,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readMeasurementSpec"];
+        put: operations["createMeasurementSpec"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMeasurementRevisions"];
+        put?: never;
+        post: operations["createMeasurementRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec/revisions/{revisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readMeasurementRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
         parameters: {
             query?: never;
@@ -2174,6 +2222,93 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+        };
+        MeasurementPointInput: {
+            code: string;
+            label: string;
+            notes?: string | null;
+            /** Format: decimal */
+            toleranceMinus?: string | null;
+            /** Format: decimal */
+            tolerancePlus?: string | null;
+            /** Format: decimal */
+            value: string;
+        };
+        MeasurementPointView: {
+            code: string;
+            label: string;
+            notes: string | null;
+            /** Format: int32 */
+            position: number;
+            /** Format: decimal */
+            toleranceMinus: string | null;
+            /** Format: decimal */
+            tolerancePlus: string | null;
+            /** Format: decimal */
+            value: string;
+        };
+        MeasurementRevisionCreateInput: {
+            baseSize: string;
+            /** Format: int64 */
+            expectedLatestRevisionNumber: number;
+            points: components["schemas"]["MeasurementPointInput"][];
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        MeasurementRevisionPage: {
+            items: components["schemas"]["MeasurementRevisionSummary"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int64 */
+            nextMaxRevisionNumber: number | null;
+        };
+        MeasurementRevisionSummary: {
+            baseSize: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            measurementSpecId: string;
+            /** Format: int32 */
+            pointCount: number;
+            /** Format: int64 */
+            revisionNumber: number;
+            /** Format: uuid */
+            styleId: string;
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        MeasurementRevisionView: {
+            baseSize: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            measurementSpecId: string;
+            points: components["schemas"]["MeasurementPointView"][];
+            /** Format: int64 */
+            revisionNumber: number;
+            /** Format: uuid */
+            styleId: string;
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        MeasurementSpecCreateInput: {
+            baseSize: string;
+            points: components["schemas"]["MeasurementPointInput"][];
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        MeasurementSpecView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            latestRevision: components["schemas"]["MeasurementRevisionView"];
+            /** Format: uuid */
+            styleId: string;
         };
         Observation: {
             contentHash?: string;
@@ -5404,6 +5539,141 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    readMeasurementSpec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeasurementSpecView"];
+                };
+            };
+        };
+    };
+    createMeasurementSpec: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Required singleton create-only precondition: exactly one * with optional HTTP SP/HTAB */
+                "If-None-Match"?: string;
+            };
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasurementSpecCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeasurementSpecView"];
+                };
+            };
+        };
+    };
+    listMeasurementRevisions: {
+        parameters: {
+            query?: {
+                limit?: string;
+                maxRevisionNumber?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeasurementRevisionPage"];
+                };
+            };
+        };
+    };
+    createMeasurementRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeasurementRevisionCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeasurementRevisionView"];
+                };
+            };
+        };
+    };
+    readMeasurementRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MeasurementRevisionView"];
+                };
             };
         };
     };

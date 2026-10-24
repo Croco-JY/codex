@@ -7,6 +7,7 @@ import { WorkspaceGate } from "./workspace";
 import { useSession } from "./session";
 const Projects = lazy(() => import("../pages/ProjectsPage"));
 const ProjectDetail = lazy(() => import("../pages/ProjectDetailPage"));
+const Measurements = lazy(() => import("../pages/MeasurementsPage"));
 const StyleDetail = lazy(() => import("../pages/StyleDetailPage"));
 const Overview = lazy(() => import("../pages/OverviewPage"));
 const Organization = lazy(() => import("../pages/OrganizationPage"));
@@ -102,6 +103,16 @@ export function AppRoutes() {
             <Authenticated>
               <WorkspaceGate>
                 <StyleDetail />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/projects/:projectId/styles/:styleId/measurements"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <Measurements />
               </WorkspaceGate>
             </Authenticated>
           }

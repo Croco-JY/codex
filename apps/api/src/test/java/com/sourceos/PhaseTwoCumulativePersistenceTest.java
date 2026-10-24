@@ -65,14 +65,14 @@ class PhaseTwoCumulativePersistenceTest extends PhaseTwoCumulativeSupport {
             jdbc.sql("SELECT count(*) FROM flyway_schema_history WHERE success")
                 .query(Integer.class)
                 .single())
-        .isEqualTo(17);
+        .isEqualTo(18);
     assertThat(
             jdbc.sql(
                     "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND"
                         + " table_type='BASE TABLE'")
                 .query(Integer.class)
                 .single())
-        .isEqualTo(47);
+        .isEqualTo(50);
     assertThat(
             jdbc.sql(
                     "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE"

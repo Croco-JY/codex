@@ -1,0 +1,33 @@
+.measurement-point {
+  min-width: 0;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #cdd7cf;
+}
+.measurement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+}
+.measurement-grid > div {
+  min-width: 0;
+}
+.measurement-grid textarea,
+.measurement-grid select {
+  width: 100%;
+  max-width: 100%;
+}
+.measurement-reference {
+  overflow-wrap: anywhere;
+}
+.measurement-error {
+  color: #923d2b;
+}
+[aria-label="Measurement workspace"],
+.measurement-heading {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+[aria-label="Measurement draft"] > fieldset {
+  min-width: 0;
+}

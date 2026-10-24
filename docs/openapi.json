@@ -1916,6 +1916,338 @@
         },
         "type": "object"
       },
+      "MeasurementPointInput": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "^[A-Z0-9][A-Z0-9._/-]{0,79}$",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "toleranceMinus": {
+            "format": "decimal",
+            "pattern": "^[0-9]{1,15}(\\.[0-9]{1,4})?$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tolerancePlus": {
+            "format": "decimal",
+            "pattern": "^[0-9]{1,15}(\\.[0-9]{1,4})?$",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {
+            "format": "decimal",
+            "pattern": "^[0-9]{1,15}(\\.[0-9]{1,4})?$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "value"
+        ],
+        "type": "object"
+      },
+      "MeasurementPointView": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "toleranceMinus": {
+            "format": "decimal",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tolerancePlus": {
+            "format": "decimal",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "value": {
+            "format": "decimal",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "notes",
+          "position",
+          "toleranceMinus",
+          "tolerancePlus",
+          "value"
+        ],
+        "type": "object"
+      },
+      "MeasurementRevisionCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "baseSize": {
+            "maxLength": 40,
+            "minLength": 1,
+            "type": "string"
+          },
+          "expectedLatestRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/MeasurementPointInput"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSize",
+          "expectedLatestRevisionNumber",
+          "points",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "MeasurementRevisionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MeasurementRevisionSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "nextMaxRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "nextMaxRevisionNumber"
+        ],
+        "type": "object"
+      },
+      "MeasurementRevisionSummary": {
+        "properties": {
+          "baseSize": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "measurementSpecId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "pointCount": {
+            "format": "int32",
+            "maximum": 500,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "revisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSize",
+          "createdAt",
+          "id",
+          "measurementSpecId",
+          "pointCount",
+          "revisionNumber",
+          "styleId",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "MeasurementRevisionView": {
+        "properties": {
+          "baseSize": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "measurementSpecId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/MeasurementPointView"
+            },
+            "type": "array"
+          },
+          "revisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSize",
+          "createdAt",
+          "id",
+          "measurementSpecId",
+          "points",
+          "revisionNumber",
+          "styleId",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "MeasurementSpecCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "baseSize": {
+            "maxLength": 40,
+            "minLength": 1,
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/MeasurementPointInput"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSize",
+          "points",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "MeasurementSpecView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latestRevision": {
+            "$ref": "#/components/schemas/MeasurementRevisionView"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "latestRevision",
+          "styleId"
+        ],
+        "type": "object"
+      },
       "Observation": {
         "properties": {
           "contentHash": {
@@ -8859,6 +9191,305 @@
         },
         "tags": [
           "style-material-selection-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec": {
+      "get": {
+        "operationId": "readMeasurementSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementSpecView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "measurement-controller"
+        ]
+      },
+      "put": {
+        "operationId": "createMeasurementSpec",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Required singleton create-only precondition: exactly one * with optional HTTP SP/HTAB",
+            "in": "header",
+            "name": "If-None-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasurementSpecCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementSpecView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "measurement-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec/revisions": {
+      "get": {
+        "operationId": "listMeasurementRevisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxRevisionNumber",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementRevisionPage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "measurement-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createMeasurementRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeasurementRevisionCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementRevisionView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "measurement-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec/revisions/{revisionId}": {
+      "get": {
+        "operationId": "readMeasurementRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasurementRevisionView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "measurement-controller"
         ]
       }
     },

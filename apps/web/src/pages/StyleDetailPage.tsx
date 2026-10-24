@@ -6,6 +6,7 @@ import { useProject, useStyle } from "../features/workspace/data";
 import {
   collectionPath,
   projectPath,
+  stylePath,
   type Project,
 } from "../features/workspace/model";
 import { Editor } from "../features/workspace/Editor";
@@ -76,6 +77,11 @@ function StyleContent({
         <h1>{style.data.name}</h1>
         {style.data.styleCode && <p>{style.data.styleCode}</p>}
         <p className="record-reference">Style ID: {style.data.id}</p>
+        <Link
+          to={`${stylePath(w.organizationId, parent.id, style.data.id)}/measurements`}
+        >
+          Measurements
+        </Link>
       </header>
       {style.isError && (
         <ApiErrorState error={style.error} retry={() => void style.refetch()} />

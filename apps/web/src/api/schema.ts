@@ -1446,6 +1446,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPatterns"];
+        put?: never;
+        post: operations["createPattern"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readPattern"];
+        put: operations["updatePatternLifecycle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPatternRevisions"];
+        put?: never;
+        post: operations["createPatternRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readPatternRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
         parameters: {
             query?: never;
@@ -2368,6 +2432,101 @@ export interface components {
         PageSupplierHit: {
             items?: components["schemas"]["SupplierHit"][];
             nextCursor?: string;
+        };
+        PatternCreateInput: {
+            /** Format: uuid */
+            measurementRevisionId?: string | null;
+            name: string;
+            purpose?: string | null;
+        };
+        PatternLifecycleInput: {
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: int64 */
+            version: number;
+        };
+        PatternPage: {
+            items: components["schemas"]["PatternSummary"][];
+            /** Format: int32 */
+            limit: number;
+            nextCursor: string | null;
+        };
+        PatternRevisionCreateInput: {
+            /** Format: int64 */
+            expectedLatestRevisionNumber: number;
+            /** Format: uuid */
+            measurementRevisionId?: string | null;
+            name: string;
+            purpose?: string | null;
+        };
+        PatternRevisionPage: {
+            items: components["schemas"]["PatternRevisionSummary"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int64 */
+            nextMaxRevisionNumber: number | null;
+        };
+        PatternRevisionSummary: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            measurementRevisionId: string | null;
+            name: string;
+            /** Format: uuid */
+            patternId: string;
+            purpose: string | null;
+            /** Format: int64 */
+            revisionNumber: number;
+            /** Format: uuid */
+            styleId: string;
+        };
+        PatternRevisionView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            measurementRevisionId: string | null;
+            name: string;
+            /** Format: uuid */
+            patternId: string;
+            purpose: string | null;
+            /** Format: int64 */
+            revisionNumber: number;
+            /** Format: uuid */
+            styleId: string;
+        };
+        PatternSummary: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            latestRevision: components["schemas"]["PatternRevisionSummary"];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        PatternView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            latestRevision: components["schemas"]["PatternRevisionView"];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
         };
         PriceCloseInput: {
             /** Format: date-time */
@@ -5673,6 +5832,199 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MeasurementRevisionView"];
+                };
+            };
+        };
+    };
+    listPatterns: {
+        parameters: {
+            query?: {
+                status?: "ACTIVE" | "ARCHIVED" | "ALL";
+                limit?: string;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternPage"];
+                };
+            };
+        };
+    };
+    createPattern: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatternCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternView"];
+                };
+            };
+        };
+    };
+    readPattern: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternView"];
+                };
+            };
+        };
+    };
+    updatePatternLifecycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatternLifecycleInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternView"];
+                };
+            };
+        };
+    };
+    listPatternRevisions: {
+        parameters: {
+            query?: {
+                limit?: string;
+                maxRevisionNumber?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternRevisionPage"];
+                };
+            };
+        };
+    };
+    createPatternRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatternRevisionCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternRevisionView"];
+                };
+            };
+        };
+    };
+    readPatternRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternRevisionView"];
                 };
             };
         };

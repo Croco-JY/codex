@@ -2417,6 +2417,341 @@
         },
         "type": "object"
       },
+      "PatternCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "measurementRevisionId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 160,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "PatternLifecycleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ],
+        "type": "object"
+      },
+      "PatternPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PatternSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "nextCursor"
+        ],
+        "type": "object"
+      },
+      "PatternRevisionCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "expectedLatestRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "measurementRevisionId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 160,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "expectedLatestRevisionNumber",
+          "name"
+        ],
+        "type": "object"
+      },
+      "PatternRevisionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PatternRevisionSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "nextMaxRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "nextMaxRevisionNumber"
+        ],
+        "type": "object"
+      },
+      "PatternRevisionSummary": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "measurementRevisionId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "patternId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "purpose": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revisionNumber": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "measurementRevisionId",
+          "name",
+          "patternId",
+          "purpose",
+          "revisionNumber",
+          "styleId"
+        ],
+        "type": "object"
+      },
+      "PatternRevisionView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "measurementRevisionId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "patternId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "purpose": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "measurementRevisionId",
+          "name",
+          "patternId",
+          "purpose",
+          "revisionNumber",
+          "styleId"
+        ],
+        "type": "object"
+      },
+      "PatternSummary": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latestRevision": {
+            "$ref": "#/components/schemas/PatternRevisionSummary"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "latestRevision",
+          "status",
+          "styleId",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
+      "PatternView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latestRevision": {
+            "$ref": "#/components/schemas/PatternRevisionView"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "latestRevision",
+          "status",
+          "styleId",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
       "PriceCloseInput": {
         "properties": {
           "validTo": {
@@ -9490,6 +9825,479 @@
         },
         "tags": [
           "measurement-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns": {
+      "get": {
+        "operationId": "listPatterns",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "ACTIVE",
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED",
+                "ALL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternPage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createPattern",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatternCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "pattern-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}": {
+      "get": {
+        "operationId": "readPattern",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-controller"
+        ]
+      },
+      "put": {
+        "operationId": "updatePatternLifecycle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatternLifecycleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions": {
+      "get": {
+        "operationId": "listPatternRevisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxRevisionNumber",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternRevisionPage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createPatternRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatternRevisionCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternRevisionView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "pattern-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}": {
+      "get": {
+        "operationId": "readPatternRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternRevisionView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-controller"
         ]
       }
     },

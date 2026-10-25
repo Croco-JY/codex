@@ -124,7 +124,8 @@ class MeasurementMigrationTest {
       q.execute("CREATE DATABASE " + name);
     }
     String url = "jdbc:postgresql://" + db.getHost() + ":" + db.getMappedPort(5432) + "/" + name;
-    var f = Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).load();
+    var f =
+        Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).target("18").load();
     f.migrate();
     f.validate();
     assertThat(f.info().applied()).hasSize(18);

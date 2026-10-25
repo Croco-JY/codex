@@ -1,0 +1,9 @@
+.pattern-id { overflow-wrap:anywhere; min-width:0; }
+.pattern-list { display:grid; gap:1rem; padding-left:1.25rem; }
+.pattern-list li { min-width:0; overflow-wrap:anywhere; }
+[aria-label="Pattern detail"], [aria-label="Pattern collection"],
+[aria-label="Pattern detail"] form, [aria-label="Pattern collection"] form,
+[aria-label="Pattern detail"] fieldset, [aria-label="Pattern collection"] fieldset { min-width:0; }
+[aria-label="Pattern detail"] dd, [aria-label="Pattern detail"] p,
+[aria-label="Pattern detail"] h2 { overflow-wrap:anywhere; }
+[aria-label="Measurement revision selector"] { max-width:100%; }

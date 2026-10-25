@@ -305,6 +305,31 @@ public class MeasurementService {
     return new SpecView(s.id(), s.styleId(), r, s.createdAt());
   }
 
+  /** Immutable, same-Style reference metadata; intentionally does not hydrate POM rows. */
+  public record ReferenceContext(
+      UUID revisionId, UUID measurementSpecId, UUID styleId, long revisionNumber) {}
+
+  @Transactional(readOnly = true)
+  public ReferenceContext referenceContext(UUID org, UUID project, UUID style, UUID revision) {
+    styles.readContext(org, project, style);
+    var spec = required(style, false);
+    return jdbc.sql(
+            "SELECT id,measurement_spec_id,style_id,revision_number FROM measurement_revision WHERE"
+                + " id=:id AND style_id=:style AND measurement_spec_id=:spec")
+        .param("id", revision)
+        .param("style", style)
+        .param("spec", spec.id())
+        .query(
+            (r, n) ->
+                new ReferenceContext(
+                    r.getObject("id", UUID.class),
+                    r.getObject("measurement_spec_id", UUID.class),
+                    r.getObject("style_id", UUID.class),
+                    r.getLong("revision_number")))
+        .optional()
+        .orElseThrow(ValidationRules::missing);
+  }
+
   @Transactional(readOnly = true)
   public SpecView read(UUID org, UUID project, UUID style) {
     styles.readContext(org, project, style);

@@ -12,6 +12,7 @@ export function useMeasurementSpec(
   projectId: string,
   styleId: string,
   enabled: boolean,
+  freshOnMount = false,
 ) {
   const w = useWorkspace();
   return useQuery({
@@ -23,6 +24,7 @@ export function useMeasurementSpec(
     ),
     enabled,
     retry: false,
+    ...(freshOnMount ? { refetchOnMount: "always" as const } : {}),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         try {
@@ -45,6 +47,7 @@ export function useMeasurementHistory(
   spec: Spec,
   max: number,
   enabled: boolean,
+  freshOnMount = false,
 ) {
   const w = useWorkspace();
   return useQuery({
@@ -58,6 +61,7 @@ export function useMeasurementHistory(
     ),
     enabled,
     retry: false,
+    ...(freshOnMount ? { refetchOnMount: "always" as const } : {}),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(revisionsPath, {

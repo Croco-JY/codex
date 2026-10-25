@@ -270,6 +270,28 @@ export const queryKeys = {
       "revision",
       revision,
     ] as const,
+  patternArtifact: (
+    scope: string,
+    org: string,
+    project: string,
+    style: string,
+    pattern: string,
+    revision: string,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "style",
+      style,
+      "pattern",
+      pattern,
+      "revision",
+      revision,
+      "artifact",
+    ] as const,
   admin: (scope: string) => ["admin", scope] as const,
   adminCitations: (
     scope: string,

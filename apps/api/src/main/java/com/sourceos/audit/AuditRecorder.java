@@ -80,7 +80,11 @@ public class AuditRecorder {
           "measurementRevisionNumber",
           "patternId",
           "patternRevisionNumber",
-          "measurementRevisionId");
+          "measurementRevisionId",
+          "patternRevisionId",
+          "patternArtifactState",
+          "patternArtifactFormat",
+          "patternArtifactFailureCode");
 
   private String state(java.util.Map<String, ?> values) {
     if (values == null) return null;

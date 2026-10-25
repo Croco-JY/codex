@@ -2417,6 +2417,163 @@
         },
         "type": "object"
       },
+      "PatternArtifactDeclaredFormat": {
+        "enum": [
+          "DXF_AAMA",
+          "DXF_ASTM",
+          "PDF"
+        ],
+        "type": "string"
+      },
+      "PatternArtifactMultipart": {
+        "additionalProperties": false,
+        "properties": {
+          "file": {
+            "format": "binary",
+            "type": "string"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PatternArtifactRevisionCreateInput"
+          }
+        },
+        "required": [
+          "file",
+          "metadata"
+        ],
+        "type": "object"
+      },
+      "PatternArtifactRevisionCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "declaredFormat": {
+            "$ref": "#/components/schemas/PatternArtifactDeclaredFormat"
+          },
+          "displayName": {
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "expectedLatestRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "measurementRevisionId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "purpose": {
+            "maxLength": 160,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "declaredFormat",
+          "displayName",
+          "expectedLatestRevisionNumber",
+          "name"
+        ],
+        "type": "object"
+      },
+      "PatternArtifactRevisionResult": {
+        "properties": {
+          "artifact": {
+            "$ref": "#/components/schemas/PatternArtifactView"
+          },
+          "revision": {
+            "$ref": "#/components/schemas/PatternRevisionView"
+          }
+        },
+        "required": [
+          "artifact",
+          "revision"
+        ],
+        "type": "object"
+      },
+      "PatternArtifactState": {
+        "enum": [
+          "PENDING",
+          "READY",
+          "FAILED"
+        ],
+        "type": "string"
+      },
+      "PatternArtifactView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "declaredFormat": {
+            "$ref": "#/components/schemas/PatternArtifactDeclaredFormat"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "failureCode": {
+            "description": "Null for PENDING/READY. FAILED uses STORAGE_WRITE_FAILED, STORAGE_READBACK_FAILED or STORAGE_INTEGRITY_MISMATCH.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "patternId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "patternRevisionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "sizeBytes": {
+            "format": "int64",
+            "maximum": 10485760,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PatternArtifactState"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt",
+          "declaredFormat",
+          "displayName",
+          "failureCode",
+          "id",
+          "patternId",
+          "patternRevisionId",
+          "sizeBytes",
+          "state",
+          "styleId",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "PatternCreateInput": {
         "additionalProperties": false,
         "properties": {
@@ -10090,6 +10247,74 @@
         ]
       }
     },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/artifact-revisions": {
+      "post": {
+        "operationId": "createPatternArtifactRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/PatternArtifactMultipart"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternArtifactRevisionResult"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "pattern-artifact-controller"
+        ]
+      }
+    },
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions": {
       "get": {
         "operationId": "listPatternRevisions",
@@ -10298,6 +10523,141 @@
         },
         "tags": [
           "pattern-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/artifact": {
+      "get": {
+        "operationId": "readPatternArtifact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternArtifactView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-artifact-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/artifact/content": {
+      "get": {
+        "operationId": "downloadPatternArtifact",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Private exact-byte attachment"
+          }
+        },
+        "tags": [
+          "pattern-artifact-controller"
         ]
       }
     },

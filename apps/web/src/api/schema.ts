@@ -1478,6 +1478,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/artifact-revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["createPatternArtifactRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions": {
         parameters: {
             query?: never;
@@ -1502,6 +1518,38 @@ export interface paths {
             cookie?: never;
         };
         get: operations["readPatternRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/artifact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readPatternArtifact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/artifact/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadPatternArtifact"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2432,6 +2480,50 @@ export interface components {
         PageSupplierHit: {
             items?: components["schemas"]["SupplierHit"][];
             nextCursor?: string;
+        };
+        /** @enum {string} */
+        PatternArtifactDeclaredFormat: "DXF_AAMA" | "DXF_ASTM" | "PDF";
+        PatternArtifactMultipart: {
+            /** Format: binary */
+            file: string;
+            metadata: components["schemas"]["PatternArtifactRevisionCreateInput"];
+        };
+        PatternArtifactRevisionCreateInput: {
+            declaredFormat: components["schemas"]["PatternArtifactDeclaredFormat"];
+            displayName: string;
+            /** Format: int64 */
+            expectedLatestRevisionNumber: number;
+            /** Format: uuid */
+            measurementRevisionId?: string | null;
+            name: string;
+            purpose?: string | null;
+        };
+        PatternArtifactRevisionResult: {
+            artifact: components["schemas"]["PatternArtifactView"];
+            revision: components["schemas"]["PatternRevisionView"];
+        };
+        /** @enum {string} */
+        PatternArtifactState: "PENDING" | "READY" | "FAILED";
+        PatternArtifactView: {
+            /** Format: date-time */
+            createdAt: string;
+            declaredFormat: components["schemas"]["PatternArtifactDeclaredFormat"];
+            displayName: string;
+            /** @description Null for PENDING/READY. FAILED uses STORAGE_WRITE_FAILED, STORAGE_READBACK_FAILED or STORAGE_INTEGRITY_MISMATCH. */
+            failureCode: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            patternId: string;
+            /** Format: uuid */
+            patternRevisionId: string;
+            /** Format: int64 */
+            sizeBytes: number;
+            state: components["schemas"]["PatternArtifactState"];
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
         };
         PatternCreateInput: {
             /** Format: uuid */
@@ -5946,6 +6038,35 @@ export interface operations {
             };
         };
     };
+    createPatternArtifactRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["PatternArtifactMultipart"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternArtifactRevisionResult"];
+                };
+            };
+        };
+    };
     listPatternRevisions: {
         parameters: {
             query?: {
@@ -6025,6 +6146,58 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["PatternRevisionView"];
+                };
+            };
+        };
+    };
+    readPatternArtifact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternArtifactView"];
+                };
+            };
+        };
+    };
+    downloadPatternArtifact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private exact-byte attachment */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
                 };
             };
         };

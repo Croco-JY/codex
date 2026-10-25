@@ -54,7 +54,10 @@ class PatternMigrationTest {
       assertThat(before).hasSize(49);
     }
     var latest =
-        Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
+        Flyway.configure()
+            .dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword())
+            .target("19")
+            .load();
     latest.migrate();
     latest.validate();
     assertThat(latest.info().applied()).hasSize(19);
@@ -75,7 +78,8 @@ class PatternMigrationTest {
       q.execute("CREATE DATABASE " + name);
     }
     String url = "jdbc:postgresql://" + db.getHost() + ":" + db.getMappedPort(5432) + "/" + name;
-    var f = Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).load();
+    var f =
+        Flyway.configure().dataSource(url, db.getUsername(), db.getPassword()).target("19").load();
     f.migrate();
     f.validate();
     assertThat(f.info().applied()).hasSize(19);

@@ -9,8 +9,7 @@ import { useWorkspace, useWorkspaceCommand } from "../../app/workspace";
 import { Button, Input, Surface, Skeleton } from "../../ui";
 import { ApiErrorState } from "../../ui/ApiErrorState";
 import { stylePath, type Project, type Style } from "../workspace/model";
-import { useMeasurementSpec, useMeasurementHistory } from "../measurement/data";
-import type { Spec } from "../measurement/model";
+
 import {
   path,
   detailPath,
@@ -32,6 +31,8 @@ import {
   type Filter,
 } from "./model";
 import "./pattern.css";
+import { MeasurementPicker } from "./MeasurementPicker";
+import { ArtifactInspector, ArtifactImport } from "./PatternArtifacts";
 type Context = {
   project: Project;
   style: Style;
@@ -209,7 +210,7 @@ export function RevisionFacts({
         </div>
       </dl>
       <p>
-        Metadata only. A measurement association does not establish geometry,
+        Revision metadata. A measurement association does not establish geometry,
         fit or approval.
       </p>
     </section>
@@ -307,6 +308,19 @@ function Detail({
       <RevisionFacts
         value={value.latestRevision}
         title={`Latest Pattern revision ${value.latestRevision.revisionNumber}`}
+      />
+      <ArtifactInspector
+        key={`artifact-${value.latestRevision.id}`}
+        projectId={projectId}
+        revision={value.latestRevision}
+        available={available}
+      />
+      <ArtifactImport
+        projectId={projectId}
+        value={value}
+        writable={w.writer && writable && value.status === "ACTIVE"}
+        refresh={reconcileRead}
+        refreshParents={refreshParents}
       />
       <History
         key={value.latestRevision.id}
@@ -676,98 +690,6 @@ function Editor({
     </form>
   );
 }
-function MeasurementPicker({
-  projectId,
-  styleId,
-  choose,
-  close,
-}: {
-  projectId: string;
-  styleId: string;
-  choose: (id: string) => void;
-  close: () => void;
-}) {
-  const q = useMeasurementSpec(projectId, styleId, true, true);
-  return (
-    <section aria-label="Measurement revision selector">
-      <h4>Choose an exact Measurement revision</h4>
-      <Button onClick={close}>Close measurement selector</Button>
-      {q.isFetching && <Skeleton label="Loading Measurements for pin" />}
-      {q.isError && <ApiErrorState error={q.error} />}
-      {q.data === null && !q.isFetching && (
-        <p>No Measurement Spec exists for this Style.</p>
-      )}
-      {q.data && !q.isError && !q.isFetching && (
-        <MeasurementChoices
-          projectId={projectId}
-          spec={q.data}
-          choose={choose}
-        />
-      )}
-    </section>
-  );
-}
-function MeasurementChoices({
-  projectId,
-  spec,
-  choose,
-}: {
-  projectId: string;
-  spec: Spec;
-  choose: (id: string) => void;
-}) {
-  const [cursors, setCursors] = useState<number[]>([]),
-    q = useMeasurementHistory(
-      projectId,
-      spec,
-      cursors.at(-1) ?? spec.latestRevision.revisionNumber,
-      true,
-      true,
-    );
-  return (
-    <>
-      {q.isPending && <Skeleton label="Loading Measurement revision choices" />}
-      {q.isError && <ApiErrorState error={q.error} />}
-      {q.data && (
-        <>
-          <ul>
-            {q.data.items.map((r) => (
-              <li key={r.id}>
-                <Button
-                  disabled={q.isError || q.isFetching}
-                  onClick={() => choose(r.id)}
-                >
-                  Use Measurement revision {r.revisionNumber}
-                </Button>
-                <span>
-                  {" "}
-                  {r.baseSize} · {r.unitSystem}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <Button
-            disabled={!cursors.length || q.isFetching}
-            onClick={() => setCursors(cursors.slice(0, -1))}
-          >
-            Newer Measurement choices
-          </Button>
-          <Button
-            disabled={
-              q.data.nextMaxRevisionNumber === null || q.isFetching || q.isError
-            }
-            onClick={() => {
-              if (q.data?.nextMaxRevisionNumber)
-                setCursors([...cursors, q.data.nextMaxRevisionNumber]);
-            }}
-          >
-            Older Measurement choices
-          </Button>
-        </>
-      )}
-    </>
-  );
-}
 function History({
   projectId,
   value,
@@ -871,9 +793,16 @@ function Selected({
   if (q.data.revisionNumber !== selected.revisionNumber)
     return <ApiErrorState error={new ApiError(502)} />;
   return (
-    <RevisionFacts
-      value={q.data}
-      title={`Selected Pattern revision ${q.data.revisionNumber}`}
-    />
+    <>
+      <RevisionFacts
+        value={q.data}
+        title={`Selected Pattern revision ${q.data.revisionNumber}`}
+      />
+      <ArtifactInspector
+        projectId={projectId}
+        revision={q.data}
+        available={available}
+      />
+    </>
   );
 }

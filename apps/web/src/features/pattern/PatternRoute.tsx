@@ -74,8 +74,8 @@ function StyleGate({
       </nav>
       <h1>{detail ? "Pattern" : "Patterns"}</h1>
       <p className="pattern-id">
-        {s.data.name} · Immutable metadata snapshots. No files or quality
-        approval.
+        {s.data.name} · Immutable revisions. Artifacts are private attachments,
+        not geometry or quality approval.
       </p>
       {s.isError && <ApiErrorState error={s.error} />}
       {detail ? (

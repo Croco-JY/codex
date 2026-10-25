@@ -1,8 +1,8 @@
 # Data Model
 
-## Implemented through Phase 1C
+## Implemented through Phase 2G
 
-Flyway owns schema; Hibernate uses ddl-auto=validate. V1–V12 are released and immutable. UUID keys, UTC timestamptz, foreign keys, explicit lifecycle states and version columns are established conventions. Identity remains issuer+subject, with no separate user table.
+Flyway owns schema; Hibernate uses ddl-auto=validate. V1–V17 are released and immutable. UUID keys, UTC timestamptz, foreign keys, explicit lifecycle states and version columns are established conventions. Identity remains issuer+subject, with no separate user table.
 
 | Migration | Implemented ownership |
 | --- | --- |
@@ -16,9 +16,16 @@ Flyway owns schema; Hibernate uses ddl-auto=validate. V1–V12 are released and 
 | V10 | Price and same-provider evidence; immutable facts except one closure |
 | V11 | Append-only Inventory snapshots with imported/manual identities |
 | V12 | Bounded Material/commercial search indexes |
+| V13 | Organization-owned Project and Style hierarchy; immutable parents and deletion guards |
+| V14 | One per-Style Requirement sheet |
+| V15 | Scoped private Material Selections pointing to global catalog |
+| V16 | Private Style Facility Candidate referencing global Facility only |
+| V17 | Per-Style Development Reference with committed upload reservation/finalization states and non-XA storage |
 
 Quantity/money are already NUMERIC/BigDecimal, externally exact decimal strings. MaterialVariant and Listing each reference Material; Listing does not store variantId. Composite unique keys on `(id, material_id)` already support consistent references. Global catalog records are not buyer-Organization-owned. Supplier/Facility early citation APIs append only; their DB edges do not have all the later V9/V10 mutation guards, as recorded in the accepted contract lock.
 
-## Planned, not migrated
+## Proposed beyond V17 — no migration approved
 
-[Phase 2 schema plan](phase-2-plan.md#21-migration-ownership-v13v17) reserves V13 Project+Style, V14 Requirement, V15 Material Selection, V16 Facility Candidate and V17 Development Reference. No V13 exists yet. Tables and constraints below that boundary are proposals until their individual slice is approved. No future table is pre-created in V13, and no accepted migration may be rewritten by a later slice.
+[Phase 2 design history](phase-2-plan.md#21-migration-ownership-v13v17) was implemented and merged in PR #4. Any statements within earlier planning documents describing V13–V17 as future are historical snapshots of those planning stages, not the current merged state.
+
+[Pattern-to-Transaction commercial readiness proposal](phase-3-commercial-readiness-contract.md) defines future Pattern Artifact, sealed revisions, Marker/Yield/BOM/Costing, immutable manufacturing specification release, guest supplier capability, BYOS private supplier overlay, Entitlement usage ledger and permissioned Data Intelligence. **No such new tables are yet implemented by this proposal.** Each requires fresh baseline inspection, approved independently scoped migrations after V17 and complete tenant/security/regression testing. In particular, V16 candidate is still global-Facility-only and must evolve through additive migration rather than rewriting V16.

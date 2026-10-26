@@ -1,5 +1,11 @@
 import { test, expect, afterEach, vi } from "vitest";
-import { screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+  act,
+} from "@testing-library/react";
 import {
   fixture,
   grading,
@@ -10,12 +16,14 @@ import {
   B,
   S,
   GID,
+  P,
   root,
   response,
   id,
 } from "../../test/gradingFixture";
 import { deferred } from "../../test/measurementFixture";
 import { setAccessToken } from "../../api/session";
+import { queryKeys } from "../../api/queryKeys";
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -208,6 +216,287 @@ test("detail embeds matrix, anchors one history, opens exact historical snapshot
   expect(
     h.calls.filter((r) => r.url.includes("/grade-rule-sets")),
   ).toHaveLength(3);
+  expect(
+    screen.getByRole("region", {
+      name: "Historical grading revision 1 matrix",
+    }),
+  ).toHaveTextContent("-2.5000");
+  expect(writes(h)).toHaveLength(0);
+});
+test.each(["revision-number", "size-count", "rule-count"])(
+  "historical %s contradiction shows safe error without rendering or extra requests",
+  async (kind) => {
+    const h = fixture(),
+      d = deferred<Response>(),
+      r = revision();
+    h.gradings.set(A, [grading(2)]);
+    h.history.set(r.id, r);
+    const exact = detail + "/revisions/" + r.id;
+    h.overrides.set("GET " + exact, () => d.promise);
+    h.mount(route(A, true));
+    await ready(2);
+    await screen.findByRole("button", { name: "Open grading revision 1" });
+    click("Open grading revision 1");
+    await screen.findByRole("status", {
+      name: "Loading historical grading revision",
+    });
+    const forged = revision();
+    if (kind === "revision-number") forged.revisionNumber = 999;
+    if (kind === "size-count") {
+      forged.sizes.pop();
+      forged.rules.forEach((g) => {
+        g.values.pop();
+      });
+    }
+    if (kind === "rule-count") forged.rules.pop();
+    d.resolve(response(forged));
+    await screen.findByRole("heading", { name: "Service unavailable" });
+    expect(
+      screen.queryByRole("region", {
+        name: /Historical grading revision .* matrix/,
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("heading", {
+        name: "Historical grading revision 999",
+      }),
+    ).toBeNull();
+    expect(
+      h.calls.filter((r) => r.url.includes("/grade-rule-sets")),
+    ).toHaveLength(3);
+    expect(writes(h)).toHaveLength(0);
+    const query = h.cache
+      .getQueryCache()
+      .getAll()
+      .find((q) => q.queryKey.at(-1) === forged.id);
+    expect(query?.state.error).toMatchObject({ name: "ApiError", status: 502 });
+  },
+);
+test("historical retry retains the selected summary despite background history replacement", async () => {
+  const h = fixture(),
+    d = deferred<Response>(),
+    original = revision();
+  h.gradings.set(A, [grading(2)]);
+  h.history.set(original.id, original);
+  let attempt = 0;
+  const forged = { ...original, name: "Refetched summary" };
+  h.overrides.set("GET " + detail + "/revisions/" + original.id, () =>
+    ++attempt === 1 ? d.promise : response(forged),
+  );
+  h.mount(route(A, true));
+  await ready(2);
+  await screen.findByRole("button", { name: "Open grading revision 1" });
+  click("Open grading revision 1");
+  await screen.findByRole("status", {
+    name: "Loading historical grading revision",
+  });
+  // Replace the history cache with a different, structurally valid summary for the same UUID.
+  await act(async () => {
+    h.cache.setQueryData(
+      queryKeys.gradingHistory(h.scope, A, P, S, GID, 25, 2),
+      {
+        items: [summary({ ...original, name: "Refetched summary" })],
+        limit: 25,
+        nextMaxRevisionNumber: null,
+      },
+    );
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByRole("region", { name: "Grading revision history" }),
+    ).toHaveTextContent("Refetched summary"),
+  );
+  d.resolve(response(forged));
+  await screen.findByRole("heading", { name: "Service unavailable" });
+  click("Try again");
+  await waitFor(() => expect(attempt).toBe(2));
+  await screen.findByRole("heading", { name: "Service unavailable" });
+  expect(
+    screen.queryByRole("region", {
+      name: /Historical grading revision .* matrix/,
+    }),
+  ).toBeNull();
+  expect(writes(h)).toHaveLength(0);
+});
+test("older-page selection uses that page's complete summary and clears explicitly on pagination", async () => {
+  const h = fixture();
+  h.gradings.set(A, [grading(27)]);
+  for (let n = 1; n <= 26; n++) h.history.set(revision(n).id, revision(n));
+  h.mount(route(A, true));
+  await ready(27);
+  await screen.findByRole("button", { name: "Open grading revision 26" });
+  click("Older grading revisions");
+  await screen.findByRole("button", { name: "Open grading revision 1" });
+  click("Open grading revision 1");
+  await screen.findByRole("region", {
+    name: "Historical grading revision 1 matrix",
+  });
+  expect(h.calls.filter((r) => /\/revisions\//.test(r.url))).toHaveLength(1);
+  click("Newer grading revisions");
+  await screen.findByRole("button", { name: "Open grading revision 26" });
+  expect(
+    screen.queryByRole("region", {
+      name: "Historical grading revision 1 matrix",
+    }),
+  ).toBeNull();
+  expect(writes(h)).toHaveLength(0);
+});
+test("fresh cached historical data is checked against each newly selected summary without another GET", async () => {
+  const h = fixture(),
+    r = revision();
+  h.gradings.set(A, [grading(2)]);
+  h.history.set(r.id, r);
+  h.mount(route(A, true));
+  await ready(2);
+  await screen.findByRole("button", { name: "Open grading revision 1" });
+  click("Open grading revision 1");
+  await screen.findByRole("region", {
+    name: "Historical grading revision 1 matrix",
+  });
+  click("Close historical grading revision");
+  await act(async () => {
+    h.cache.setQueryData(
+      queryKeys.gradingHistory(h.scope, A, P, S, GID, 25, 2),
+      {
+        items: [{ ...summary(r), sizeCount: 2 }],
+        limit: 25,
+        nextMaxRevisionNumber: null,
+      },
+    );
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByRole("region", { name: "Grading revision history" }),
+    ).toHaveTextContent("2 sizes × 2 rules"),
+  );
+  click("Open grading revision 1");
+  await screen.findByRole("heading", { name: "Service unavailable" });
+  expect(
+    screen.queryByRole("region", {
+      name: "Historical grading revision 1 matrix",
+    }),
+  ).toBeNull();
+  expect(h.calls.filter((r) => /\/revisions\//.test(r.url))).toHaveLength(1);
+  expect(writes(h)).toHaveLength(0);
+});
+test("reselecting the same UUID with changed summary hides previously selected cached data", async () => {
+  const h = fixture(),
+    r = revision();
+  h.gradings.set(A, [grading(2)]);
+  h.history.set(r.id, r);
+  h.mount(route(A, true));
+  await ready(2);
+  await screen.findByRole("button", { name: "Open grading revision 1" });
+  click("Open grading revision 1");
+  await screen.findByRole("region", {
+    name: "Historical grading revision 1 matrix",
+  });
+  await act(async () => {
+    h.cache.setQueryData(
+      queryKeys.gradingHistory(h.scope, A, P, S, GID, 25, 2),
+      {
+        items: [{ ...summary(r), ruleCount: 1 }],
+        limit: 25,
+        nextMaxRevisionNumber: null,
+      },
+    );
+  });
+  await waitFor(() =>
+    expect(
+      screen.getByRole("region", { name: "Grading revision history" }),
+    ).toHaveTextContent("3 sizes × 1 rules"),
+  );
+  // A refetch alone does not replace the pinned selection.
+  expect(
+    screen.getByRole("region", {
+      name: "Historical grading revision 1 matrix",
+    }),
+  ).toBeVisible();
+  click("Open grading revision 1");
+  await screen.findByRole("heading", { name: "Service unavailable" });
+  expect(
+    screen.queryByRole("region", {
+      name: "Historical grading revision 1 matrix",
+    }),
+  ).toBeNull();
+  expect(h.calls.filter((r) => /\/revisions\//.test(r.url))).toHaveLength(1);
+  expect(writes(h)).toHaveLength(0);
+});
+test.each(["A→B", "ABA", "Actor"])(
+  "in-flight historical selection cannot cross %s",
+  async (transition) => {
+    const h = fixture(),
+      d = deferred<Response>(),
+      r = revision();
+    h.gradings.set(A, [grading(2)]);
+    h.history.set(r.id, r);
+    let first = true;
+    h.overrides.set("GET " + detail + "/revisions/" + r.id, () => {
+      if (first) {
+        first = false;
+        return d.promise;
+      }
+      return response(r);
+    });
+    h.mount(route(A, true));
+    await ready(2);
+    await screen.findByRole("button", { name: "Open grading revision 1" });
+    click("Open grading revision 1");
+    await screen.findByRole("status", {
+      name: "Loading historical grading revision",
+    });
+    if (transition === "Actor") {
+      await act(async () => {
+        setAccessToken("replacement-historical-actor");
+      });
+      await ready(2);
+    } else {
+      click("Grading B");
+      await screen.findByText("No grade rule sets in this page.");
+      if (transition === "ABA") {
+        click("Grading detail A");
+        await ready(2);
+      }
+    }
+    await act(async () => {
+      d.resolve(response({ ...r, revisionNumber: 999 }));
+    });
+    expect(
+      screen.queryByRole("region", {
+        name: /Historical grading revision .* matrix/,
+      }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Service unavailable" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", {
+        name: "Close historical grading revision",
+      }),
+    ).toBeNull();
+    expect(writes(h)).toHaveLength(0);
+  },
+);
+test("current-generation historical 403 denies the workspace", async () => {
+  const h = fixture(),
+    r = revision();
+  h.gradings.set(A, [grading(2)]);
+  h.history.set(r.id, r);
+  h.overrides.set("GET " + detail + "/revisions/" + r.id, () =>
+    response({}, 403),
+  );
+  h.mount(route(A, true));
+  await ready(2);
+  await screen.findByRole("button", { name: "Open grading revision 1" });
+  click("Open grading revision 1");
+  await screen.findByText(/Access denied/i);
+  expect(
+    h.cache
+      .getQueryCache()
+      .getAll()
+      .filter((q) => q.queryKey[0] === "workspace"),
+  ).toHaveLength(0);
+  expect(writes(h)).toHaveLength(0);
 });
 test("409 retains whole matrix and old baseline; explicit reconciliation changes only baseline", async () => {
   const h = fixture();

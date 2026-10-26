@@ -26,6 +26,7 @@ import {
   type Draft,
   type Grading,
   type Filter,
+  type Summary,
 } from "./model";
 import { Matrix, MatrixEditor } from "./Matrix";
 import "./grading.css";
@@ -309,7 +310,7 @@ function History({
   available: boolean;
 }) {
   const [bounds, setBounds] = useState([value.latestRevision.revisionNumber]),
-    [selected, setSelected] = useState<string | null>(null);
+    [selected, setSelected] = useState<Summary | null>(null);
   const max = bounds.at(-1)!,
     q = useGradingHistory(projectId, value.styleId, value.id, max, available);
   return (
@@ -327,10 +328,7 @@ function History({
                 Revision {r.revisionNumber} · {r.name} · {r.sizeCount} sizes ×{" "}
                 {r.ruleCount} rules
                 {r.id !== value.latestRevision.id && (
-                  <Button
-                    disabled={!available}
-                    onClick={() => setSelected(r.id)}
-                  >
+                  <Button disabled={!available} onClick={() => setSelected(r)}>
                     Open grading revision {r.revisionNumber}
                   </Button>
                 )}
@@ -365,7 +363,7 @@ function History({
           <Historical
             projectId={projectId}
             value={value}
-            id={selected}
+            expected={selected}
             available={available}
           />
           <Button onClick={() => setSelected(null)}>
@@ -379,24 +377,24 @@ function History({
 function Historical({
   projectId,
   value,
-  id,
+  expected,
   available,
 }: {
   projectId: string;
   value: Grading;
-  id: string;
+  expected: Summary;
   available: boolean;
 }) {
   const q = useGradingRevision(
     projectId,
     value.styleId,
     value.id,
-    id,
+    expected,
     available,
   );
   if (q.isPending)
     return <Skeleton label="Loading historical grading revision" />;
-  if (!q.data)
+  if (q.isError || !q.data)
     return <ApiErrorState error={q.error} retry={() => void q.refetch()} />;
   return (
     <Matrix

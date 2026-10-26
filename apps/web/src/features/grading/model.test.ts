@@ -10,6 +10,7 @@ import {
 } from "../../test/gradingFixture";
 import {
   checkedRevision,
+  checkedHistoricalRevision,
   checkedGrading,
   checkedPage,
   checkedHistory,
@@ -19,6 +20,125 @@ import {
   trimBoundary,
   isZero,
 } from "./model";
+test("historical summary correspondence preserves exact strings, Unicode and arbitrary signed deltas", () => {
+  const r = revision();
+  r.name = "🧵 Historical grading";
+  r.createdAt = "2026-10-26T00:00:00.123456Z";
+  r.sizes[0].label = "작은 사이즈 🧵";
+  r.rules[0].values[0].delta = "999999999999999.9999";
+  r.rules[0].values[1].delta = "-0.0000";
+  r.rules[0].values[2].delta = "-7.1250";
+  expect(checkedHistoricalRevision(r, S, GID, summary(r))).toEqual(r);
+});
+test.each([
+  "id",
+  "gradeRuleSetId",
+  "styleId",
+  "revisionNumber",
+  "name",
+  "baseSizeCode",
+  "unitSystem",
+  "createdAt",
+  "sizeCount",
+  "ruleCount",
+])("historical summary mismatch %s is ApiError 502", (field) => {
+  const r = revision(),
+    expected = summary(r);
+  switch (field) {
+    case "id":
+      r.id = id(99);
+      break;
+    case "gradeRuleSetId":
+      r.gradeRuleSetId = id(99);
+      break;
+    case "styleId":
+      r.styleId = id(99);
+      break;
+    case "revisionNumber":
+      r.revisionNumber = 999;
+      break;
+    case "name":
+      r.name = "Contradictory name";
+      break;
+    case "baseSizeCode":
+      r.baseSizeCode = "S0";
+      r.rules.forEach((g) => {
+        g.values[0].delta = "0";
+      });
+      break;
+    case "unitSystem":
+      r.unitSystem = "IN";
+      break;
+    case "createdAt":
+      r.createdAt = "2026-10-26T00:00:00Z";
+      break;
+    case "sizeCount":
+      r.sizes.pop();
+      r.rules.forEach((g) => {
+        g.values.pop();
+      });
+      break;
+    case "ruleCount":
+      r.rules.pop();
+      break;
+  }
+  // Every counterexample remains a valid standalone snapshot.
+  expect(checkedRevision(r, r.styleId, r.gradeRuleSetId)).toEqual(r);
+  expect(() => checkedHistoricalRevision(r, S, GID, expected)).toThrow(
+    expect.objectContaining({ name: "ApiError", status: 502 }),
+  );
+});
+test("historical timestamp comparison retains submillisecond precision and exact serialization", () => {
+  const r = revision();
+  r.createdAt = "2026-10-26T00:00:00.123456Z";
+  const expected = summary(r);
+  for (const createdAt of [
+    "2026-10-26T00:00:00.123457Z",
+    "2026-10-26T09:00:00.123456+09:00",
+  ]) {
+    expect(() =>
+      checkedHistoricalRevision({ ...r, createdAt }, S, GID, expected),
+    ).toThrow(expect.objectContaining({ name: "ApiError", status: 502 }));
+  }
+});
+test.each([
+  "duplicate-size",
+  "duplicate-rule",
+  "position",
+  "decimal",
+  "base-nonzero",
+  "matrix-order",
+  "extra-field",
+])("matching summary never bypasses structural validation: %s", (kind) => {
+  const r = revision(),
+    expected = summary(r);
+  switch (kind) {
+    case "duplicate-size":
+      r.sizes[2].code = r.sizes[0].code;
+      break;
+    case "duplicate-rule":
+      r.rules[1].code = r.rules[0].code;
+      break;
+    case "position":
+      r.sizes[0].position = 2;
+      break;
+    case "decimal":
+      r.rules[0].values[0].delta = 2 as never;
+      break;
+    case "base-nonzero":
+      r.rules[0].values[1].delta = "1";
+      break;
+    case "matrix-order":
+      r.rules[0].values.reverse();
+      break;
+    case "extra-field":
+      Object.assign(r, { sealed: true });
+      break;
+  }
+  expect(() => checkedHistoricalRevision(r, S, GID, expected)).toThrow(
+    expect.objectContaining({ name: "ApiError", status: 502 }),
+  );
+});
 test("exact values, arbitrary explicit order and nonfirst base survive full hydration", () => {
   const r = revision();
   r.rules[0].values[0].delta = "-999999999999999.9999";

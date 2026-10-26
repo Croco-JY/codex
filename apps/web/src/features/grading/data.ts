@@ -6,8 +6,9 @@ import {
   checkedGrading,
   checkedPage,
   checkedHistory,
-  checkedRevision,
+  checkedHistoricalRevision,
   type Filter,
+  type Summary,
 } from "./model";
 export const path =
   "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets" as const;
@@ -132,7 +133,7 @@ export function useGradingRevision(
   projectId: string,
   styleId: string,
   gradeRuleSetId: string,
-  revisionId: string,
+  expected: Summary,
   enabled: boolean,
 ) {
   const w = useWorkspace();
@@ -143,10 +144,13 @@ export function useGradingRevision(
       projectId,
       styleId,
       gradeRuleSetId,
-      revisionId,
+      expected.id,
     ),
     enabled,
     retry: false,
+    // Also validate cached data against this selection, even without a refetch.
+    select: (data) =>
+      checkedHistoricalRevision(data, styleId, gradeRuleSetId, expected),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(revisionPath, {
@@ -157,15 +161,15 @@ export function useGradingRevision(
               projectId,
               styleId,
               gradeRuleSetId,
-              revisionId,
+              revisionId: expected.id,
             },
           },
         });
-        return checkedRevision(
+        return checkedHistoricalRevision(
           requireData(r.data, r.response),
           styleId,
           gradeRuleSetId,
-          revisionId,
+          expected,
         );
       }),
   });

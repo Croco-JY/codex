@@ -115,6 +115,79 @@ function noForeignDomains(calls: ReturnType<typeof privateTraffic>) {
     ),
   ).toHaveLength(0);
 }
+for (const kind of ["revision-number", "size-count", "valid"] as const) {
+  test(`historical summary consistency: ${kind}`, async ({
+    page,
+    request,
+  }) => {
+    const f = await setup(request),
+      g = await create(request, f);
+    const endpoint = f.endpoint + "/" + g.id;
+    const next = await request.post(api + endpoint + "/revisions", {
+      headers: f.headers,
+      data: { ...snapshot(), expectedLatestRevisionNumber: 1 },
+    });
+    expect(next.status()).toBe(201);
+    const calls = privateTraffic(page);
+    let intercepted = 0;
+    await page.route(
+      "**" + endpoint + "/revisions/" + g.latestRevision.id,
+      async (route) => {
+        const actual = await route.fetch();
+        expect(actual.status()).toBe(200);
+        const body = await actual.json();
+        expect(body.id).toBe(g.latestRevision.id);
+        expect(body.revisionNumber).toBe(1);
+        if (kind === "revision-number") body.revisionNumber = 999;
+        if (kind === "size-count") {
+          body.sizes.pop();
+          for (const rule of body.rules) rule.values.pop();
+        }
+        intercepted++;
+        await route.fulfill({ response: actual, json: body });
+      },
+    );
+    await login(page, f, f.listRoute + "/" + g.id);
+    await ready(page, 2);
+    await page
+      .getByRole("button", { name: "Open grading revision 1", exact: true })
+      .click();
+    if (kind === "valid") {
+      await expect(
+        page.getByRole("region", {
+          name: "Historical grading revision 1 matrix",
+          exact: true,
+        }),
+      ).toContainText("-2.5000");
+      await expect(
+        page.getByRole("heading", { name: "Service unavailable", exact: true }),
+      ).toHaveCount(0);
+    } else {
+      await expect(
+        page.getByRole("heading", { name: "Service unavailable", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("region", {
+          name: /Historical grading revision .* matrix/,
+        }),
+      ).toHaveCount(0);
+      await expect(
+        page.getByRole("heading", {
+          name: "Historical grading revision 999",
+          exact: true,
+        }),
+      ).toHaveCount(0);
+    }
+    expect(intercepted).toBe(1);
+    expect(calls.filter((c) => c.path === endpoint)).toHaveLength(1);
+    expect(
+      calls.filter((c) => c.path === endpoint + "/revisions"),
+    ).toHaveLength(1);
+    expect(calls.filter((c) => /\/revisions\//.test(c.path))).toHaveLength(1);
+    expect(calls.filter((c) => c.method !== "GET")).toHaveLength(0);
+    noForeignDomains(calls);
+  });
+}
 test("StyleDetail grading0, list1, detail1/history1 and immutable revisions/lifecycle", async ({
   page,
   request,

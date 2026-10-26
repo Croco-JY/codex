@@ -130,6 +130,27 @@ export function checkedRevision(
   });
   return r;
 }
+export function checkedHistoricalRevision(
+  input: unknown,
+  style: string,
+  parent: string,
+  expected: Summary,
+): Revision {
+  const r = checkedRevision(input, style, parent, expected.id);
+  requireValid(
+    r.id === expected.id &&
+      r.gradeRuleSetId === expected.gradeRuleSetId &&
+      r.styleId === expected.styleId &&
+      r.revisionNumber === expected.revisionNumber &&
+      r.name === expected.name &&
+      r.baseSizeCode === expected.baseSizeCode &&
+      r.unitSystem === expected.unitSystem &&
+      r.createdAt === expected.createdAt &&
+      r.sizes.length === expected.sizeCount &&
+      r.rules.length === expected.ruleCount,
+  );
+  return r;
+}
 export function checkedGrading(
   input: unknown,
   style: string,

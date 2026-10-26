@@ -1,0 +1,19 @@
+.grading-id { overflow-wrap:anywhere; min-width:0; }
+.grading-list { display:grid; gap:1rem; padding-left:1.25rem; }
+.grading-list li { min-width:0; overflow-wrap:anywhere; }
+[aria-label="Grading collection"], [aria-label="Grading detail"],
+[aria-label="Grading collection"] form, [aria-label="Grading detail"] form,
+.grading-editor { min-width:0; max-width:100%; }
+[aria-label="Grading detail"] p, [aria-label="Grading detail"] h2,
+[aria-label="Grading collection"] p, [aria-label="Grading collection"] h2 { overflow-wrap:anywhere; }
+.grading-scroll { min-width:0; max-width:100%; overflow-x:auto; margin-block:1rem; }
+.grading-scroll:focus-visible, .grading-editor :focus-visible { outline:3px solid var(--accent, #096b63); outline-offset:2px; }
+.grading-matrix { border-collapse:collapse; width:max-content; min-width:100%; }
+.grading-matrix th, .grading-matrix td { border:1px solid var(--border, #b8c8c4); padding:.5rem; min-width:8rem; vertical-align:top; }
+.grading-matrix th p { white-space:pre-wrap; max-width:20rem; }
+.grading-matrix caption { text-align:left; padding:.5rem; font-weight:600; }
+.grading-matrix label { display:block; font-size:.8rem; margin-block:.25rem; }
+.grading-matrix input, .grading-matrix textarea { display:block; width:10rem; max-width:100%; }
+.grading-editor > label { display:block; margin-block:.75rem; }
+.grading-editor > select { display:block; max-width:100%; margin-bottom:.75rem; }
+.grading-editor > label input, .grading-editor > label textarea, .grading-editor > label select { display:block; max-width:100%; }

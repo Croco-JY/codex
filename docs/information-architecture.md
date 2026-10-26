@@ -20,7 +20,7 @@ Direct Style entry strictly resolves Project GET → Style GET before exactly fo
 
 Measurements has create-only singleton/revision-1 and complete new-revision draft forms, bounded revision-number history, explicit historical reads, strict payload validation and generation isolation. VIEWER and archived parents remain read-only. 409/412 and uncertain outcomes retain the draft and require explicit non-submitting reconciliation; no automatic mutation retry or equivalent-content success attribution.
 
-Under the unchanged [Phase 3 PLAN](phase-3-plan.md), Pattern list/detail routes are now implemented by 3B below; grading/release routes remain proposed only. Each future route must resolve Project→Style before its own bounded domain, with no cross-domain speculative histories or fanout. No global private Pattern route or new sidebar item is implemented by 3A.
+Under the unchanged [Phase 3 PLAN](phase-3-plan.md), Pattern list/detail routes are implemented by 3B below and grading routes by 3D; release routes remain proposed only. Each future route must resolve Project→Style before its own bounded domain, with no cross-domain speculative histories or fanout. No global private Pattern route or new sidebar item is implemented by 3A.
 
 Pattern geometry/preview, BOM, Samples, RFQ/Quotes, Contracts, Payments and Production remain unavailable and must not appear as working tools. Generic development attachments must not be labelled Tech Packs or Patterns. Tech Pack/BOM/Sample implementation ownership requires a separate roadmap decision. DISCOVER → DEVELOP → SOURCE → TRANSACT → PRODUCE → LEARN is the long-term sequence, not a claim that all navigation already exists.
 
@@ -31,3 +31,9 @@ Pattern geometry/preview, BOM, Samples, RFQ/Quotes, Contracts, Payments and Prod
 ## Phase 3C — Explicit artifact inspection/import
 
 [3C](phase-3c-pattern-artifacts.md) adds Inspect artifact on latest/explicit historical revision and Import artifact as new revision for eligible writers. No new route/sidebar/StyleDetail child is introduced. StyleDetail, Pattern list/detail/history initial artifact GET count remains zero. Only explicit inspection fetches metadata; content waits for explicit READY download. Import opening performs no Measurement lookup; the existing bounded selector is explicit. Ambiguous outcomes retain File/metadata in memory and require authoritative review plus explicit reconciliation/submission. No preview or retry-in-place is offered.
+
+## Phase 3D — Lazy grading matrix
+
+[3D](phase-3d-grading-foundation.md) adds `.../styles/:styleId/grading` and `.../grading/:gradeRuleSetId` under Authenticated→WorkspaceGate. StyleDetail adds navigation only, keeping four Phase 2 reads and zero grading/Pattern/Measurement/artifact requests. After Project→Style gating, list entry uses one compact collection GET; detail uses one full detail GET plus one history GET anchored to its embedded revision number. Exact older snapshots are fetched only on explicit selection.
+
+Semantic matrix tables have captions, row/column headers, associated labels, explicit base/unit/state, keyboard controls and contained horizontal scrolling. Delta drafts remain strings and memory-only. Explicit size/rule controls preserve array order; new cells remain blank and base changes do not rebase values. Conflict or ambiguous mutation retains the complete draft and requires non-submitting reconciliation; retry:false prevents automatic resends. Lifecycle archive requires confirmation; VIEWER and archived hierarchies are read-only. Organization/Actor generations guard every read and command callback. No Pattern/Measurement picker, binary request, Delete, geometry or private browser persistence is introduced.

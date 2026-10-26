@@ -699,6 +699,591 @@
         },
         "type": "object"
       },
+      "GradeRuleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 80,
+            "pattern": "^[A-Z0-9][A-Z0-9._/-]{0,79}$",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleValueInput"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "values"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "baseSizeCode": {
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleInput"
+            },
+            "type": "array"
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/GradeSizeInput"
+            },
+            "type": "array"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSizeCode",
+          "name",
+          "rules",
+          "sizes",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetLifecycleInput": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetLifecycleView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latestRevision": {
+            "$ref": "#/components/schemas/GradeRuleSetRevisionSummary"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "latestRevision",
+          "status",
+          "styleId",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetListItem": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latestRevision": {
+            "$ref": "#/components/schemas/GradeRuleSetRevisionSummary"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "latestRevision",
+          "status",
+          "styleId",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleSetListItem"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "nextCursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "nextCursor"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetRevisionCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "baseSizeCode": {
+            "type": "string"
+          },
+          "expectedLatestRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 1000,
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleInput"
+            },
+            "type": "array"
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/GradeSizeInput"
+            },
+            "type": "array"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSizeCode",
+          "expectedLatestRevisionNumber",
+          "name",
+          "rules",
+          "sizes",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetRevisionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleSetRevisionSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "nextMaxRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "nextMaxRevisionNumber"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetRevisionSummary": {
+        "properties": {
+          "baseSizeCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "gradeRuleSetId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "revisionNumber": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "ruleCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "sizeCount": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSizeCode",
+          "createdAt",
+          "gradeRuleSetId",
+          "id",
+          "name",
+          "revisionNumber",
+          "ruleCount",
+          "sizeCount",
+          "styleId",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetRevisionView": {
+        "properties": {
+          "baseSizeCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "gradeRuleSetId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "revisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "rules": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleView"
+            },
+            "type": "array"
+          },
+          "sizes": {
+            "items": {
+              "$ref": "#/components/schemas/GradeSizeView"
+            },
+            "type": "array"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "unitSystem": {
+            "enum": [
+              "MM",
+              "CM",
+              "IN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "baseSizeCode",
+          "createdAt",
+          "gradeRuleSetId",
+          "id",
+          "name",
+          "notes",
+          "revisionNumber",
+          "rules",
+          "sizes",
+          "styleId",
+          "unitSystem"
+        ],
+        "type": "object"
+      },
+      "GradeRuleSetView": {
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "latestRevision": {
+            "$ref": "#/components/schemas/GradeRuleSetRevisionView"
+          },
+          "status": {
+            "enum": [
+              "ACTIVE",
+              "ARCHIVED"
+            ],
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "version": {
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "createdAt",
+          "id",
+          "latestRevision",
+          "status",
+          "styleId",
+          "updatedAt",
+          "version"
+        ],
+        "type": "object"
+      },
+      "GradeRuleValueInput": {
+        "additionalProperties": false,
+        "properties": {
+          "delta": {
+            "pattern": "^-?[0-9]{1,15}(\\.[0-9]{1,4})?$",
+            "type": "string"
+          },
+          "sizeCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "delta",
+          "sizeCode"
+        ],
+        "type": "object"
+      },
+      "GradeRuleValueView": {
+        "properties": {
+          "delta": {
+            "format": "decimal",
+            "type": "string"
+          },
+          "sizeCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "delta",
+          "sizeCode"
+        ],
+        "type": "object"
+      },
+      "GradeRuleView": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "values": {
+            "items": {
+              "$ref": "#/components/schemas/GradeRuleValueView"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "notes",
+          "position",
+          "values"
+        ],
+        "type": "object"
+      },
+      "GradeSizeInput": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 40,
+            "pattern": "^[A-Z0-9][A-Z0-9._/-]{0,39}$",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label"
+        ],
+        "type": "object"
+      },
+      "GradeSizeView": {
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "position": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "position"
+        ],
+        "type": "object"
+      },
       "Health": {
         "properties": {
           "application": {
@@ -9506,6 +10091,479 @@
         },
         "tags": [
           "style-facility-candidate-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets": {
+      "get": {
+        "operationId": "listGradeRuleSets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "ACTIVE",
+              "enum": [
+                "ACTIVE",
+                "ARCHIVED",
+                "ALL"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetPage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "grading-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createGradeRuleSet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GradeRuleSetCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "grading-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets/{gradeRuleSetId}": {
+      "get": {
+        "operationId": "readGradeRuleSet",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "gradeRuleSetId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "grading-controller"
+        ]
+      },
+      "put": {
+        "operationId": "updateGradeRuleSetLifecycle",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "gradeRuleSetId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GradeRuleSetLifecycleInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetLifecycleView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "grading-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets/{gradeRuleSetId}/revisions": {
+      "get": {
+        "operationId": "listGradeRuleSetRevisions",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "gradeRuleSetId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxRevisionNumber",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetRevisionPage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "grading-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createGradeRuleSetRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "gradeRuleSetId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GradeRuleSetRevisionCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetRevisionView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "grading-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets/{gradeRuleSetId}/revisions/{revisionId}": {
+      "get": {
+        "operationId": "readGradeRuleSetRevision",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "gradeRuleSetId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeRuleSetRevisionView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "grading-controller"
         ]
       }
     },

@@ -1366,6 +1366,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listGradeRuleSets"];
+        put?: never;
+        post: operations["createGradeRuleSet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets/{gradeRuleSetId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readGradeRuleSet"];
+        put: operations["updateGradeRuleSetLifecycle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets/{gradeRuleSetId}/revisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listGradeRuleSetRevisions"];
+        put?: never;
+        post: operations["createGradeRuleSetRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/grade-rule-sets/{gradeRuleSetId}/revisions/{revisionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readGradeRuleSetRevision"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/material-selections": {
         parameters: {
             query?: never;
@@ -1930,6 +1994,162 @@ export interface components {
             updatedAt?: string;
             /** Format: int64 */
             version?: number;
+        };
+        GradeRuleInput: {
+            code: string;
+            label: string;
+            notes?: string | null;
+            values: components["schemas"]["GradeRuleValueInput"][];
+        };
+        GradeRuleSetCreateInput: {
+            baseSizeCode: string;
+            name: string;
+            notes?: string | null;
+            rules: components["schemas"]["GradeRuleInput"][];
+            sizes: components["schemas"]["GradeSizeInput"][];
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        GradeRuleSetLifecycleInput: {
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: int64 */
+            version: number;
+        };
+        GradeRuleSetLifecycleView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            latestRevision: components["schemas"]["GradeRuleSetRevisionSummary"];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        GradeRuleSetListItem: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            latestRevision: components["schemas"]["GradeRuleSetRevisionSummary"];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        GradeRuleSetPage: {
+            items: components["schemas"]["GradeRuleSetListItem"][];
+            /** Format: int32 */
+            limit: number;
+            nextCursor: string | null;
+        };
+        GradeRuleSetRevisionCreateInput: {
+            baseSizeCode: string;
+            /** Format: int64 */
+            expectedLatestRevisionNumber: number;
+            name: string;
+            notes?: string | null;
+            rules: components["schemas"]["GradeRuleInput"][];
+            sizes: components["schemas"]["GradeSizeInput"][];
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        GradeRuleSetRevisionPage: {
+            items: components["schemas"]["GradeRuleSetRevisionSummary"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int64 */
+            nextMaxRevisionNumber: number | null;
+        };
+        GradeRuleSetRevisionSummary: {
+            baseSizeCode: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            gradeRuleSetId: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: int64 */
+            revisionNumber: number;
+            /** Format: int32 */
+            ruleCount: number;
+            /** Format: int32 */
+            sizeCount: number;
+            /** Format: uuid */
+            styleId: string;
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        GradeRuleSetRevisionView: {
+            baseSizeCode: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            gradeRuleSetId: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            notes: string | null;
+            /** Format: int64 */
+            revisionNumber: number;
+            rules: components["schemas"]["GradeRuleView"][];
+            sizes: components["schemas"]["GradeSizeView"][];
+            /** Format: uuid */
+            styleId: string;
+            /** @enum {string} */
+            unitSystem: "MM" | "CM" | "IN";
+        };
+        GradeRuleSetView: {
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            latestRevision: components["schemas"]["GradeRuleSetRevisionView"];
+            /** @enum {string} */
+            status: "ACTIVE" | "ARCHIVED";
+            /** Format: uuid */
+            styleId: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: int64 */
+            version: number;
+        };
+        GradeRuleValueInput: {
+            delta: string;
+            sizeCode: string;
+        };
+        GradeRuleValueView: {
+            /** Format: decimal */
+            delta: string;
+            sizeCode: string;
+        };
+        GradeRuleView: {
+            code: string;
+            label: string;
+            notes: string | null;
+            /** Format: int32 */
+            position: number;
+            values: components["schemas"]["GradeRuleValueView"][];
+        };
+        GradeSizeInput: {
+            code: string;
+            label: string;
+        };
+        GradeSizeView: {
+            code: string;
+            label: string;
+            /** Format: int32 */
+            position: number;
         };
         Health: {
             application?: string;
@@ -5712,6 +5932,199 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    listGradeRuleSets: {
+        parameters: {
+            query?: {
+                status?: "ACTIVE" | "ARCHIVED" | "ALL";
+                limit?: string;
+                cursor?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetPage"];
+                };
+            };
+        };
+    };
+    createGradeRuleSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeRuleSetCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetView"];
+                };
+            };
+        };
+    };
+    readGradeRuleSet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                gradeRuleSetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetView"];
+                };
+            };
+        };
+    };
+    updateGradeRuleSetLifecycle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                gradeRuleSetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeRuleSetLifecycleInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetLifecycleView"];
+                };
+            };
+        };
+    };
+    listGradeRuleSetRevisions: {
+        parameters: {
+            query?: {
+                limit?: string;
+                maxRevisionNumber?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                gradeRuleSetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetRevisionPage"];
+                };
+            };
+        };
+    };
+    createGradeRuleSetRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                gradeRuleSetId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GradeRuleSetRevisionCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetRevisionView"];
+                };
+            };
+        };
+    };
+    readGradeRuleSetRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                gradeRuleSetId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["GradeRuleSetRevisionView"];
+                };
             };
         };
     };

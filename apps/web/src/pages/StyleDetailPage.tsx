@@ -87,6 +87,9 @@ function StyleContent({
         >
           Patterns
         </Link>
+        <Link to={`${stylePath(w.organizationId, parent.id, style.data.id)}/grading`}>
+          Grading
+        </Link>
       </header>
       {style.isError && (
         <ApiErrorState error={style.error} retry={() => void style.refetch()} />

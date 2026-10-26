@@ -10,6 +10,8 @@ const ProjectDetail = lazy(() => import("../pages/ProjectDetailPage"));
 const Patterns = lazy(() => import("../pages/PatternsPage"));
 const PatternDetail = lazy(() => import("../pages/PatternDetailPage"));
 const Measurements = lazy(() => import("../pages/MeasurementsPage"));
+const Grading = lazy(() => import("../pages/GradingPage"));
+const GradingDetail = lazy(() => import("../pages/GradingDetailPage"));
 const StyleDetail = lazy(() => import("../pages/StyleDetailPage"));
 const Overview = lazy(() => import("../pages/OverviewPage"));
 const Organization = lazy(() => import("../pages/OrganizationPage"));
@@ -135,6 +137,26 @@ export function AppRoutes() {
             <Authenticated>
               <WorkspaceGate>
                 <PatternDetail />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/projects/:projectId/styles/:styleId/grading"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <Grading />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/projects/:projectId/styles/:styleId/grading/:gradeRuleSetId"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <GradingDetail />
               </WorkspaceGate>
             </Authenticated>
           }

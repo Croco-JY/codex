@@ -5,7 +5,11 @@ import {
   waitFor,
   cleanup,
   act,
+  render,
 } from "@testing-library/react";
+import { MemoryRouter, useNavigate } from "react-router";
+import { QueryClientProvider } from "@tanstack/react-query";
+import App from "../../App";
 import {
   fixture,
   route,
@@ -40,6 +44,279 @@ const writes = (h: ReturnType<typeof fixture>) =>
   h.calls.filter((r) => r.method !== "GET");
 const reads = (h: ReturnType<typeof fixture>) =>
   h.calls.filter((r) => r.url.includes("/qa"));
+const historyBounds = (h: ReturnType<typeof fixture>) =>
+  h.calls
+    .filter(
+      (r) =>
+        r.method === "GET" &&
+        new URL(r.url).pathname === qaRoot() + "/assessments",
+    )
+    .map((r) => new URL(r.url).searchParams.get("maxAssessmentNumber"));
+const currentKey = (h: ReturnType<typeof fixture>) =>
+  queryKeys.patternQa(h.scope, A, P, S, PID, revision().id);
+function historyFixture(head = 2) {
+  const h = fixture();
+  h.current.set(A, qa(head));
+  for (let n = 1; n <= head; n++) h.rows.set(assessment(n).id, assessment(n));
+  return h;
+}
+async function selectFirstAssessment(h: ReturnType<typeof fixture>) {
+  h.mount(route());
+  await screen.findByRole("heading", { name: "Latest QA assessment 2" });
+  click("Expand QA history");
+  await screen.findByRole("button", { name: "Open QA assessment 1" });
+  click("Open QA assessment 1");
+  await screen.findByRole("heading", { name: "Historical QA assessment 1" });
+}
+async function refreshCurrent(h: ReturnType<typeof fixture>, head: number) {
+  h.current.set(A, qa(head));
+  await act(async () => {
+    await h.cache.refetchQueries({ queryKey: currentKey(h), exact: true });
+  });
+  await screen.findByRole("heading", {
+    name: `Latest QA assessment ${head}`,
+  });
+}
+test("R01 background 2→3 preserves history anchor2 without an anchor3 request", async () => {
+  const h = historyFixture();
+  await selectFirstAssessment(h);
+  expect(historyBounds(h)).toEqual(["2"]);
+  await refreshCurrent(h, 3);
+  expect(historyBounds(h)).toEqual(["2"]);
+  expect(
+    screen.queryByRole("button", { name: "Open QA assessment 3" }),
+  ).toBeNull();
+  expect(reads(h)).toHaveLength(4); // current×2, history×1, exact×1
+  expect(writes(h)).toHaveLength(0);
+});
+test("R01 background 2→3 preserves the selected assessment and pinned summary", async () => {
+  const h = historyFixture();
+  await selectFirstAssessment(h);
+  await refreshCurrent(h, 3);
+  expect(
+    screen.getByRole("region", { name: "Historical QA assessment 1" }),
+  ).toHaveTextContent(assessment(1).notes);
+  expect(
+    h.calls.filter((r) =>
+      new URL(r.url).pathname.endsWith("/assessments/" + assessment(1).id),
+    ),
+  ).toHaveLength(1);
+  expect(historyBounds(h)).toEqual(["2"]);
+  expect(writes(h)).toHaveLength(0);
+});
+test("R01 background 27→28 preserves the older page, bounds stack and selection", async () => {
+  const h = historyFixture(27);
+  h.mount(route());
+  await screen.findByRole("heading", { name: "Latest QA assessment 27" });
+  click("Expand QA history");
+  await screen.findByRole("button", { name: "Open QA assessment 27" });
+  click("Older QA assessments");
+  await screen.findByRole("button", { name: "Open QA assessment 1" });
+  click("Open QA assessment 1");
+  await screen.findByRole("heading", { name: "Historical QA assessment 1" });
+  expect(historyBounds(h)).toEqual(["27", "2"]);
+  await refreshCurrent(h, 28);
+  expect(
+    screen.getByRole("heading", { name: "Historical QA assessment 1" }),
+  ).toBeVisible();
+  expect(historyBounds(h)).toEqual(["27", "2"]);
+  expect(
+    screen.queryByRole("button", { name: "Open QA assessment 27" }),
+  ).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "Newer QA assessments" }),
+  ).toBeEnabled();
+  click("Newer QA assessments");
+  await screen.findByRole("button", { name: "Open QA assessment 27" });
+  expect(
+    screen.queryByRole("heading", { name: "Historical QA assessment 1" }),
+  ).toBeNull();
+  click("Older QA assessments");
+  await screen.findByRole("button", { name: "Open QA assessment 1" });
+  expect(historyBounds(h)).toEqual(["27", "2"]);
+  expect(writes(h)).toHaveLength(0);
+});
+test("R01 UNREVIEWED history stays anchored0 when background QA becomes assessment1", async () => {
+  const h = historyFixture(0);
+  h.mount(route());
+  await loaded();
+  click("Expand QA history");
+  await screen.findByText("No assessments in this history snapshot.");
+  await refreshCurrent(h, 1);
+  expect(
+    screen.getByText("No assessments in this history snapshot."),
+  ).toBeVisible();
+  expect(historyBounds(h)).toEqual(["0"]);
+  expect(
+    screen.queryByRole("button", { name: "Open QA assessment 1" }),
+  ).toBeNull();
+  expect(writes(h)).toHaveLength(0);
+});
+test("R01 explicit close/reopen alone adopts head3 and valid cached detail still renders", async () => {
+  const h = historyFixture();
+  await selectFirstAssessment(h);
+  await refreshCurrent(h, 3);
+  expect(historyBounds(h)).toEqual(["2"]);
+  click("Close QA history");
+  expect(
+    screen.queryByRole("region", { name: "QA assessment history" }),
+  ).toBeNull();
+  click("Expand QA history");
+  await screen.findByRole("button", { name: "Open QA assessment 3" });
+  expect(historyBounds(h)).toEqual(["2", "3"]);
+  expect(
+    screen.queryByRole("heading", { name: "Historical QA assessment 1" }),
+  ).toBeNull();
+  click("Open QA assessment 1");
+  await screen.findByRole("heading", { name: "Historical QA assessment 1" });
+  expect(
+    h.calls.filter((r) =>
+      new URL(r.url).pathname.endsWith("/assessments/" + assessment(1).id),
+    ),
+  ).toHaveLength(1);
+  expect(writes(h)).toHaveLength(0);
+});
+test("R01 exact revision R1→R2 discards the open history and selected assessment", async () => {
+  const h = historyFixture();
+  h.patterns.set(A, [pattern(2)]);
+  h.history.set(revision(2).id, revision(2));
+  h.overrides.set("GET " + qaRoot(A, 2), () =>
+    response({
+      ...qa(),
+      patternRevisionId: revision(2).id,
+      patternRevisionNumber: 2,
+    }),
+  );
+  h.overrides.set("GET " + qaRoot(A, 2) + "/assessments", () =>
+    response({ items: [], limit: 25, nextMaxAssessmentNumber: null }),
+  );
+  function RevisionNavigation() {
+    const navigate = useNavigate();
+    return <button onClick={() => navigate(route(A, 2))}>QA revision2</button>;
+  }
+  render(
+    <QueryClientProvider client={h.cache}>
+      <MemoryRouter initialEntries={[route()]}>
+        <App />
+        <RevisionNavigation />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+  await screen.findByRole("heading", { name: "Latest QA assessment 2" });
+  click("Expand QA history");
+  await screen.findByRole("button", { name: "Open QA assessment 1" });
+  click("Open QA assessment 1");
+  await screen.findByRole("heading", { name: "Historical QA assessment 1" });
+  click("QA revision2");
+  await loaded();
+  expect(
+    screen.queryByRole("region", { name: "QA assessment history" }),
+  ).toBeNull();
+  expect(
+    screen.queryByRole("heading", { name: "Historical QA assessment 1" }),
+  ).toBeNull();
+  click("Expand QA history");
+  await screen.findByText("No assessments in this history snapshot.");
+  const r2Calls = h.calls.filter(
+    (r) => new URL(r.url).pathname === qaRoot(A, 2) + "/assessments",
+  );
+  expect(r2Calls).toHaveLength(1);
+  expect(new URL(r2Calls[0].url).searchParams.get("maxAssessmentNumber")).toBe(
+    "0",
+  );
+  expect(writes(h)).toHaveLength(0);
+});
+test.each([
+  ["A→B", true],
+  ["A→B", false],
+  ["ABA", true],
+  ["ABA", false],
+  ["Actor", true],
+  ["Actor", false],
+])(
+  "R01 in-flight historical selection cannot cross %s, late success=%s",
+  async (mode, success) => {
+    const h = historyFixture(),
+      d = deferred<Response>();
+    const old = { ...assessment(1), notes: "Old private selected history" };
+    h.overrides.set(
+      "GET " + qaRoot() + "/assessments/" + old.id,
+      () => d.promise,
+    );
+    h.mount(route());
+    await screen.findByRole("heading", { name: "Latest QA assessment 2" });
+    click("Expand QA history");
+    await screen.findByRole("button", { name: "Open QA assessment 1" });
+    click("Open QA assessment 1");
+    await screen.findByRole("status", {
+      name: "Loading historical QA assessment",
+    });
+    if (mode === "Actor") {
+      await act(async () => {
+        setAccessToken("r01-replacement-actor");
+      });
+      await screen.findByRole("heading", { name: "Latest QA assessment 2" });
+    } else {
+      click("Patterns B");
+      await screen.findByRole("link", { name: "Pattern revision 1" });
+      if (mode === "ABA") click("Pattern detail A");
+      else
+        fireEvent.click(
+          screen.getByRole("link", { name: "Pattern revision 1" }),
+        );
+      await screen.findByRole("link", { name: "Human QA for revision 1" });
+      fireEvent.click(
+        screen.getByRole("link", { name: "Human QA for revision 1" }),
+      );
+      if (mode === "ABA")
+        await screen.findByRole("heading", { name: "Latest QA assessment 2" });
+      else await loaded();
+    }
+    expect(
+      screen.queryByRole("region", { name: "QA assessment history" }),
+    ).toBeNull();
+    click("Expand QA history");
+    await screen.findByRole("region", { name: "QA assessment history" });
+    await act(async () => {
+      d.resolve(response(success ? old : {}, success ? 200 : 403));
+    });
+    expect(screen.queryByText(old.notes)).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Historical QA assessment 1" }),
+    ).toBeNull();
+    expect(screen.queryByText("Access denied")).toBeNull();
+    expect(
+      h.cache
+        .getQueryCache()
+        .getAll()
+        .filter(
+          (q) =>
+            q.queryKey.includes("assessment") &&
+            (q.state.data as { notes?: string } | undefined)?.notes ===
+              old.notes,
+        ),
+    ).toHaveLength(0);
+    expect(writes(h)).toHaveLength(0);
+  },
+);
+test("R01 current-generation403 during refresh removes already selected private history", async () => {
+  const h = historyFixture();
+  await selectFirstAssessment(h);
+  h.overrides.set("GET " + qaRoot(), () => response({}, 403));
+  await act(async () => {
+    await h.cache.refetchQueries({ queryKey: currentKey(h), exact: true });
+  });
+  await screen.findByText("Access denied");
+  expect(
+    screen.queryByRole("region", { name: "QA assessment history" }),
+  ).toBeNull();
+  expect(
+    h.cache
+      .getQueryCache()
+      .getAll()
+      .filter((q) => q.queryKey[0] === "workspace"),
+  ).toHaveLength(0);
+});
 async function edit(notes = "Private human QA notes") {
   click("Record QA assessment");
   await waitFor(() =>

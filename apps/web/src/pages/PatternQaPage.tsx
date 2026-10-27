@@ -320,7 +320,7 @@ function QaPanel({
             </Button>
             {expanded && (
               <History
-                key={q.data.latestAssessment?.id ?? "unreviewed"}
+                key={JSON.stringify([w.generation, ...scope.key])}
                 projectId={project.id}
                 revision={revision}
                 head={head}

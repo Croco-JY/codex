@@ -4,7 +4,7 @@ import {
   type Page,
   type APIRequestContext,
 } from "@playwright/test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -232,6 +232,110 @@ test("lazy navigation, exact UNREVIEWED, observations, immutable history and str
   expect(p.version).toBe(0);
   expect(p.latestRevision).toEqual(f.pattern.latestRevision);
   noHidden(calls);
+});
+test("R01 real background QA refresh preserves anchor2 and selected assessment1 until explicit reopen", async ({
+  page,
+  request,
+}) => {
+  const f = await setup(request),
+    first = await assess(request, f),
+    second = await assess(request, f, 1),
+    endpoint = qaPath(f),
+    calls = traffic(page);
+  await login(page, f);
+  await latest(page, 2);
+  await page
+    .getByRole("button", { name: "Expand QA history", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Open QA assessment 1", exact: true })
+    .click();
+  const selected = page.getByRole("region", {
+    name: "Historical QA assessment 1",
+    exact: true,
+  });
+  await expect(selected).toContainText(first.notes);
+  const historyCalls = () =>
+      calls.filter(
+        (c) => c.method === "GET" && c.path === endpoint + "/assessments",
+      ),
+    anchors = () =>
+      historyCalls().map((c) =>
+        new URLSearchParams(c.query).get("maxAssessmentNumber"),
+      );
+  expect(anchors()).toEqual(["2"]);
+  expect(second.assessmentNumber).toBe(2);
+  const originalUrl = page.url();
+  await page.evaluate(() => {
+    document.documentElement.dataset.r01SameDocument = "pinned-history";
+  });
+  // Advance browser time, not wall time, to exercise the existing stale-on-focus
+  // policy without changing production query configuration or navigating away.
+  await page.clock.install();
+  const third = await assess(request, f, 2);
+  expect(third.assessmentNumber).toBe(3);
+  const refreshed = page.waitForResponse(
+    (r) =>
+      new URL(r.url()).pathname === endpoint && r.request().method() === "GET",
+  );
+  await page.clock.fastForward(31_000);
+  await page.evaluate(() =>
+    window.dispatchEvent(new Event("visibilitychange")),
+  );
+  const current = await refreshed;
+  expect(current.status()).toBe(200);
+  expect((await current.json()).latestAssessment.id).toBe(third.id);
+  await latest(page, 3);
+  await expect(selected).toContainText(first.notes);
+  await expect.poll(() => historyCalls().length).toBe(2);
+  expect(anchors()).toEqual(["2", "2"]); // initial + focus refresh of the same bound
+  await expect(
+    page.getByRole("button", { name: "Open QA assessment 3", exact: true }),
+  ).toHaveCount(0);
+  expect(calls.filter((c) => c.method !== "GET")).toHaveLength(0);
+  expect(page.url()).toBe(originalUrl);
+  expect(
+    await page.evaluate(() => document.documentElement.dataset.r01SameDocument),
+  ).toBe("pinned-history");
+  await capture(page, "r01-pinned-history");
+  await page
+    .getByRole("button", { name: "Close QA history", exact: true })
+    .click();
+  await expect(selected).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Expand QA history", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Open QA assessment 3", exact: true }),
+  ).toBeVisible();
+  expect(anchors()).toEqual(["2", "2", "3"]);
+  await expect(selected).toHaveCount(0);
+  expect(calls.filter((c) => c.method !== "GET")).toHaveLength(0);
+  noHidden(calls);
+  await capture(page, "r01-reopened-history");
+  const metricsPath = test
+    .info()
+    .outputPath("r01-history-snapshot-requests.json");
+  writeFileSync(
+    metricsPath,
+    JSON.stringify(
+      {
+        currentQaGets: calls.filter((c) => c.path === endpoint).length,
+        historyAnchors: anchors(),
+        exactAssessmentGets: calls.filter((c) =>
+          /\/qa\/assessments\//.test(c.path),
+        ).length,
+        browserMutations: calls.filter((c) => c.method !== "GET").length,
+        requests: calls,
+      },
+      null,
+      2,
+    ),
+  );
+  await test.info().attach("r01-history-snapshot-requests", {
+    path: metricsPath,
+    contentType: "application/json",
+  });
 });
 test("exact READY artifact human attestation is explicit, truthful and not inherited by a new revision", async ({
   page,

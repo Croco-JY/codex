@@ -1622,6 +1622,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/qa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readPatternQa"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/qa/assessments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPatternQaAssessments"];
+        put?: never;
+        post: operations["createPatternQaAssessment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/qa/assessments/{assessmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["readPatternQaAssessment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/requirement": {
         parameters: {
             query?: never;
@@ -2762,6 +2810,73 @@ export interface components {
             /** Format: int32 */
             limit: number;
             nextCursor: string | null;
+        };
+        PatternQaAssessmentPage: {
+            items: components["schemas"]["PatternQaAssessmentSummary"][];
+            /** Format: int32 */
+            limit: number;
+            /** Format: int64 */
+            nextMaxAssessmentNumber: number | null;
+        };
+        PatternQaAssessmentSummary: {
+            /** Format: uuid */
+            artifactId: string | null;
+            /** Format: int64 */
+            assessmentNumber: number;
+            evidenceBasis: components["schemas"]["PatternQaEvidenceBasis"];
+            /** Format: uuid */
+            id: string;
+            outcome: components["schemas"]["PatternQaOutcome"];
+            /** Format: uuid */
+            patternRevisionId: string;
+            /** Format: date-time */
+            reviewedAt: string;
+            /** Format: uuid */
+            styleId: string;
+        };
+        PatternQaAssessmentView: {
+            /** Format: uuid */
+            artifactId: string | null;
+            /** Format: int64 */
+            assessmentNumber: number;
+            evidenceBasis: components["schemas"]["PatternQaEvidenceBasis"];
+            /** Format: uuid */
+            id: string;
+            notes: string;
+            outcome: components["schemas"]["PatternQaOutcome"];
+            /** Format: uuid */
+            patternRevisionId: string;
+            /** Format: date-time */
+            reviewedAt: string;
+            /** Format: uuid */
+            styleId: string;
+        };
+        PatternQaCreateInput: {
+            /** Format: uuid */
+            artifactId: string | null;
+            evidenceBasis: components["schemas"]["PatternQaEvidenceBasis"];
+            /** Format: int64 */
+            expectedLatestAssessmentNumber: number;
+            notes: string;
+            outcome: components["schemas"]["PatternQaOutcome"];
+        };
+        /** @enum {string} */
+        PatternQaEvidenceBasis: "METADATA_ONLY" | "READY_ARTIFACT";
+        /** @enum {string} */
+        PatternQaOutcome: "OBSERVED" | "CHANGES_REQUESTED" | "HUMAN_REVIEWED";
+        /** @enum {string} */
+        PatternQaState: "UNREVIEWED" | "OBSERVED" | "CHANGES_REQUESTED" | "HUMAN_REVIEWED";
+        PatternQaView: {
+            latestAssessment: components["schemas"]["PatternQaAssessmentView"] | null;
+            /** Format: uuid */
+            patternId: string;
+            /** Format: uuid */
+            patternRevisionId: string;
+            /** Format: int64 */
+            patternRevisionNumber: number;
+            state: components["schemas"]["PatternQaState"];
+            /** Format: uuid */
+            styleId: string;
         };
         PatternRevisionCreateInput: {
             /** Format: int64 */
@@ -6611,6 +6726,118 @@ export interface operations {
                 };
                 content: {
                     "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    readPatternQa: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternQaView"];
+                };
+            };
+        };
+    };
+    listPatternQaAssessments: {
+        parameters: {
+            query?: {
+                limit?: string;
+                maxAssessmentNumber?: string;
+            };
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternQaAssessmentPage"];
+                };
+            };
+        };
+    };
+    createPatternQaAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatternQaCreateInput"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternQaAssessmentView"];
+                };
+            };
+        };
+    };
+    readPatternQaAssessment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                organizationId: string;
+                projectId: string;
+                styleId: string;
+                patternId: string;
+                revisionId: string;
+                assessmentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PatternQaAssessmentView"];
                 };
             };
         };

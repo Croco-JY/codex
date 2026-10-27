@@ -3236,6 +3236,248 @@
         ],
         "type": "object"
       },
+      "PatternQaAssessmentPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PatternQaAssessmentSummary"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "format": "int32",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "nextMaxAssessmentNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "items",
+          "limit",
+          "nextMaxAssessmentNumber"
+        ],
+        "type": "object"
+      },
+      "PatternQaAssessmentSummary": {
+        "properties": {
+          "artifactId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assessmentNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "evidenceBasis": {
+            "$ref": "#/components/schemas/PatternQaEvidenceBasis"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PatternQaOutcome"
+          },
+          "patternRevisionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifactId",
+          "assessmentNumber",
+          "evidenceBasis",
+          "id",
+          "outcome",
+          "patternRevisionId",
+          "reviewedAt",
+          "styleId"
+        ],
+        "type": "object"
+      },
+      "PatternQaAssessmentView": {
+        "properties": {
+          "artifactId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assessmentNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "evidenceBasis": {
+            "$ref": "#/components/schemas/PatternQaEvidenceBasis"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "notes": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PatternQaOutcome"
+          },
+          "patternRevisionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "reviewedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "artifactId",
+          "assessmentNumber",
+          "evidenceBasis",
+          "id",
+          "notes",
+          "outcome",
+          "patternRevisionId",
+          "reviewedAt",
+          "styleId"
+        ],
+        "type": "object"
+      },
+      "PatternQaCreateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "artifactId": {
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidenceBasis": {
+            "$ref": "#/components/schemas/PatternQaEvidenceBasis"
+          },
+          "expectedLatestAssessmentNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "notes": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/PatternQaOutcome"
+          }
+        },
+        "required": [
+          "artifactId",
+          "evidenceBasis",
+          "expectedLatestAssessmentNumber",
+          "notes",
+          "outcome"
+        ],
+        "type": "object"
+      },
+      "PatternQaEvidenceBasis": {
+        "enum": [
+          "METADATA_ONLY",
+          "READY_ARTIFACT"
+        ],
+        "type": "string"
+      },
+      "PatternQaOutcome": {
+        "enum": [
+          "OBSERVED",
+          "CHANGES_REQUESTED",
+          "HUMAN_REVIEWED"
+        ],
+        "type": "string"
+      },
+      "PatternQaState": {
+        "enum": [
+          "UNREVIEWED",
+          "OBSERVED",
+          "CHANGES_REQUESTED",
+          "HUMAN_REVIEWED"
+        ],
+        "type": "string"
+      },
+      "PatternQaView": {
+        "properties": {
+          "latestAssessment": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PatternQaAssessmentView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "patternId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "patternRevisionId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "patternRevisionNumber": {
+            "format": "int64",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/PatternQaState"
+          },
+          "styleId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "latestAssessment",
+          "patternId",
+          "patternRevisionId",
+          "patternRevisionNumber",
+          "state",
+          "styleId"
+        ],
+        "type": "object"
+      },
       "PatternRevisionCreateInput": {
         "additionalProperties": false,
         "properties": {
@@ -11716,6 +11958,311 @@
         },
         "tags": [
           "pattern-artifact-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/qa": {
+      "get": {
+        "operationId": "readPatternQa",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternQaView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-qa-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/qa/assessments": {
+      "get": {
+        "operationId": "listPatternQaAssessments",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxAssessmentNumber",
+            "required": false,
+            "schema": {
+              "maximum": 9007199254740991,
+              "minimum": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternQaAssessmentPage"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-qa-controller"
+        ]
+      },
+      "post": {
+        "operationId": "createPatternQaAssessment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatternQaCreateInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternQaAssessmentView"
+                }
+              }
+            },
+            "description": "Created"
+          }
+        },
+        "tags": [
+          "pattern-qa-controller"
+        ]
+      }
+    },
+    "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/patterns/{patternId}/revisions/{revisionId}/qa/assessments/{assessmentId}": {
+      "get": {
+        "operationId": "readPatternQaAssessment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organizationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "projectId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "styleId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "patternId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "revisionId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "assessmentId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/PatternQaAssessmentView"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "pattern-qa-controller"
         ]
       }
     },

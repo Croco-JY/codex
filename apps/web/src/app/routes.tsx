@@ -9,6 +9,7 @@ const Projects = lazy(() => import("../pages/ProjectsPage"));
 const ProjectDetail = lazy(() => import("../pages/ProjectDetailPage"));
 const Patterns = lazy(() => import("../pages/PatternsPage"));
 const PatternDetail = lazy(() => import("../pages/PatternDetailPage"));
+const PatternQa = lazy(() => import("../pages/PatternQaPage"));
 const Measurements = lazy(() => import("../pages/MeasurementsPage"));
 const Grading = lazy(() => import("../pages/GradingPage"));
 const GradingDetail = lazy(() => import("../pages/GradingDetailPage"));
@@ -80,6 +81,16 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<Skeleton label="Loading page" />}>
       <Routes>
+        <Route
+          path="/organizations/:organizationId/projects/:projectId/styles/:styleId/patterns/:patternId/revisions/:revisionId/qa"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <PatternQa />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
         <Route path="/" element={<Overview />} />
         <Route
           path="/organizations/:organizationId/projects"

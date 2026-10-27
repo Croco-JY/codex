@@ -148,7 +148,10 @@ class GradingMigrationTest {
       assertThat(before.get("pattern_artifact")).hasSize(3);
     }
     var latest =
-        Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
+        Flyway.configure()
+            .dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword())
+            .target("21")
+            .load();
     latest.migrate();
     latest.validate();
     assertThat(latest.info().applied()).hasSize(21);

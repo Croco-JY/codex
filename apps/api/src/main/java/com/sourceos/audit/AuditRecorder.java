@@ -88,7 +88,10 @@ public class AuditRecorder {
           "gradeRuleSetId",
           "gradeRuleSetRevisionNumber",
           "gradeSizeCount",
-          "gradeRuleCount");
+          "gradeRuleCount",
+          "patternQaAssessmentNumber",
+          "patternQaOutcome",
+          "patternQaEvidenceBasis");
 
   private String state(java.util.Map<String, ?> values) {
     if (values == null) return null;

@@ -1,4 +1,26 @@
 export const queryKeys = {
+  patternQa: (
+    scope: string,
+    org: string,
+    project: string,
+    style: string,
+    pattern: string,
+    revision: string,
+  ) =>
+    [
+      "workspace",
+      scope,
+      org,
+      "project",
+      project,
+      "style",
+      style,
+      "pattern",
+      pattern,
+      "revision",
+      revision,
+      "qa",
+    ] as const,
   workspace: (scope: string, org: string) => ["workspace", scope, org] as const,
   projects: (
     scope: string,

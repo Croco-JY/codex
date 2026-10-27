@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import { useForm, type Path } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, requireData } from "../../api/client";
@@ -178,6 +178,8 @@ export function RevisionFacts({
   value: Revision;
   title: string;
 }) {
+  const w = useWorkspace(),
+    { projectId = "" } = useParams();
   return (
     <section aria-label={title}>
       <h3>{title}</h3>
@@ -210,9 +212,14 @@ export function RevisionFacts({
         </div>
       </dl>
       <p>
-        Revision metadata. A measurement association does not establish geometry,
-        fit or approval.
+        Revision metadata. A measurement association does not establish
+        geometry, fit or approval.
       </p>
+      <Link
+        to={`${stylePath(w.organizationId, projectId, value.styleId)}/patterns/${value.patternId}/revisions/${value.id}/qa`}
+      >
+        Human QA for revision {value.revisionNumber}
+      </Link>
     </section>
   );
 }

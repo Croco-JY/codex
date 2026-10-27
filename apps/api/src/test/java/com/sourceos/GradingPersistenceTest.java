@@ -20,7 +20,10 @@ class GradingPersistenceTest {
   @BeforeAll
   static void migrate() {
     var f =
-        Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
+        Flyway.configure()
+            .dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword())
+            .target("21")
+            .load();
     f.migrate();
     f.validate();
     assertThat(f.info().applied()).hasSize(21);

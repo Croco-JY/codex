@@ -1,8 +1,8 @@
 # Data Model
 
-## Implemented through Pattern Artifacts (3C)
+## Implemented through Human Pattern QA (3E)
 
-Flyway owns schema; Hibernate uses ddl-auto=validate. Accepted V1–V20 remain byte-identical. Accepted 3A/3B/3C introduced V18/V19/V20. Separately authorized [3D](phase-3d-grading-foundation.md) adds V21, pending independent review, with 21 migrations, 58 public base tables including Flyway history and 57 application base tables. UUID keys, UTC timestamptz, foreign keys, explicit lifecycle states and versions only where the domain is mutable are established conventions. Identity remains issuer+subject, with no separate user table.
+Flyway owns schema; Hibernate uses ddl-auto=validate. Accepted V1–V21 remain byte-identical. Accepted 3A/3B/3C introduced V18/V19/V20; [3D](phase-3d-grading-foundation.md) and R01 are independently accepted. Separately authorized [3E](phase-3e-human-qa.md) adds V22, pending independent acceptance, with 22 migrations, 59 public base tables including Flyway history and 58 application base tables. UUID keys, UTC timestamptz, foreign keys, explicit lifecycle states and versions only where the domain is mutable are established conventions. Identity remains issuer+subject, with no separate user table.
 
 | Migration | Implemented ownership |
 | --- | --- |
@@ -25,6 +25,7 @@ Flyway owns schema; Hibernate uses ddl-auto=validate. Accepted V1–V20 remain b
 | V19 | Pattern lifecycle and immutable metadata revisions; deferred revision1, active sequence guard and same-Style Measurement FK |
 | V20 | New-revision artifact reservation, immutable identity/private digest and terminal READY/FAILED; old revision retrofit prohibited |
 | V21 | Independent Style-owned GradeRuleSet, immutable ordered full snapshots and complete exact base-relative Size × Rule matrices |
+| V22 | Exact PatternRevision human assessments, immutable linear history and same-revision READY evidence |
 
 Quantity/money are already NUMERIC/BigDecimal, externally exact decimal strings. MaterialVariant and Listing each reference Material; Listing does not store variantId. Composite unique keys on `(id, material_id)` already support consistent references. Global catalog records are not buyer-Organization-owned. Supplier/Facility early citation APIs append only; their DB edges do not have all the later V9/V10 mutation guards, as recorded in the accepted contract lock.
 
@@ -32,7 +33,7 @@ Project/Style/Requirement/Reference hard DELETE and TRUNCATE are blocked; Select
 
 ## Measurement integrity and future Phase 3 schema
 
-[Phase 3 PLAN](phase-3-plan.md) itself changed no schema. [3A](phase-3a-measurement-foundation.md) now implements V18. [3B](phase-3b-pattern-vault.md) adds V19 Pattern/revision foundation. [3C](phase-3c-pattern-artifacts.md) adds V20 private artifacts on new revisions. [3D](phase-3d-grading-foundation.md) adds V21 grading; later QA/release remain future, separately approved slices, and V22+ is absent. No speculative tables, dummy migrations or Tech Pack/BOM/Sample reservations.
+[Phase 3 PLAN](phase-3-plan.md) itself changed no schema. [3A](phase-3a-measurement-foundation.md) implements V18. [3B](phase-3b-pattern-vault.md) adds V19 Pattern/revision foundation. [3C](phase-3c-pattern-artifacts.md) adds V20 private artifacts on new revisions. [3D](phase-3d-grading-foundation.md) adds V21 grading, and [3E](phase-3e-human-qa.md) adds V22 human assessments. Release remains a separately approved future slice; V23+ is absent. No speculative tables, dummy migrations or Tech Pack/BOM/Sample reservations.
 
 MeasurementSpec is unique per Style and has no mutable business fields. Its deferred insertion constraint requires sealed revision 1 at commit. Each revision's separate deferred constraint requires sealed=true, 1..500 points and positions exactly 0..N−1. Points may be inserted only while the new parent revision is unsealed inside the creation transaction; after sealing no point insertion/update/delete is allowed. The only revision update is false→true sealing with every other column identical. Spec/revision/point deletion and truncation are forbidden. There is no quality status, mutable version or currentRevisionId. A sequence trigger locks only the owning spec and requires exactly latest+1; application writes first lock Project→Style→Spec and compare expected latest. Exact values/tolerances are NUMERIC(19,4)/BigDecimal/JSON strings.
 
@@ -40,7 +41,7 @@ V18 supplies UNIQUE(id,style_id) on both spec and revision, with (measurement_sp
 
 ## V19 Pattern integrity
 
-[3B](phase-3b-pattern-vault.md) adds only pattern and pattern_revision. V1–V18 remain byte-identical; V20+ absent. Pattern starts ACTIVE/v0, may only flip lifecycle with exact version+1 and immutable identity, and cannot be deleted/truncated. A deferred constraint requires revision1 at commit. A revision sequence trigger locks only its Pattern, requires ACTIVE and max+1. Revision UPDATE/DELETE/TRUNCATE are blocked. Owner-aware Pattern and Measurement composite FKs enforce same-Style relationships even through direct SQL. Null Measurement pin is intentional MATCH SIMPLE behavior. Name/purpose are canonical immutable revision content, never aggregate metadata. No artifact/source/quality columns or speculative tables. Populated V18→V19 preserves Measurement and all older table values.
+[3B](phase-3b-pattern-vault.md) introduced only pattern and pattern_revision, preserving V1–V18; V20+ was absent at that boundary. Pattern starts ACTIVE/v0, may only flip lifecycle with exact version+1 and immutable identity, and cannot be deleted/truncated. A deferred constraint requires revision1 at commit. A revision sequence trigger locks only its Pattern, requires ACTIVE and max+1. Revision UPDATE/DELETE/TRUNCATE are blocked. Owner-aware Pattern and Measurement composite FKs enforce same-Style relationships even through direct SQL. Null Measurement pin is intentional MATCH SIMPLE behavior. Name/purpose are canonical immutable revision content, never aggregate metadata. The 3B revision had no artifact/source/quality columns or speculative tables. Populated V18→V19 preserves Measurement and all older table values.
 
 ## V20 Pattern artifact integrity
 
@@ -51,3 +52,9 @@ See [3C](phase-3c-pattern-artifacts.md). V19 revision no-update trigger stays in
 Exactly five tables: grade_rule_set, grade_rule_set_revision, grade_size, grade_rule and grade_rule_value. There is no Pattern FK or Measurement FK. The parent `(revision.id,base_size_code)` references `(grade_size.revision_id,code)` through an ALTER-added DEFERRABLE INITIALLY DEFERRED composite FK; GradeSize also references its parent revision. PKs, same-revision composite FKs, contiguous positions and exact cardinality prove the complete matrix.
 
 Revision construction is unsealed insert→ordered children→multi-row values→seal→commit. A single revision-level deferred event validates final sealing, counts/order and mathematical base zero. Child insertion checks construction state under the parent lock; no child event scans the matrix. Immutable revision/child guards and statement-level destruction guards preserve history. Lifecycle-only stable version/timestamps remain independent of new revisions. Exact signed NUMERIC(19,4) values reject NaN; PostgreSQL typmod rejects infinities and may round direct-SQL over-scale input. API grammar rejects over-scale strings before persistence. Java code-point validation and V21's explicit boundary set agree without locale/POSIX whitespace assumptions. See [3D](phase-3d-grading-foundation.md) for observed migration and numeric evidence.
+
+## V22 human assessment integrity
+
+Exactly one new table, pattern_qa_assessment, references pattern_revision(id,style_id) and optional pattern_artifact(id). A BEFORE INSERT trigger resolves revision ownership, locks Pattern, requires ACTIVE, allocates/validates exact-revision max+1 and verifies any artifact belongs to that revision/Style and is READY. Unique(revision,assessment_number) supports reverse latest/history scans without a duplicate index. Statement guards reject UPDATE/DELETE/TRUNCATE, including empty-target statements and cascade truncation.
+
+Three stored outcomes: OBSERVED, CHANGES_REQUESTED, HUMAN_REVIEWED. Metadata-only evidence requires null artifact and cannot claim HUMAN_REVIEWED. UNREVIEWED is derived, not a dummy row. Required notes contain 1–2,000 Unicode code points with the fixed 26-character boundary set; null, noncanonical boundaries and invalid input are rejected. Reviewer provenance is internal and reviewed_at is server-owned; DTOs expose no raw issuer/subject. No mutable QA aggregate/current pointer or old revision/artifact/grading rewrite. Fresh V22 and populated V21→V22 validate; all 57 old application-table snapshots are preserved and QA starts empty.

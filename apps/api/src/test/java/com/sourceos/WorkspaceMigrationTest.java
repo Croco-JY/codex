@@ -74,7 +74,7 @@ class WorkspaceMigrationTest {
         Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
     flyway.migrate();
     flyway.validate();
-    assertThat(flyway.info().applied()).hasSize(21);
+    assertThat(flyway.info().applied()).hasSize(22);
     try (var c = DriverManager.getConnection(db.getJdbcUrl(), db.getUsername(), db.getPassword());
         var q = c.createStatement()) {
       var after = snapshot(c);
@@ -97,7 +97,8 @@ class WorkspaceMigrationTest {
               "grade_rule_set_revision",
               "grade_size",
               "grade_rule",
-              "grade_rule_value"));
+              "grade_rule_value",
+              "pattern_qa_assessment"));
       assertThat(after.keySet()).containsExactlyInAnyOrderElementsOf(expected);
       before.forEach((table, rows) -> assertThat(after.get(table)).as(table).isEqualTo(rows));
       assertThat(after.get("project")).isEmpty();
@@ -106,7 +107,7 @@ class WorkspaceMigrationTest {
       assertThat(after.get("style_material_selection")).isEmpty();
       assertThat(after.get("style_facility_candidate")).isEmpty();
       assertThat(after.get("style_development_reference")).isEmpty();
-      assertThat(after).hasSize(57); // 58 including history.
+      assertThat(after).hasSize(58); // 59 including history.
       q.execute(
           "INSERT INTO project(id,organization_id,name)"
               + " VALUES('99999999-9999-4999-8999-999999999999','11111111-1111-4111-8111-111111111111','New"

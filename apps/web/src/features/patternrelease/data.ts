@@ -45,6 +45,7 @@ export function useConsents(cursor: string | null) {
   return useQuery({
     queryKey: [...key, "consents", 25, cursor],
     retry: false,
+    select: (value) => checkedConsentPage(value, w.organizationId),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(consentsPath, {
@@ -95,6 +96,7 @@ export function useReceived(cursor: string | null) {
   return useQuery({
     queryKey: [...key, "inbox", 25, cursor],
     retry: false,
+    select: (value) => checkedReceivedPage(value, w.organizationId),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(receivedPath, {
@@ -138,6 +140,7 @@ export function useSourceReleases(scope: SourceScope, cursor: string | null) {
   return useQuery({
     queryKey: [...key, "source", scope, 25, cursor],
     retry: false,
+    select: (value) => checkedSourcePage(value, scope),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(sourcePath, {
@@ -189,6 +192,7 @@ export function useReleaseEvents(
     queryKey: [...key, "source", scope, "release", id, "events", limit, max],
     retry: false,
     staleTime: Infinity,
+    select: (value) => checkedEvents(value, id, max, limit),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(`${sourceDetailPath}/events`, {

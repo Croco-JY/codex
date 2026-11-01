@@ -417,3 +417,123 @@ test("cached exact detail remains bound to first trusted immutable receipt", asy
     screen.queryByRole("button", { name: "Download exact artifact" }),
   ).not.toBeEnabled();
 });
+
+test.each([
+  "foreign release",
+  "above pinned head",
+  "invalid timestamp",
+  "duplicate event",
+])(
+  "cached release events reject %s without replacing pinned history",
+  async (fault) => {
+    const h = fixture();
+    await openSource(h);
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(id(600)) }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Open release events" }),
+    );
+    await screen.findByRole("heading", { name: "Release events through 1" });
+    await waitFor(() =>
+      expect(
+        h.cache
+          .getQueryCache()
+          .findAll()
+          .filter((q) => q.queryKey.includes("events") && q.state.data),
+      ).toHaveLength(1),
+    );
+    const query = h.cache
+      .getQueryCache()
+      .findAll()
+      .find((q) => q.queryKey.includes("events"))!;
+    const good = query.state.data as {
+      items: {
+        id: string;
+        releaseId: string;
+        eventNumber: number;
+        kind: string;
+        occurredAt: string;
+      }[];
+      limit: number;
+      nextMaxEventNumber: number | null;
+    };
+    const event = { ...good.items[0] };
+    if (fault === "foreign release") event.releaseId = id(998);
+    if (fault === "above pinned head") {
+      event.eventNumber = 2;
+      event.kind = "REVOKED";
+    }
+    if (fault === "invalid timestamp")
+      event.occurredAt = "FOREIGN-CACHED-INVALID-TIMESTAMP";
+    const bad = {
+      ...good,
+      items: fault === "duplicate event" ? [event, event] : [event],
+    };
+    await act(async () => {
+      h.cache.setQueryData(query.queryKey, bad);
+    });
+    await screen.findByRole("alert");
+    expect(
+      screen.getByRole("heading", { name: "Release events through 1" }),
+    ).toBeVisible();
+    expect(screen.queryByText(/FOREIGN-CACHED-INVALID-TIMESTAMP/)).toBeNull();
+    expect(screen.queryByText(/2 · REVOKED/)).toBeNull();
+    expect(releaseCalls(h).filter((r) => r.method === "POST")).toHaveLength(0);
+  },
+);
+
+test.each(["inbox", "consents", "source"])(
+  "cached %s collection rejects a foreign Organization before rendering",
+  async (kind) => {
+    const h = fixture();
+    if (kind === "source") await openSource(h);
+    else {
+      h.mount(kind === "inbox" ? inboxRoute() : consentRoute());
+      if (kind === "inbox")
+        await screen.findByText(/Private B exact.pdf · ACTIVE/);
+      else await screen.findByRole("button", { name: new RegExp(id(602)) });
+    }
+    const query = h.cache
+      .getQueryCache()
+      .findAll()
+      .find((q) =>
+        kind === "source"
+          ? q.queryKey.includes("source") &&
+            !q.queryKey.includes("release") &&
+            q.state.data
+          : q.queryKey.includes(kind) && q.state.data,
+      )!;
+    const good = query.state.data as {
+      items: Record<string, unknown>[];
+      limit: number;
+      nextCursor: string | null;
+    };
+    const foreign = { ...good.items[0] };
+    if (kind === "source") foreign.sourceOrganizationId = B;
+    else foreign.recipientOrganizationId = A;
+    if (kind !== "consents") foreign.displayName = "FOREIGN-CACHED-COLLECTION";
+    await act(async () => {
+      h.cache.setQueryData(query.queryKey, { ...good, items: [foreign] });
+    });
+    await screen.findByRole("alert");
+    expect(screen.queryByText(/FOREIGN-CACHED-COLLECTION/)).toBeNull();
+  },
+);
+
+test("cached exact artifact cannot substitute a foreign revision or authorize submission", async () => {
+  const h = fixture();
+  await prepare(h);
+  const query = h.cache
+    .getQueryCache()
+    .findAll()
+    .find((q) => q.queryKey.includes("artifact") && q.state.data)!;
+  await act(async () => {
+    h.cache.setQueryData(query.queryKey, {
+      ...(query.state.data as Record<string, unknown>),
+      patternRevisionId: id(998),
+      displayName: "FOREIGN-CACHED-ARTIFACT.pdf",
+    });
+  });
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/FOREIGN-CACHED-ARTIFACT/)).toBeNull();
+  expect(screen.getByRole("button", { name: "Create release" })).toBeDisabled();
+});

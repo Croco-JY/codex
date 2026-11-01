@@ -263,8 +263,11 @@ detail one GET, and artifact/event inspection and downloads require explicit act
 New cache keys contain Actor scope, Organization, generation, exact scope/IDs and
 page parameters. Private selected summaries, drafts and histories are memory-only,
 including navigation selection; no private DTO is placed in browser history state.
-Runtime validation also runs on cached detail. Immutable fields and exact timestamp
-precision are compared; terminal access is not silently restored. Open event head,
+Runtime validation runs on cached collections, event pages, exact detail and artifact
+metadata through the same schema/scope checks used for network responses. Invalid
+cache values cannot replace pinned history or authorize artifact submission.
+Immutable fields and exact timestamp precision are compared; terminal access is
+not silently restored. Open event head,
 older page and selection survive current-state refresh until deliberate reset.
 
 All mutations and downloads retry:false. Unknown outcomes retain drafts, refresh

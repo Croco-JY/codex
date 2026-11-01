@@ -233,6 +233,15 @@ function PrepareRelease({
     queryKey: [...key, "artifact", scope],
     retry: false,
     refetchOnMount: "always",
+    select: (value) =>
+      value === null
+        ? null
+        : checkedArtifact(
+            value,
+            scope.styleId,
+            scope.patternId,
+            scope.revisionId,
+          ),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         try {
@@ -267,6 +276,7 @@ function PrepareRelease({
         accessDurationSeconds: Number(seconds),
         confirmed,
       });
+      if (artifact.isError) throw new ApiError(502);
       if (!artifact.data || artifact.data.state !== "READY")
         throw new ApiError(409);
       const r = await api.POST(sourcePath, {

@@ -74,7 +74,7 @@ class WorkspaceMigrationTest {
         Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
     flyway.migrate();
     flyway.validate();
-    assertThat(flyway.info().applied()).hasSize(22);
+    assertThat(flyway.info().applied()).hasSize(23);
     try (var c = DriverManager.getConnection(db.getJdbcUrl(), db.getUsername(), db.getPassword());
         var q = c.createStatement()) {
       var after = snapshot(c);
@@ -98,7 +98,11 @@ class WorkspaceMigrationTest {
               "grade_size",
               "grade_rule",
               "grade_rule_value",
-              "pattern_qa_assessment"));
+              "pattern_qa_assessment",
+              "pattern_release_consent",
+              "pattern_release_consent_event",
+              "pattern_release",
+              "pattern_release_event"));
       assertThat(after.keySet()).containsExactlyInAnyOrderElementsOf(expected);
       before.forEach((table, rows) -> assertThat(after.get(table)).as(table).isEqualTo(rows));
       assertThat(after.get("project")).isEmpty();
@@ -107,7 +111,14 @@ class WorkspaceMigrationTest {
       assertThat(after.get("style_material_selection")).isEmpty();
       assertThat(after.get("style_facility_candidate")).isEmpty();
       assertThat(after.get("style_development_reference")).isEmpty();
-      assertThat(after).hasSize(58); // 59 including history.
+      for (String table :
+          List.of(
+              "pattern_release_consent",
+              "pattern_release_consent_event",
+              "pattern_release",
+              "pattern_release_event")) assertThat(after.get(table)).as(table).isEmpty();
+      assertThat(after)
+          .hasSize(62); // 63 including history; all previous rows still compared above.
       q.execute(
           "INSERT INTO project(id,organization_id,name)"
               + " VALUES('99999999-9999-4999-8999-999999999999','11111111-1111-4111-8111-111111111111','New"

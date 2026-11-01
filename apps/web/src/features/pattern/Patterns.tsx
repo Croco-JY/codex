@@ -220,6 +220,12 @@ export function RevisionFacts({
       >
         Human QA for revision {value.revisionNumber}
       </Link>
+      {" · "}
+      <Link
+        to={`${stylePath(w.organizationId, projectId, value.styleId)}/patterns/${value.patternId}/revisions/${value.id}/releases`}
+      >
+        Releases for revision {value.revisionNumber}
+      </Link>
     </section>
   );
 }

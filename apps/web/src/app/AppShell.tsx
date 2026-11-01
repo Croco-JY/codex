@@ -19,9 +19,10 @@ function Shell() {
   const session = useSession();
   const boundary = useWorkspaceBoundary();
   const { pathname } = useLocation();
-  const routeOrg = /^\/organizations\/([^/]+)\/projects(?:\/|$)/.exec(
-    pathname,
-  )?.[1];
+  const routeOrg =
+    /^\/organizations\/([^/]+)\/(?:projects|received-pattern-releases|release-consents)(?:\/|$)/.exec(
+      pathname,
+    )?.[1];
   const usable =
     !routeOrg ||
     (boundary.resolved === routeOrg && boundary.active?.id === routeOrg);
@@ -54,6 +55,15 @@ function Shell() {
               }
             >
               Projects
+            </NavLink>
+            <NavLink
+              to={
+                usable && boundary.active?.id
+                  ? `/organizations/${boundary.active.id}/received-pattern-releases`
+                  : "/organization"
+              }
+            >
+              Received releases
             </NavLink>
             <span className="nav-group">SUPPLY NETWORK</span>
             <NavLink to="/suppliers">Suppliers</NavLink>

@@ -10,6 +10,9 @@ const ProjectDetail = lazy(() => import("../pages/ProjectDetailPage"));
 const Patterns = lazy(() => import("../pages/PatternsPage"));
 const PatternDetail = lazy(() => import("../pages/PatternDetailPage"));
 const PatternQa = lazy(() => import("../pages/PatternQaPage"));
+const PatternReleases = lazy(() => import("../pages/PatternReleasesPage"));
+const ReceivedReleases = lazy(() => import("../pages/ReceivedReleasesPage"));
+const ReleaseConsents = lazy(() => import("../pages/ReleaseConsentsPage"));
 const Measurements = lazy(() => import("../pages/MeasurementsPage"));
 const Grading = lazy(() => import("../pages/GradingPage"));
 const GradingDetail = lazy(() => import("../pages/GradingDetailPage"));
@@ -81,6 +84,46 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<Skeleton label="Loading page" />}>
       <Routes>
+        <Route
+          path="/organizations/:organizationId/projects/:projectId/styles/:styleId/patterns/:patternId/revisions/:revisionId/releases"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <PatternReleases />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/received-pattern-releases"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <ReceivedReleases />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/received-pattern-releases/:releaseId"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <ReceivedReleases />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
+        <Route
+          path="/organizations/:organizationId/release-consents"
+          element={
+            <Authenticated>
+              <WorkspaceGate>
+                <ReleaseConsents />
+              </WorkspaceGate>
+            </Authenticated>
+          }
+        />
         <Route
           path="/organizations/:organizationId/projects/:projectId/styles/:styleId/patterns/:patternId/revisions/:revisionId/qa"
           element={

@@ -1,8 +1,8 @@
 # Data Model
 
-## Implemented through Human Pattern QA (3E)
+## Implemented through secure Pattern releases (3F)
 
-Flyway owns schema; Hibernate uses ddl-auto=validate. Accepted V1–V21 remain byte-identical. Accepted 3A/3B/3C introduced V18/V19/V20; [3D](phase-3d-grading-foundation.md) and R01 are independently accepted. Separately authorized [3E](phase-3e-human-qa.md) adds V22, pending independent acceptance, with 22 migrations, 59 public base tables including Flyway history and 58 application base tables. UUID keys, UTC timestamptz, foreign keys, explicit lifecycle states and versions only where the domain is mutable are established conventions. Identity remains issuer+subject, with no separate user table.
+Flyway owns schema; Hibernate uses ddl-auto=validate. Accepted V1–V22 remain byte-identical. Phase 3E/R01 is independently accepted at `5412b1f3ce64baf11ef6148647d499d5bd73b78b`; its R02 documentation issue stays open/non-blocking. Separately authorized [3F](phase-3f-secure-pattern-releases.md) adds V23: 23 migrations, 63 public base tables including Flyway history and 62 application base tables. Phase 3F independent implementation acceptance remains separate. UUID keys, UTC timestamptz, foreign keys, explicit lifecycle states and versions only where the domain is mutable are established conventions. Identity remains issuer+subject, with no separate user table.
 
 | Migration | Implemented ownership |
 | --- | --- |
@@ -26,6 +26,7 @@ Flyway owns schema; Hibernate uses ddl-auto=validate. Accepted V1–V21 remain b
 | V20 | New-revision artifact reservation, immutable identity/private digest and terminal READY/FAILED; old revision retrofit prohibited |
 | V21 | Independent Style-owned GradeRuleSet, immutable ordered full snapshots and complete exact base-relative Size × Rule matrices |
 | V22 | Exact PatternRevision human assessments, immutable linear history and same-revision READY evidence |
+| V23 | Four immutable consent/release tables, owner-aware references, paired events and additive exact parent-version guards |
 
 Quantity/money are already NUMERIC/BigDecimal, externally exact decimal strings. MaterialVariant and Listing each reference Material; Listing does not store variantId. Composite unique keys on `(id, material_id)` already support consistent references. Global catalog records are not buyer-Organization-owned. Supplier/Facility early citation APIs append only; their DB edges do not have all the later V9/V10 mutation guards, as recorded in the accepted contract lock.
 
@@ -33,7 +34,7 @@ Project/Style/Requirement/Reference hard DELETE and TRUNCATE are blocked; Select
 
 ## Measurement integrity and future Phase 3 schema
 
-[Phase 3 PLAN](phase-3-plan.md) itself changed no schema. [3A](phase-3a-measurement-foundation.md) implements V18. [3B](phase-3b-pattern-vault.md) adds V19 Pattern/revision foundation. [3C](phase-3c-pattern-artifacts.md) adds V20 private artifacts on new revisions. [3D](phase-3d-grading-foundation.md) adds V21 grading, and [3E](phase-3e-human-qa.md) adds V22 human assessments. Release remains a separately approved future slice; V23+ is absent. No speculative tables, dummy migrations or Tech Pack/BOM/Sample reservations.
+[Phase 3 PLAN](phase-3-plan.md) itself changed no schema. [3A](phase-3a-measurement-foundation.md) implements V18. [3B](phase-3b-pattern-vault.md) adds V19 Pattern/revision foundation. [3C](phase-3c-pattern-artifacts.md) adds V20 private artifacts on new revisions. [3D](phase-3d-grading-foundation.md) adds V21 grading, and [3E](phase-3e-human-qa.md) adds V22 human assessments. [3F](phase-3f-secure-pattern-releases.md) implements V23 exact-revision release; later migrations and phases remain absent. No speculative tables, dummy migrations or Tech Pack/BOM/Sample reservations.
 
 MeasurementSpec is unique per Style and has no mutable business fields. Its deferred insertion constraint requires sealed revision 1 at commit. Each revision's separate deferred constraint requires sealed=true, 1..500 points and positions exactly 0..N−1. Points may be inserted only while the new parent revision is unsealed inside the creation transaction; after sealing no point insertion/update/delete is allowed. The only revision update is false→true sealing with every other column identical. Spec/revision/point deletion and truncation are forbidden. There is no quality status, mutable version or currentRevisionId. A sequence trigger locks only the owning spec and requires exactly latest+1; application writes first lock Project→Style→Spec and compare expected latest. Exact values/tolerances are NUMERIC(19,4)/BigDecimal/JSON strings.
 
@@ -58,3 +59,7 @@ Revision construction is unsealed insert→ordered children→multi-row values�
 Exactly one new table, pattern_qa_assessment, references pattern_revision(id,style_id) and optional pattern_artifact(id). A BEFORE INSERT trigger resolves revision ownership, locks Pattern, requires ACTIVE, allocates/validates exact-revision max+1 and verifies any artifact belongs to that revision/Style and is READY. Unique(revision,assessment_number) supports reverse latest/history scans without a duplicate index. Statement guards reject UPDATE/DELETE/TRUNCATE, including empty-target statements and cascade truncation.
 
 Three stored outcomes: OBSERVED, CHANGES_REQUESTED, HUMAN_REVIEWED. Metadata-only evidence requires null artifact and cannot claim HUMAN_REVIEWED. UNREVIEWED is derived, not a dummy row. Required notes contain 1–2,000 Unicode code points with the fixed 26-character boundary set; null, noncanonical boundaries and invalid input are rejected. Reviewer provenance is internal and reviewed_at is server-owned; DTOs expose no raw issuer/subject. No mutable QA aggregate/current pointer or old revision/artifact/grading rewrite. Fresh V22 and populated V21→V22 validate; all 57 old application-table snapshots are preserved and QA starts empty.
+
+## V23 release integrity
+
+See [3F](phase-3f-secure-pattern-releases.md) for the four table contracts, server times, immutable owner/artifact binding, single consumption, deferred event completeness and Option B local version guards. Release state is event-derived; no mutable consumed/latest pointer or archive context-event table exists. All four tables reject UPDATE/DELETE/TRUNCATE, including empty targets and cascade destruction. Populated V22→V23 preserves every prior application-table row and trigger; application commands atomically add release, activation, consumption/consumed truth and the source audit. Direct SQL structural constraints do not authenticate a privileged database operator as an HTTP Actor. No bytes or speculative commercial/geometry tables are stored in V23.

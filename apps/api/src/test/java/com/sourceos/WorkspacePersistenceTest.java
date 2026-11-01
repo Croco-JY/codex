@@ -154,7 +154,7 @@ class WorkspacePersistenceTest extends WorkspaceIntegrationSupport {
                                   + field
                                   + "='"
                                   + blank
-                                  + "' WHERE id='"
+                                  + "',version=version+1 WHERE id='"
                                   + id
                                   + "'"))
                   .isInstanceOf(SQLException.class)
@@ -162,21 +162,24 @@ class WorkspacePersistenceTest extends WorkspaceIntegrationSupport {
               c.rollback(savepoint);
             }
           }
-          for (String expression : List.of("status='DELETED'", "version=-1")) {
+          for (String expression : List.of("status='DELETED',version=version+1", "version=-1")) {
             var savepoint = c.setSavepoint();
             assertThatThrownBy(
                     () ->
                         q.execute(
                             "UPDATE " + table + " SET " + expression + " WHERE id='" + id + "'"))
                 .isInstanceOf(SQLException.class)
-                .hasMessageContaining("check constraint");
+                .hasMessageContaining(
+                    expression.startsWith("version=")
+                        ? "Exact parent version advancement required"
+                        : "check constraint");
             c.rollback(savepoint);
           }
           assertThat(
                   q.executeUpdate(
                       "UPDATE "
                           + table
-                          + " SET description=NULL"
+                          + " SET description=NULL,version=version+1"
                           + (child ? ",style_code=NULL" : "")
                           + " WHERE id='"
                           + id

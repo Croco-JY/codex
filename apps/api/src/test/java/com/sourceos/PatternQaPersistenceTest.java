@@ -23,7 +23,7 @@ class PatternQaPersistenceTest {
         Flyway.configure().dataSource(db.getJdbcUrl(), db.getUsername(), db.getPassword()).load();
     f.migrate();
     f.validate();
-    assertThat(f.info().applied()).hasSize(22);
+    assertThat(f.info().applied()).hasSize(23);
   }
 
   Connection connection() throws Exception {
@@ -258,7 +258,7 @@ class PatternQaPersistenceTest {
               "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND"
                   + " table_type='BASE TABLE'")) {
         r.next();
-        assertThat(r.getInt(1)).isEqualTo(59);
+        assertThat(r.getInt(1)).isEqualTo(63);
       }
       try (var r =
           q.executeQuery("SELECT notes FROM pattern_qa_assessment WHERE id='" + first + "'")) {

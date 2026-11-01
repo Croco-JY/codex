@@ -33,7 +33,20 @@ test("real Material discovery applies listing terms, opens detail and returns th
   )
     await page.getByText("Search filters", { exact: true }).click();
   await page.getByLabel("Keyword", { exact: true }).fill("Review");
+  // Both the old unfiltered placeholder and the new filtered first page have 25
+  // cards. Count alone cannot establish that this filter's response has arrived.
+  const filtered = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      response.request().method() === "GET" &&
+      url.pathname === "/api/v1/materials" &&
+      url.searchParams.get("q") === "Review" &&
+      (!url.searchParams.get("offset") ||
+        url.searchParams.get("offset") === "0")
+    );
+  });
   await page.getByRole("button", { name: "Apply filters" }).click();
+  expect((await filtered).status()).toBe(200);
   await expect(page).toHaveURL(/q=Review/);
   await expect(page.locator(".material-card")).toHaveCount(25);
   await page.getByRole("button", { name: "Load more", exact: true }).click();

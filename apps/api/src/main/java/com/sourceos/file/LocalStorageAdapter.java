@@ -32,4 +32,10 @@ class LocalStorageAdapter implements StoragePort {
   public byte[] get(UUID org, UUID object) throws IOException {
     return Files.readAllBytes(path(org, object));
   }
+
+  /** Additive File-private capability path; the existing StoragePort API is unchanged. */
+  byte[] readBounded(com.sourceos.authorization.ReleaseAuthorization.Binding binding)
+      throws IOException {
+    return SecureBoundedObjects.read(root, binding);
+  }
 }

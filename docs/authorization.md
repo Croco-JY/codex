@@ -19,3 +19,9 @@ Platform mutation audit uses PLATFORM scope, NULL organization_id and required e
 
 ## Tests
 PostgreSQL Testcontainers tests prove member access, outsider denial, viewer mutation denial, revoked access denial, scoped lists, optimistic conflict and private storage denial. Production-profile tests prove local identity headers do not authenticate and invalid bearer tokens return correlated 401 responses. Provider decoding is mocked in those tests; live Cognito integration is not claimed.
+
+## Exact Pattern releases
+
+[3F](phase-3f-secure-pattern-releases.md) separately authorizes release-scoped recipient OWNER/ADMIN/VIEWER access. It does not grant source membership or change AuthorizedStorage.get. Recipient consent issue/read/list/withdraw requires OWNER/ADMIN; source create/revoke requires source OWNER/ADMIN, while source readers may inspect scoped receipts/events. PLATFORM_ADMIN has no private bypass. A user who belongs to both Organizations must still satisfy the explicitly requested route scope.
+
+Final delivery checks current recipient membership, consumed/withdrawn consent, revocation/expiry, exact immutable READY artifact and five ACTIVE/version-equal parents inside one verified physical read-only REPEATABLE READ transaction after storage. Actor/resource/connection escapes poison authorization; commit failure returns no bytes. Source release audits retain the actual source Actor and scope; recipient consumption events truthfully identify the source initiator without fabricated recipient audit mirroring. There is no source UUID existence lookup at consent issuance, bearer content credential, generic object route or automatic retry.

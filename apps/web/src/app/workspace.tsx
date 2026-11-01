@@ -84,9 +84,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     cache = useQueryClient(),
     navigate = useNavigate();
   const { pathname } = useLocation();
-  const routeOrg = /^\/organizations\/([^/]+)\/projects(?:\/|$)/.exec(
-    pathname,
-  )?.[1];
+  const routeOrg =
+    /^\/organizations\/([^/]+)\/(?:projects|received-pattern-releases|release-consents)(?:\/|$)/.exec(
+      pathname,
+    )?.[1];
   const route = useRef(routeOrg);
   route.current = routeOrg;
   const [state, setState] = useState<Boundary>({ generation: 0 });

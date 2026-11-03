@@ -70,7 +70,7 @@ test("IA-01: valid cached timestamp cannot replace first trusted pinned event", 
 // Exercise the production hook with a legitimate one-event page size. The
 // actual release lifecycle has only two events; no invented long event history.
 import { render } from "@testing-library/react";
-import { useState } from "react";
+import { StrictMode, useState } from "react";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { SessionProvider } from "../../app/session";
@@ -131,11 +131,13 @@ function Window({ max, limit }: { max: number; limit: number }) {
     </section>
   );
 }
-function Probe() {
+function Probe({ initiallyShown = true }: { initiallyShown?: boolean }) {
   const [max, bound] = useState(2),
-    [shown, show] = useState(true),
+    [shown, show] = useState(initiallyShown),
     [limit, size] = useState(1),
-    [twins, duplicate] = useState(false);
+    [twins, duplicate] = useState(false),
+    [late, mountLate] = useState<number | null>(null),
+    [renders, rerender] = useState(0);
   return (
     <>
       <button onClick={() => bound(1)}>Older window</button>
@@ -145,12 +147,18 @@ function Probe() {
         Toggle page size
       </button>
       <button onClick={() => duplicate(true)}>Second observer</button>
+      <button onClick={() => mountLate(2)}>Late first-window observer</button>
+      <button onClick={() => mountLate(1)}>Late older-window observer</button>
+      <button onClick={() => mountLate(null)}>Close late observer</button>
+      <button onClick={() => duplicate(false)}>Close second observer</button>
+      <button onClick={() => rerender(renders + 1)}>Rerender observers {renders}</button>
       {shown && <Window max={max} limit={limit} />}
       {twins && <Window max={max} limit={limit} />}
+      {late !== null && <Window max={late} limit={limit} />}
     </>
   );
 }
-function mountProbe(h: ReturnType<typeof fixture>) {
+function mountProbe(h: ReturnType<typeof fixture>, options: { strict?: boolean; initiallyShown?: boolean } = {}) {
   h.overrides.set("GET " + eventPath, async (r) => {
     const u = new URL(r.url);
     return response(
@@ -170,7 +178,7 @@ function mountProbe(h: ReturnType<typeof fixture>) {
                 path="/organizations/:organizationId/*"
                 element={
                   <WorkspaceGate>
-                    <Probe />
+                    <Probe initiallyShown={options.initiallyShown} />
                   </WorkspaceGate>
                 }
               />
@@ -179,6 +187,7 @@ function mountProbe(h: ReturnType<typeof fixture>) {
         </SessionProvider>
       </MemoryRouter>
     </QueryClientProvider>,
+    options.strict ? { wrapper: StrictMode } : undefined,
   );
 }
 const click = (name: string) =>
@@ -494,6 +503,205 @@ test.each(["first", "older"])(
     expect(screen.getByText(max === 2
       ? "2 · REVOKED · " + last.occurredAt
       : "1 · ACTIVATED · " + time)).toBeInTheDocument();
+    expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+  },
+);
+
+
+test("FRA-01: a late observer cannot create competing trust after inactive query eviction", async () => {
+  const h = fixture();
+  await readyProbe(h);
+  const key = eventQuery(h, 2).queryKey;
+  click("Older window");
+  await screen.findByText("1 · ACTIVATED · " + time);
+  h.cache.removeQueries({ queryKey: key, exact: true });
+  let corruptRequests = 0;
+  h.overrides.set("GET " + eventPath, async (request) => {
+    const max = Number(new URL(request.url).searchParams.get("maxEventNumber"));
+    if (max === 2) corruptRequests++;
+    return response(max === 2 ? changed(page(2)) : page(max));
+  });
+  click("Late first-window observer");
+  await waitFor(() => expect(corruptRequests).toBeGreaterThan(0));
+  await waitFor(() => expect(screen.queryByText("Fetching history")).toBeNull());
+  click("First window");
+  await waitFor(() => expect(eventQuery(h, 2).getObserversCount()).toBe(2));
+  await waitFor(() => expect(screen.queryByText("Fetching history")).toBeNull());
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  expect(screen.getAllByRole("alert")).toHaveLength(2);
+  expect(eventQuery(h, 2).options.retry).toBe(false);
+  expect(eventQuery(h, 2).queryKey.at(-1)).toBe(2);
+  expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+  h.overrides.set("GET " + eventPath, async () => response(page(2)));
+  fireEvent.click(screen.getAllByRole("button", { name: "Refresh window" })[0]);
+  await waitFor(() => expect(screen.queryAllByRole("alert")).toHaveLength(0));
+  expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2);
+  await act(async () => h.cache.setQueryData(eventQuery(h, 2).queryKey, changed(page(2))));
+  await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+});
+
+
+test("shared cache replacement and Query recreation reject B for both observers", async () => {
+  const h = fixture(); await readyProbe(h);
+  click("Late first-window observer");
+  await waitFor(() => expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2));
+  const key = eventQuery(h).queryKey;
+  await act(async () => h.cache.setQueryData(key, changed(page(2))));
+  await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  await act(async () => {
+    h.cache.removeQueries({ queryKey: key, exact: true });
+    h.cache.setQueryData(key, changed(page(2)));
+  });
+  fireEvent.click(screen.getByRole("button", { name: /Rerender observers/ }));
+  await waitFor(() => expect(eventQuery(h).getObserversCount()).toBe(2));
+  expect(screen.getAllByRole("alert")).toHaveLength(2);
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  fireEvent.click(screen.getAllByRole("button", { name: "Refresh window" })[0]);
+  await waitFor(() => expect(screen.queryAllByRole("alert")).toHaveLength(0));
+  expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2);
+});
+
+test("opposite observer order shares the same first network facts", async () => {
+  const h = fixture(); mountProbe(h, { initiallyShown: false });
+  fireEvent.click(await screen.findByRole("button", { name: "Late first-window observer" }));
+  await screen.findByText("2 · REVOKED · " + last.occurredAt);
+  click("Toggle observer");
+  await waitFor(() => expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2));
+  await act(async () => h.cache.setQueryData(eventQuery(h).queryKey, changed(page(2))));
+  await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+});
+
+test("older-window eviction cannot give a late observer alternate first facts", async () => {
+  const h = fixture(); await readyProbe(h);
+  click("Older window"); await screen.findByText("1 · ACTIVATED · " + time);
+  const key = eventQuery(h, 1).queryKey;
+  click("First window"); await screen.findByText("2 · REVOKED · " + last.occurredAt);
+  h.cache.removeQueries({ queryKey: key, exact: true });
+  h.overrides.set("GET " + eventPath, async () => response(changed(page(1))));
+  click("Late older-window observer");
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  click("Older window");
+  await waitFor(() => expect(eventQuery(h, 1).getObserversCount()).toBe(2));
+  await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+});
+
+test("one owner ending retains trust; final owner plus cache eviction requires fresh provenance", async () => {
+  const h = fixture(); await readyProbe(h);
+  click("Late first-window observer");
+  await waitFor(() => expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2));
+  const key = eventQuery(h).queryKey;
+  click("Toggle observer");
+  h.cache.removeQueries({ queryKey: key, exact: true });
+  h.overrides.set("GET " + eventPath, async () => response(changed(page(2))));
+  click("Refresh window");
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  click("Close late observer");
+  h.cache.removeQueries({ queryKey: key, exact: true });
+  h.cache.setQueryData(key, page(2));
+  const pending = deferred<Response>();
+  h.overrides.set("GET " + eventPath, () => pending.promise);
+  click("Toggle observer");
+  await screen.findByRole("alert");
+  expect(screen.queryByText("2 · REVOKED · " + last.occurredAt)).toBeNull();
+  await act(async () => pending.resolve(response(page(2))));
+  await screen.findByText("2 · REVOKED · " + last.occurredAt);
+  await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+});
+
+test("Strict Mode replay keeps shared trust and one cleanup cannot revoke the remaining owner", async () => {
+  const h = fixture(); mountProbe(h, { strict: true });
+  await screen.findByText("2 · REVOKED · " + last.occurredAt);
+  click("Late first-window observer");
+  await waitFor(() => expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2));
+  click("Toggle observer");
+  h.overrides.set("GET " + eventPath, async () => response(changed(page(2))));
+  click("Refresh window");
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  h.overrides.set("GET " + eventPath, async () => response(page(2)));
+  click("Refresh window");
+  await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  expect(screen.getByText("2 · REVOKED · " + last.occurredAt)).toBeInTheDocument();
+});
+
+test.each(["Actor", "Organization ABA"])(
+  "late network data from a previous %s cannot seed shared current trust", async (boundary) => {
+    const h = fixture(), pending = deferred<Response>();
+    let oldRequests = 0;
+    h.overrides.set("GET " + eventPath, async () => { oldRequests++; return pending.promise; });
+    h.mount(sourceRoute());
+    fireEvent.click(await screen.findByRole("button", { name: new RegExp(id(600)) }));
+    fireEvent.click(await screen.findByRole("button", { name: "Open release events" }));
+    await waitFor(() => expect(oldRequests).toBe(1));
+    if (boundary === "Actor") {
+      act(() => setLocalSubject("fra01-current-actor"));
+      await screen.findByRole("button", { name: new RegExp(id(600)) });
+    } else {
+      click("Inbox B"); await screen.findByText(/Private B exact.pdf · ACTIVE/);
+      click("Source A"); await screen.findByRole("button", { name: new RegExp(id(600)) });
+    }
+    h.overrides.set("GET " + eventPath, async () => response(page(1, 25)));
+    await openRealHistory(h);
+    await act(async () => pending.resolve(response(changed(page(1, 25)))));
+    const history = screen.getByRole("region", { name: "Pinned release events" });
+    expect(history).not.toHaveTextContent("00:00:42Z");
+    expect(history).toHaveTextContent("1 · ACTIVATED · " + time);
+    expect(within(history).queryByRole("alert")).toBeNull();
+    expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+  },
+);
+
+
+test("overlapping events agree across previously untrusted page-size windows", async () => {
+  const h = fixture(); await readyProbe(h);
+  h.overrides.set("GET " + eventPath, async () => response(changed(page(2, 2))));
+  click("Toggle page size");
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+  h.overrides.set("GET " + eventPath, async () => response(page(2, 2)));
+  click("Refresh window");
+  await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  expect(screen.getByText("2 · REVOKED · " + last.occurredAt)).toBeInTheDocument();
+  expect(screen.getByText("1 · ACTIVATED · " + time)).toBeInTheDocument();
+});
+
+test.each(["old-first", "current-first"])(
+  "overlapping deferred reads and Query recreation never install canceled facts: %s", async (order) => {
+    const h = fixture(), old = deferred<Response>(), current = deferred<Response>();
+    mountProbe(h);
+    let requests = 0;
+    h.overrides.set("GET " + eventPath, async () => {
+      requests++;
+      return requests === 1 ? old.promise : current.promise;
+    });
+    await waitFor(() => expect(requests).toBe(1));
+    const key = eventQuery(h).queryKey;
+    h.cache.removeQueries({ queryKey: key, exact: true });
+    click("Late first-window observer");
+    await waitFor(() => expect(requests).toBe(2));
+    if (order === "old-first") {
+      await act(async () => old.resolve(response(changed(page(2)))));
+      expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+      await act(async () => current.resolve(response(page(2))));
+    } else {
+      await act(async () => current.resolve(response(page(2))));
+      await waitFor(() => expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2));
+      await act(async () => old.resolve(response(changed(page(2)))));
+    }
+    fireEvent.click(screen.getByRole("button", { name: /Rerender observers/ }));
+    await waitFor(() => expect(eventQuery(h).getObserversCount()).toBe(2));
+    await waitFor(() => expect(screen.getAllByText("2 · REVOKED · " + last.occurredAt)).toHaveLength(2));
+    expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+    await act(async () => h.cache.setQueryData(key, changed(page(2))));
+    await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
+    expect(screen.queryByText(/00:00:42Z/)).toBeNull();
     expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
   },
 );

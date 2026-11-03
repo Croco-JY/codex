@@ -405,16 +405,7 @@ export function checkedEvents(
       p.limit === expected.limit &&
         p.nextMaxEventNumber === expected.nextMaxEventNumber &&
         p.items.length === expected.items.length &&
-        p.items.every((event, index) => {
-          const old = expected.items[index];
-          return (
-            event.id === old.id &&
-            event.releaseId === old.releaseId &&
-            event.eventNumber === old.eventNumber &&
-            event.kind === old.kind &&
-            event.occurredAt === old.occurredAt
-          );
-        }),
+        p.items.every((event, index) => sameEventFacts(event, expected.items[index])),
     );
   return p;
 }
@@ -424,6 +415,19 @@ export type EventHistorySnapshot = Readonly<{
   limit: number;
   nextMaxEventNumber: number | null;
 }>;
+
+export function sameEventFacts(
+  event: EventHistorySnapshot["items"][number],
+  expected: EventHistorySnapshot["items"][number],
+) {
+  return (
+    event.id === expected.id &&
+    event.releaseId === expected.releaseId &&
+    event.eventNumber === expected.eventNumber &&
+    event.kind === expected.kind &&
+    event.occurredAt === expected.occurredAt
+  );
+}
 
 // Own a deep, immutable copy: later cache writes must not mutate the baseline.
 export function snapshotEvents(

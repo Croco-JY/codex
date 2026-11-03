@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef } from "react";
+import { hashKey, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { api, requireData } from "../../api/client";
 import { ApiError } from "../../api/errors";
 import { useWorkspace } from "../../app/workspace";
@@ -8,9 +8,6 @@ import { revisionPath } from "../pattern/data";
 import {
   checkedConsent,
   checkedConsentPage,
-  checkedEvents,
-  snapshotEvents,
-  type EventHistorySnapshot,
   checkedReceived,
   checkedReceivedPage,
   checkedSource,
@@ -21,6 +18,12 @@ import {
   type SourceSummary,
   type SourceView,
 } from "./model";
+import {
+  acceptEventHistoryRead,
+  beginEventHistoryRead,
+  retainEventHistory,
+  selectEventHistory,
+} from "./eventHistoryTrust";
 
 export const consentsPath =
   "/api/v1/organizations/{organizationId}/release-consents" as const;
@@ -31,11 +34,6 @@ export const receivedDetailPath = `${receivedPath}/{releaseId}` as const;
 export const sourcePath = `${revisionPath}/releases` as const;
 export const sourceDetailPath = `${sourcePath}/{releaseId}` as const;
 
-// A Query is owned by its QueryClient and complete authenticated scope/key.
-// Trust survives observer remounts and page navigation, but not query eviction
-// or a new Actor/Organization/generation. Weak keys retain no evicted history.
-// Only an authoritative, current network response can establish an anchor.
-const trustedEventWindows = new WeakMap<object, EventHistorySnapshot>();
 export function useReleaseScope() {
   const w = useWorkspace();
   return {
@@ -197,40 +195,23 @@ export function useReleaseEvents(
 ) {
   const { w, key } = useReleaseScope();
   const cache = useQueryClient();
-  const queryKey = [
+  const historyKey = [
     ...key,
     "source",
     scope,
     "release",
     id,
     "events",
-    limit,
-    max,
   ];
-  // A pinned History can outlive an inactive page's cache entry. Retain its
-  // first facts for this hook/context lifetime, independently of Query GC.
-  const context = JSON.stringify([...key, "source", scope, "release", id]);
-  const history = useRef({
-    context,
-    windows: new Map<string, EventHistorySnapshot>(),
-  });
-  if (history.current.context !== context)
-    history.current = { context, windows: new Map() };
-  const remembered = history.current.windows;
-  const window = () => {
-    const query = cache.getQueryCache().find({ queryKey, exact: true });
-    if (!query) throw new ApiError(502);
-    return query;
-  };
-  const checkedWindow = (value: unknown, owner: ReturnType<typeof window>) => {
-    const retained = remembered.get(owner.queryHash);
-    const shared = trustedEventWindows.get(owner);
-    const page = checkedEvents(value, id, max, limit, retained ?? shared);
-    if (retained && shared) checkedEvents(page, id, max, limit, shared);
-    return { page, expected: retained ?? shared };
-  };
+  const context = hashKey(historyKey);
+  // This lease owns lifetime/pinned head only; immutable authority is shared.
+  const owner = useMemo(() => ({ pinnedHead: max }), [cache, context]);
+  useLayoutEffect(
+    () => retainEventHistory(cache, historyKey, owner, owner.pinnedHead),
+    [cache, context, owner],
+  );
   return useQuery({
-    queryKey,
+    queryKey: [...historyKey, limit, max],
     retry: false,
     staleTime: Infinity,
     refetchOnMount: "always",
@@ -239,16 +220,9 @@ export function useReleaseEvents(
     // object's identity and memoize the earlier missing-provenance error.
     // This is local to bounded history windows; caching remains enabled.
     structuralSharing: false,
-    select: (value) => {
-      const owner = window();
-      const { page, expected } = checkedWindow(value, owner);
-      if (!expected) throw new ApiError(502);
-      // Copy only existing private network provenance, never cache authority.
-      remembered.set(owner.queryHash, expected);
-      return page;
-    },
+    select: (value) => selectEventHistory(cache, historyKey, value, id, max, limit),
     queryFn: async ({ signal }) => {
-      const owner = window();
+      const receipt = beginEventHistoryRead(cache, historyKey, id, max, limit);
       const value = await w.run(signal, async () => {
         const r = await api.GET(`${sourceDetailPath}/events`, {
           signal,
@@ -259,11 +233,9 @@ export function useReleaseEvents(
         });
         return requireData(r.data, r.response);
       });
-      const { page, expected } = checkedWindow(value, owner);
-      const snapshot = expected ?? snapshotEvents(page);
-      if (!trustedEventWindows.has(owner)) trustedEventWindows.set(owner, snapshot);
-      remembered.set(owner.queryHash, snapshot);
-      return page;
+      if (!w.current() || signal.aborted)
+        throw new DOMException("Workspace request cancelled", "AbortError");
+      return acceptEventHistoryRead(receipt, value);
     },
   });
 }

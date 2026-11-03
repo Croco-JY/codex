@@ -266,23 +266,35 @@ including navigation selection; no private DTO is placed in browser history stat
 Runtime validation runs on cached collections, event pages, exact detail and artifact
 metadata through the same schema/scope checks used for network responses. Invalid
 cache values cannot replace pinned history or authorize artifact submission.
-Event-history windows retain a private, immutable copy of their first validated
-network response. Each anchor belongs to the QueryClient's fully scoped Query
-(Actor/session, Organization, workspace generation, exact hierarchy/release,
-window bound and limit); it survives page navigation and observer remounts and
-is released with query eviction. The live History hook also retains its own
-page-window snapshots until that history context ends, so inactive-page garbage
-collection cannot erase earlier trusted facts during pagination. Full
-Actor/Organization/generation/hierarchy/release changes reset that local context.
-Cache selection can reuse existing private network provenance but cannot create trust. An
-unrecognized cached window remains hidden until an authoritative network
-response validates it; expansion/remount revalidates without automatic retries.
-Both network and cached candidates compare exact serialized event fields,
-ordered membership and pagination against the retained anchor. Contradictions
-surface a safe error and never replace that anchor or render rejected values.
-Only this bounded history query disables deep structural sharing, so an identical
-authoritative response still reruns selection after an unknown cache entry was
-rejected. Cache storage, lifetime, scope and other queries remain unchanged.
+Event history uses one private, in-memory trust registry per QueryClient and
+canonical authenticated release context: Actor/session, Organization, workspace
+generation, exact source hierarchy/revision and release ID. Live pinned-history
+leases retain their own head and navigation, but never own competing truth.
+All observers share immutable windows keyed by maximum event number and page
+limit, plus event facts indexed by UUID and event number.
+Overlapping windows must agree on every exact serialized immutable event field.
+
+Only a current authenticated network response can establish unknown facts.
+Structural, complete-window and overlapping-event checks finish before a
+separate deeply frozen snapshot is synchronously registered. Cached objects
+cannot create trust. Query functions and selectors use the same registry and
+comparison path; neither Query identity nor dataUpdatedAt grants authority.
+Contradictions surface safe errors without overwriting facts or rendering the
+rejected candidate. Identical valid responses and explicit recovery remain valid.
+Only this bounded history query disables deep structural sharing so an identical
+first authoritative response reruns selection after unknown cached data was
+rejected. Caching remains enabled and automatic query retries remain disabled.
+
+Committed owner leases preserve the shared registry through pagination, Query
+eviction/recreation, concurrent observers and Strict Mode effect replay. Closing
+one history cannot erase another live history's facts. After the last owner ends,
+matching cached event queries retain the required provenance for safe remounts;
+after their final eviction the registry is deleted and its cache subscription is
+removed when no contexts remain. Existing Query gcTime (five minutes) bounds
+idle cache retention; no new retention timer or browser persistence is added.
+Opaque single-use read receipts bind in-flight responses to their registry epoch,
+so an ended/replaced context cannot seed a new one. Actor/Organization/generation
+changes have distinct canonical contexts and follow existing workspace cleanup.
 
 Immutable fields and exact timestamp precision are compared; terminal access is
 not silently restored. Open event head,

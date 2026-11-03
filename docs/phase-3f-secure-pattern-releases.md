@@ -266,6 +266,20 @@ including navigation selection; no private DTO is placed in browser history stat
 Runtime validation runs on cached collections, event pages, exact detail and artifact
 metadata through the same schema/scope checks used for network responses. Invalid
 cache values cannot replace pinned history or authorize artifact submission.
+Event-history windows retain a private, immutable copy of their first validated
+network response. Each anchor belongs to the QueryClient's fully scoped Query
+(Actor/session, Organization, workspace generation, exact hierarchy/release,
+window bound and limit); it survives page navigation and observer remounts and
+is released with query eviction. Cache selection cannot create trust. An
+unrecognized cached window remains hidden until an authoritative network
+response validates it; expansion/remount revalidates without automatic retries.
+Both network and cached candidates compare exact serialized event fields,
+ordered membership and pagination against the retained anchor. Contradictions
+surface a safe error and never replace that anchor or render rejected values.
+Only this bounded history query disables deep structural sharing, so an identical
+authoritative response still reruns selection after an unknown cache entry was
+rejected. Cache storage, lifetime, scope and other queries remain unchanged.
+
 Immutable fields and exact timestamp precision are compared; terminal access is
 not silently restored. Open event head,
 older page and selection survive current-state refresh until deliberate reset.

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { api, requireData } from "../../api/client";
 import { ApiError } from "../../api/errors";
@@ -9,6 +9,8 @@ import {
   checkedConsent,
   checkedConsentPage,
   checkedEvents,
+  snapshotEvents,
+  type EventHistorySnapshot,
   checkedReceived,
   checkedReceivedPage,
   checkedSource,
@@ -28,6 +30,12 @@ export const receivedPath =
 export const receivedDetailPath = `${receivedPath}/{releaseId}` as const;
 export const sourcePath = `${revisionPath}/releases` as const;
 export const sourceDetailPath = `${sourcePath}/{releaseId}` as const;
+
+// A Query is owned by its QueryClient and complete authenticated scope/key.
+// Trust survives observer remounts and page navigation, but not query eviction
+// or a new Actor/Organization/generation. Weak keys retain no evicted history.
+// Only an authoritative, current network response can establish an anchor.
+const trustedEventWindows = new WeakMap<object, EventHistorySnapshot>();
 export function useReleaseScope() {
   const w = useWorkspace();
   return {
@@ -188,13 +196,40 @@ export function useReleaseEvents(
   limit = 25,
 ) {
   const { w, key } = useReleaseScope();
+  const cache = useQueryClient();
+  const queryKey = [
+    ...key,
+    "source",
+    scope,
+    "release",
+    id,
+    "events",
+    limit,
+    max,
+  ];
+  const window = () => {
+    const query = cache.getQueryCache().find({ queryKey, exact: true });
+    if (!query) throw new ApiError(502);
+    return query;
+  };
   return useQuery({
-    queryKey: [...key, "source", scope, "release", id, "events", limit, max],
+    queryKey,
     retry: false,
     staleTime: Infinity,
-    select: (value) => checkedEvents(value, id, max, limit),
-    queryFn: ({ signal }) =>
-      w.run(signal, async () => {
+    refetchOnMount: "always",
+    // An authoritative receipt must re-run selection even when its values equal
+    // an untrusted cached object. Deep structural sharing would reuse that
+    // object's identity and memoize the earlier missing-provenance error.
+    // This is local to bounded history windows; caching remains enabled.
+    structuralSharing: false,
+    select: (value) => {
+      const expected = trustedEventWindows.get(window());
+      if (!expected) throw new ApiError(502);
+      return checkedEvents(value, id, max, limit, expected);
+    },
+    queryFn: async ({ signal }) => {
+      const owner = window();
+      const value = await w.run(signal, async () => {
         const r = await api.GET(`${sourceDetailPath}/events`, {
           signal,
           params: {
@@ -202,7 +237,12 @@ export function useReleaseEvents(
             query: { limit, maxEventNumber: max },
           },
         });
-        return checkedEvents(requireData(r.data, r.response), id, max, limit);
-      }),
+        return requireData(r.data, r.response);
+      });
+      const expected = trustedEventWindows.get(owner);
+      const page = checkedEvents(value, id, max, limit, expected);
+      if (!expected) trustedEventWindows.set(owner, snapshotEvents(page));
+      return page;
+    },
   });
 }

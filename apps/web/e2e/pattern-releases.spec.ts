@@ -659,3 +659,78 @@ test("real older release page and selected receipt survive a newer committed rel
     page.getByRole("button", { name: new RegExp(newest.release.id) }),
   ).toBeVisible();
 });
+
+test("IA-01 trusted event window rejects a valid contradictory network timestamp on remount", async ({
+  page,
+  request,
+}) => {
+  const f = await setup(request),
+    r = await release(request, f),
+    calls = traffic(page);
+  await login(page, f, f.sourceRoute, f.owner);
+  await page.getByRole("button", { name: new RegExp(r.release.id) }).click();
+  const path = f.sourceApi + "/" + r.release.id + "/events";
+  const first = page.waitForResponse(
+    (res) =>
+      new URL(res.url()).pathname === path && res.request().method() === "GET",
+  );
+  await page
+    .getByRole("button", { name: "Open release events", exact: true })
+    .click();
+  const trusted = await (await first).json();
+  const original = trusted.items[0].occurredAt as string;
+  const changed = new Date(Date.parse(original) + 1000).toISOString();
+  expect(changed).not.toBe(original);
+  const history = page.getByRole("region", { name: "Pinned release events" });
+  await expect(history).toContainText(original);
+  const pattern = (url: URL) => url.pathname === path;
+  await page.route(pattern, async (route) => {
+    const real = await route.fetch();
+    expect(real.status()).toBe(200);
+    const candidate = await real.json();
+    candidate.items[0].occurredAt = changed;
+    await route.fulfill({ response: real, json: candidate });
+  });
+  await page
+    .getByRole("button", { name: "Close release events", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Open release events", exact: true })
+    .click();
+  await expect(history.getByRole("alert")).toBeVisible();
+  await expect(history).not.toContainText(changed);
+  await expect(
+    history.getByRole("heading", {
+      name: "Release events through 1",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(
+    calls.filter((c) => c.method !== "GET" || c.url.endsWith("/content")),
+  ).toEqual([]);
+  await page.unroute(pattern);
+  await history.getByRole("button", { name: "Try again", exact: true }).click();
+  await expect(history.getByRole("alert")).toHaveCount(0);
+  await expect(history).toContainText(original);
+  expect(calls.filter((c) => c.url.includes("/events"))).toHaveLength(3);
+  expect(
+    calls.filter((c) => c.method !== "GET" || c.url.endsWith("/content")),
+  ).toEqual([]);
+  mkdirSync(artifacts, { recursive: true });
+  writeFileSync(
+    artifacts + "ia01-immutable-window.json",
+    JSON.stringify(
+      {
+        original,
+        rejected: changed,
+        pinnedHead: 1,
+        requests: calls,
+        mutations: 0,
+        binaryRequests: 0,
+        recovered: true,
+      },
+      null,
+      2,
+    ),
+  );
+});

@@ -7,6 +7,7 @@ import {
   checkedReceived,
   checkedReceivedPage,
   checkedEvents,
+  snapshotEvents,
   instantNanos,
   sourceDraft,
   type SourceScope,
@@ -337,3 +338,175 @@ describe("Release immutable runtime contract", () => {
     ).toThrow();
   });
 });
+
+describe("trusted immutable release-event windows", () => {
+  const event1 = {
+    id: id(81),
+    releaseId: id(80),
+    eventNumber: 1,
+    kind: "ACTIVATED",
+    occurredAt: "2026-10-24T00:00:00.123456Z",
+  };
+  const event2 = {
+    id: id(82),
+    releaseId: id(80),
+    eventNumber: 2,
+    kind: "REVOKED",
+    occurredAt: "2026-10-24T00:00:01Z",
+  };
+  const page: {
+    items: (typeof event1)[];
+    limit: number;
+    nextMaxEventNumber: number | null;
+  } = { items: [event2, event1], limit: 2, nextMaxEventNumber: null };
+  it.each([
+    [
+      "event UUID",
+      (p: typeof page) => {
+        p.items[0].id = id(83);
+      },
+    ],
+    [
+      "release UUID",
+      (p: typeof page) => {
+        p.items[0].releaseId = id(84);
+      },
+    ],
+    [
+      "number",
+      (p: typeof page) => {
+        p.items[0].eventNumber = 1;
+      },
+    ],
+    [
+      "kind",
+      (p: typeof page) => {
+        p.items[0].kind = "ACTIVATED";
+      },
+    ],
+    [
+      "valid timestamp",
+      (p: typeof page) => {
+        p.items[0].occurredAt = "2026-10-24T00:00:42Z";
+      },
+    ],
+    [
+      "remove event",
+      (p: typeof page) => {
+        p.items.pop();
+      },
+    ],
+    [
+      "insert event",
+      (p: typeof page) => {
+        p.items.push({ ...event1, id: id(85) });
+      },
+    ],
+    [
+      "reorder",
+      (p: typeof page) => {
+        p.items.reverse();
+      },
+    ],
+    [
+      "duplicate",
+      (p: typeof page) => {
+        p.items[1] = { ...event2 };
+      },
+    ],
+    [
+      "above head",
+      (p: typeof page) => {
+        p.items[0].eventNumber = 3;
+      },
+    ],
+    [
+      "limit",
+      (p: typeof page) => {
+        p.limit = 3;
+      },
+    ],
+    [
+      "cursor",
+      (p: typeof page) => {
+        p.nextMaxEventNumber = 1;
+      },
+    ],
+  ])("rejects %s without altering the trusted baseline", (_name, attack) => {
+    const baseline = snapshotEvents(checkedEvents(page, id(80), 2, 2));
+    const candidate = structuredClone(page);
+    attack(candidate);
+    expect(() => checkedEvents(candidate, id(80), 2, 2, baseline)).toThrow();
+    expect(baseline).toEqual(page);
+    expect(
+      checkedEvents(structuredClone(page), id(80), 2, 2, baseline),
+    ).toEqual(page);
+  });
+  it.each([
+    "2026-10-24T00:00:42Z",
+    "2026-10-24T01:00:00.123456+01:00",
+    "2026-10-24T00:00:00.1234560Z",
+    "2026-10-24T00:00:00.123456001Z",
+  ])("rejects different exact valid timestamp %s", (occurredAt) => {
+    const original = { items: [event1], limit: 1, nextMaxEventNumber: null };
+    const baseline = snapshotEvents(checkedEvents(original, id(80), 1, 1));
+    const candidate = { ...original, items: [{ ...event1, occurredAt }] };
+    expect(checkedEvents(candidate, id(80), 1, 1)).toEqual(candidate);
+    if (occurredAt !== "2026-10-24T00:00:42Z")
+      expect(Date.parse(occurredAt)).toBe(Date.parse(event1.occurredAt));
+    expect(() => checkedEvents(candidate, id(80), 1, 1, baseline)).toThrow();
+  });
+  it("rejects a structurally valid changed page cursor and owns a deep immutable snapshot", () => {
+    const original = {
+      items: [{ ...event2 }],
+      limit: 1,
+      nextMaxEventNumber: 1,
+    };
+    const baseline = snapshotEvents(checkedEvents(original, id(80), 2, 1));
+    const changed = { ...original, nextMaxEventNumber: null };
+    expect(checkedEvents(changed, id(80), 2, 1)).toEqual(changed);
+    expect(() => checkedEvents(changed, id(80), 2, 1, baseline)).toThrow();
+    original.items[0].occurredAt = "2026-10-24T00:00:42Z";
+    expect(baseline.items[0].occurredAt).toBe(event2.occurredAt);
+    expect(
+      Object.isFrozen(baseline) &&
+        Object.isFrozen(baseline.items) &&
+        Object.isFrozen(baseline.items[0]),
+    ).toBe(true);
+  });
+});
+
+it.each([false, true])(
+  "rejects a valid-shaped insertion into a trusted %s-empty window",
+  (nonempty) => {
+    const first = {
+      id: id(91),
+      releaseId: id(90),
+      eventNumber: 1,
+      kind: "ACTIVATED",
+      occurredAt: at,
+    };
+    const last = {
+      id: id(92),
+      releaseId: id(90),
+      eventNumber: 2,
+      kind: "REVOKED",
+      occurredAt: expires,
+    };
+    const original = {
+      items: nonempty ? [last] : [],
+      limit: 2,
+      nextMaxEventNumber: null,
+    };
+    const expected = snapshotEvents(checkedEvents(original, id(90), 2, 2));
+    const candidate = {
+      ...original,
+      items: nonempty ? [last, first] : [first],
+    };
+    expect(checkedEvents(candidate, id(90), 2, 2)).toEqual(candidate);
+    expect(() => checkedEvents(candidate, id(90), 2, 2, expected)).toThrow();
+    expect(
+      checkedEvents(structuredClone(original), id(90), 2, 2, expected),
+    ).toEqual(original);
+  },
+);

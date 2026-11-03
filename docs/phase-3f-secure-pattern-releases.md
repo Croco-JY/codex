@@ -270,7 +270,11 @@ Event-history windows retain a private, immutable copy of their first validated
 network response. Each anchor belongs to the QueryClient's fully scoped Query
 (Actor/session, Organization, workspace generation, exact hierarchy/release,
 window bound and limit); it survives page navigation and observer remounts and
-is released with query eviction. Cache selection cannot create trust. An
+is released with query eviction. The live History hook also retains its own
+page-window snapshots until that history context ends, so inactive-page garbage
+collection cannot erase earlier trusted facts during pagination. Full
+Actor/Organization/generation/hierarchy/release changes reset that local context.
+Cache selection can reuse existing private network provenance but cannot create trust. An
 unrecognized cached window remains hidden until an authoritative network
 response validates it; expansion/remount revalidates without automatic retries.
 Both network and cached candidates compare exact serialized event fields,

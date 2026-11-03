@@ -207,10 +207,27 @@ export function useReleaseEvents(
     limit,
     max,
   ];
+  // A pinned History can outlive an inactive page's cache entry. Retain its
+  // first facts for this hook/context lifetime, independently of Query GC.
+  const context = JSON.stringify([...key, "source", scope, "release", id]);
+  const history = useRef({
+    context,
+    windows: new Map<string, EventHistorySnapshot>(),
+  });
+  if (history.current.context !== context)
+    history.current = { context, windows: new Map() };
+  const remembered = history.current.windows;
   const window = () => {
     const query = cache.getQueryCache().find({ queryKey, exact: true });
     if (!query) throw new ApiError(502);
     return query;
+  };
+  const checkedWindow = (value: unknown, owner: ReturnType<typeof window>) => {
+    const retained = remembered.get(owner.queryHash);
+    const shared = trustedEventWindows.get(owner);
+    const page = checkedEvents(value, id, max, limit, retained ?? shared);
+    if (retained && shared) checkedEvents(page, id, max, limit, shared);
+    return { page, expected: retained ?? shared };
   };
   return useQuery({
     queryKey,
@@ -223,9 +240,12 @@ export function useReleaseEvents(
     // This is local to bounded history windows; caching remains enabled.
     structuralSharing: false,
     select: (value) => {
-      const expected = trustedEventWindows.get(window());
+      const owner = window();
+      const { page, expected } = checkedWindow(value, owner);
       if (!expected) throw new ApiError(502);
-      return checkedEvents(value, id, max, limit, expected);
+      // Copy only existing private network provenance, never cache authority.
+      remembered.set(owner.queryHash, expected);
+      return page;
     },
     queryFn: async ({ signal }) => {
       const owner = window();
@@ -239,9 +259,10 @@ export function useReleaseEvents(
         });
         return requireData(r.data, r.response);
       });
-      const expected = trustedEventWindows.get(owner);
-      const page = checkedEvents(value, id, max, limit, expected);
-      if (!expected) trustedEventWindows.set(owner, snapshotEvents(page));
+      const { page, expected } = checkedWindow(value, owner);
+      const snapshot = expected ?? snapshotEvents(page);
+      if (!trustedEventWindows.has(owner)) trustedEventWindows.set(owner, snapshot);
+      remembered.set(owner.queryHash, snapshot);
       return page;
     },
   });

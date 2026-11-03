@@ -458,3 +458,42 @@ test("real history with no fetching-state subscription recovers identical untrus
     h.calls.some((r) => r.method !== "GET" || r.url.endsWith("/content")),
   ).toBe(false);
 });
+
+
+test.each(["first", "older"])(
+  "pinned context retains %s window trust after inactive query eviction",
+  async (target) => {
+    const h = fixture();
+    await readyProbe(h);
+    click("Older window");
+    await screen.findByText("1 · ACTIVATED · " + time);
+    const max = target === "first" ? 2 : 1;
+    if (max === 1) {
+      click("First window");
+      await screen.findByText("2 · REVOKED · " + last.occurredAt);
+    }
+    const key = eventQuery(h, max).queryKey;
+    h.cache.removeQueries({ queryKey: key, exact: true });
+    const pending = deferred<Response>();
+    let requests = 0;
+    h.overrides.set("GET " + eventPath, async () => {
+      requests++;
+      return pending.promise;
+    });
+    click(max === 2 ? "First window" : "Older window");
+    expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+    await waitFor(() => expect(requests).toBe(1));
+    await act(async () => pending.resolve(response(changed(page(max)))));
+    await waitFor(() => expect(screen.queryByText("Fetching history")).toBeNull());
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+    expect(requests).toBe(1);
+    h.overrides.set("GET " + eventPath, async () => response(page(max)));
+    click("Refresh window");
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    expect(screen.getByText(max === 2
+      ? "2 · REVOKED · " + last.occurredAt
+      : "1 · ACTIVATED · " + time)).toBeInTheDocument();
+    expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+  },
+);

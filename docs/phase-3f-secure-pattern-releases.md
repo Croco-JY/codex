@@ -273,14 +273,29 @@ leases retain their own head and navigation, but never own competing truth.
 All observers share immutable windows keyed by maximum event number and page
 limit, plus event facts indexed by UUID and event number.
 Overlapping windows must agree on every exact serialized immutable event field.
+Each stored window also retains its requested maximum for cross-window coverage.
+An eligible known event (number at or below that maximum) must appear in a
+short page. In a full page it may be omitted only below the returned tail, with
+a non-null continuation that still reaches it. The cursor remains the actual
+first excluded event number, inclusive in the next request; it also witnesses
+that event's existence without inventing an unknown UUID or other event fields.
+Events above a requested maximum need not appear.
+
+Coverage checks run in both directions: existing facts and continuation witnesses
+constrain a new page, and new facts/witnesses must respect every older window's
+maximum, membership and EOF/continuation. Valid truncated pages remain valid;
+new heads can add events above an older maximum. No known event or trusted
+window is rewritten to resolve a contradiction.
 
 Only a current authenticated network response can establish unknown facts.
-Structural, complete-window and overlapping-event checks finish before a
+Structural, exact-window, immutable-fact and bidirectional coverage checks finish before a
 separate deeply frozen snapshot is synchronously registered. Cached objects
 cannot create trust. Query functions and selectors use the same registry and
 comparison path; neither Query identity nor dataUpdatedAt grants authority.
 Contradictions surface safe errors without overwriting facts or rendering the
 rejected candidate. Identical valid responses and explicit recovery remain valid.
+A rejected omission installs neither its page nor any new event facts, so a later
+coherent complete response can recover without clearing shared trusted history.
 Only this bounded history query disables deep structural sharing so an identical
 first authoritative response reruns selection after unknown cached data was
 rejected. Caching remains enabled and automatic query retries remain disabled.

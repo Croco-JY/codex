@@ -2,6 +2,7 @@ import { afterEach, expect, test } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/errors";
 import { id, time } from "../../test/patternReleaseFixture";
+import { deferred } from "../../test/measurementFixture";
 import {
   acceptEventHistoryRead, beginEventHistoryRead, retainEventHistory, selectEventHistory,
 } from "./eventHistoryTrust";
@@ -144,4 +145,137 @@ test("raw cache aliases cannot mutate shared snapshots or cross-window event ind
   expect(() => h.cached(raw)).toThrow(ApiError);
   expect(() => h.network({ ...page(2, 2), items: [raw.items[0], { ...first }] }, 2, 2)).toThrow(ApiError);
   expect(h.network(page(2, 2), 2, 2)).toEqual(page(2, 2));
+});
+
+test("FRA-02: standard window rejects known omissions and genuinely recovers", () => {
+  const h = harness();
+  h.network(page());
+  h.network(page(1), 1);
+  const omitted = { items: [{ ...last }], limit: 25, nextMaxEventNumber: null };
+  expect(() => h.network(omitted, 2, 25)).toThrow(ApiError);
+  expect(() => h.cached(omitted, 2, 25)).toThrow(ApiError);
+  expect(h.cached(page())).toEqual(page());
+  expect(h.cached(page(1), 1)).toEqual(page(1));
+  expect(h.network(page(2, 25), 2, 25)).toEqual(page(2, 25));
+  expect(h.cached(page(2, 25), 2, 25)).toEqual(page(2, 25));
+});
+
+test.each([
+  { max: 2, limit: 25, numbers: [2, 1], next: null, accepted: true },
+  { max: 2, limit: 25, numbers: [2], next: null, accepted: false },
+  { max: 2, limit: 25, numbers: [1], next: null, accepted: false },
+  { max: 2, limit: 25, numbers: [], next: null, accepted: false },
+  { max: 2, limit: 2, numbers: [2, 1], next: null, accepted: true },
+  { max: 2, limit: 2, numbers: [2], next: null, accepted: false },
+  { max: 2, limit: 1, numbers: [2], next: 1, accepted: true },
+  { max: 2, limit: 1, numbers: [2], next: null, accepted: false },
+  { max: 2, limit: 1, numbers: [1], next: null, accepted: false },
+  { max: 1, limit: 25, numbers: [1], next: null, accepted: true },
+  { max: 1, limit: 1, numbers: [1], next: null, accepted: true },
+])("known-event coverage max=$max limit=$limit items=$numbers next=$next", ({ max, limit, numbers, next, accepted }) => {
+  const h = harness(), original = page(2, 50);
+  h.network(original, 2, 50);
+  const candidate = {
+    items: numbers.map((n) => ({ ...(n === 1 ? first : last) })),
+    limit, nextMaxEventNumber: next,
+  };
+  if (accepted) {
+    expect(h.network(candidate, max, limit)).toEqual(candidate);
+    expect(h.cached(candidate, max, limit)).toEqual(candidate);
+  } else {
+    expect(() => h.network(candidate, max, limit)).toThrow(ApiError);
+    expect(() => h.cached(candidate, max, limit)).toThrow(ApiError);
+  }
+  expect(h.cached(original, 2, 50)).toEqual(original);
+});
+
+test.each([0, 2])("continuation %s cannot skip or overlap the returned full page", (next) => {
+  const h = harness(); h.network(page(1), 1);
+  expect(() => h.network({ ...page(), nextMaxEventNumber: next })).toThrow(ApiError);
+  expect(h.network(page())).toEqual(page());
+  expect(h.cached(page(1), 1)).toEqual(page(1));
+});
+
+test.each([25, 1])("new facts cannot contradict an existing window's false EOF at limit%s", (limit) => {
+  const h = harness(), incomplete = { items: [{ ...last }], limit, nextMaxEventNumber: null };
+  h.network(incomplete, 2, limit);
+  expect(() => h.network(page(1, 25), 1, 25)).toThrow(ApiError);
+  expect(() => h.cached(page(1, 25), 1, 25)).toThrow(ApiError);
+  expect(h.cached(incomplete, 2, limit)).toEqual(incomplete);
+  // The rejected activation was not partially indexed or installed as a page.
+  expect(h.network({ ...incomplete, limit: 50 }, 2, 50)).toEqual({ ...incomplete, limit: 50 });
+});
+
+test("new higher-priority event cannot contradict a previously trusted full-page prefix", () => {
+  const h = harness(), skipped = { items: [{ ...first }], limit: 1, nextMaxEventNumber: null };
+  h.network(skipped, 2, 1);
+  expect(() => h.network(page(2, 25), 2, 25)).toThrow(ApiError);
+  expect(h.cached(skipped, 2, 1)).toEqual(skipped);
+  expect(() => h.cached(page(2, 25), 2, 25)).toThrow(ApiError);
+});
+
+test("a new head above an old maximum and reachable older pages remain valid", () => {
+  const h = harness(); h.network(page(1, 25), 1, 25);
+  expect(h.network(page())).toEqual(page());
+  expect(h.network(page(2, 25), 2, 25)).toEqual(page(2, 25));
+  expect(h.network(page(1), 1)).toEqual(page(1));
+  expect(h.cached(page(1, 25), 1, 25)).toEqual(page(1, 25));
+});
+
+test("a trusted first-excluded cursor prevents a later empty page hiding that event", () => {
+  const h = harness(); h.network(page());
+  const empty = { items: [], limit: 25, nextMaxEventNumber: null };
+  expect(() => h.network(empty, 1, 25)).toThrow(ApiError);
+  expect(() => h.cached(empty, 1, 25)).toThrow(ApiError);
+  expect(h.cached(page())).toEqual(page());
+  expect(h.network(page(1, 25), 1, 25)).toEqual(page(1, 25));
+});
+
+test("a new first-excluded cursor cannot contradict an earlier trusted empty window", () => {
+  const h = harness(), empty = { items: [], limit: 25, nextMaxEventNumber: null };
+  h.network(empty, 1, 25);
+  expect(() => h.network(page())).toThrow(ApiError);
+  expect(() => h.cached(page())).toThrow(ApiError);
+  expect(h.cached(empty, 1, 25)).toEqual(empty);
+  // Rejection must not install either the new event or its cursor witness.
+  expect(h.network({ ...empty, limit: 2 }, 2, 2)).toEqual({ ...empty, limit: 2 });
+});
+
+test("rejected new facts leave all old windows, indexes, epoch and pending valid receipt intact", () => {
+  const h = harness(), original = page(1, 25);
+  h.network(original, 1, 25);
+  const invalidReceipt = h.begin(2, 2), validReceipt = h.begin(2, 25);
+  const omitted = { items: [{ ...last }], limit: 2, nextMaxEventNumber: null };
+  expect(() => acceptEventHistoryRead(invalidReceipt, omitted)).toThrow(ApiError);
+  expect(() => acceptEventHistoryRead(invalidReceipt, omitted)).toThrow(ApiError);
+  expect(() => h.cached(omitted, 2, 2)).toThrow(ApiError);
+  expect(h.cached(original, 1, 25)).toEqual(original);
+  // A different timestamp on the previously rejected, unknown event is valid:
+  // rejection must not install even that event's otherwise plausible facts.
+  const complete = page(2, 25); complete.items[0].occurredAt = changed;
+  expect(acceptEventHistoryRead(validReceipt, complete)).toEqual(complete);
+  expect(h.network({ ...complete, limit: 2 }, 2, 2)).toEqual({ ...complete, limit: 2 });
+  expect(h.cached(original, 1, 25)).toEqual(original);
+  expect(() => h.network(page(2, 25), 2, 25)).toThrow(ApiError);
+});
+
+test.each(["omission-first", "complete-first"])("controlled concurrent windows cannot install inconsistent membership: %s", async (order) => {
+  const h = harness(); h.network(page(1, 25), 1, 25);
+  const bad = deferred<unknown>(), good = deferred<unknown>();
+  const badReceipt = h.begin(2, 25), goodReceipt = h.begin(2, 2);
+  const badResult = bad.promise.then((value) => acceptEventHistoryRead(badReceipt, value));
+  const rejected = expect(badResult).rejects.toBeInstanceOf(ApiError);
+  const goodResult = good.promise.then((value) => acceptEventHistoryRead(goodReceipt, value));
+  const omitted = { items: [{ ...last }], limit: 25, nextMaxEventNumber: null };
+  if (order === "omission-first") {
+    bad.resolve(omitted); await rejected;
+    good.resolve(page(2, 2)); await expect(goodResult).resolves.toEqual(page(2, 2));
+  } else {
+    good.resolve(page(2, 2)); await expect(goodResult).resolves.toEqual(page(2, 2));
+    bad.resolve(omitted); await rejected;
+  }
+  expect(() => h.cached(omitted, 2, 25)).toThrow(ApiError);
+  expect(h.cached(page(1, 25), 1, 25)).toEqual(page(1, 25));
+  expect(h.cached(page(2, 2), 2, 2)).toEqual(page(2, 2));
+  expect(h.network(page(2, 25), 2, 25)).toEqual(page(2, 25));
 });

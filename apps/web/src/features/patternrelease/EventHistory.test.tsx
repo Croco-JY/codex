@@ -131,12 +131,13 @@ function Window({ max, limit }: { max: number; limit: number }) {
     </section>
   );
 }
-function Probe({ initiallyShown = true }: { initiallyShown?: boolean }) {
-  const [max, bound] = useState(2),
+function Probe({ initiallyShown = true, initialMax = 2, initialLimit = 1 }: { initiallyShown?: boolean; initialMax?: number; initialLimit?: number }) {
+  const [max, bound] = useState(initialMax),
     [shown, show] = useState(initiallyShown),
-    [limit, size] = useState(1),
+    [limit, size] = useState(initialLimit),
     [twins, duplicate] = useState(false),
     [late, mountLate] = useState<number | null>(null),
+    [standard, mountStandard] = useState(false),
     [renders, rerender] = useState(0);
   return (
     <>
@@ -150,15 +151,17 @@ function Probe({ initiallyShown = true }: { initiallyShown?: boolean }) {
       <button onClick={() => mountLate(2)}>Late first-window observer</button>
       <button onClick={() => mountLate(1)}>Late older-window observer</button>
       <button onClick={() => mountLate(null)}>Close late observer</button>
+      <button onClick={() => mountStandard(true)}>Standard first-window observer</button>
       <button onClick={() => duplicate(false)}>Close second observer</button>
       <button onClick={() => rerender(renders + 1)}>Rerender observers {renders}</button>
       {shown && <Window max={max} limit={limit} />}
       {twins && <Window max={max} limit={limit} />}
       {late !== null && <Window max={late} limit={limit} />}
+      {standard && <Window max={2} limit={25} />}
     </>
   );
 }
-function mountProbe(h: ReturnType<typeof fixture>, options: { strict?: boolean; initiallyShown?: boolean } = {}) {
+function mountProbe(h: ReturnType<typeof fixture>, options: { strict?: boolean; initiallyShown?: boolean; initialMax?: number; initialLimit?: number } = {}) {
   h.overrides.set("GET " + eventPath, async (r) => {
     const u = new URL(r.url);
     return response(
@@ -178,7 +181,7 @@ function mountProbe(h: ReturnType<typeof fixture>, options: { strict?: boolean; 
                 path="/organizations/:organizationId/*"
                 element={
                   <WorkspaceGate>
-                    <Probe initiallyShown={options.initiallyShown} />
+                    <Probe initiallyShown={options.initiallyShown} initialMax={options.initialMax} initialLimit={options.initialLimit} />
                   </WorkspaceGate>
                 }
               />
@@ -702,6 +705,104 @@ test.each(["old-first", "current-first"])(
     await act(async () => h.cache.setQueryData(key, changed(page(2))));
     await waitFor(() => expect(screen.getAllByRole("alert")).toHaveLength(2));
     expect(screen.queryByText(/00:00:42Z/)).toBeNull();
+    expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+  },
+);
+
+test("FRA-02: default25 new-head omission is rejected and genuine history recovers", async () => {
+  const h = fixture(); mountProbe(h, { initialMax: 1, initialLimit: 25 });
+  await screen.findByText("1 · ACTIVATED · " + time);
+  const omitted = { items: [last], limit: 25, nextMaxEventNumber: null };
+  h.overrides.set("GET " + eventPath, async () => response(omitted));
+  click("Late first-window observer");
+  const regions = screen.getAllByRole("region", { name: "Observed event window" });
+  await within(regions[1]).findByRole("alert");
+  expect(eventQuery(h, 2, 25).state.data).toBeUndefined();
+  expect(eventQuery(h, 1, 25).getObserversCount()).toBe(1);
+  expect(eventQuery(h, 2, 25).getObserversCount()).toBe(1);
+  expect(regions[0]).toHaveTextContent("1 · ACTIVATED · " + time);
+  expect(regions[1]).not.toHaveTextContent("2 · REVOKED");
+  await act(async () => h.cache.setQueryData(eventQuery(h, 2, 25).queryKey, omitted));
+  expect(regions[1]).not.toHaveTextContent("2 · REVOKED");
+  expect(within(regions[1]).getByRole("alert")).toBeInTheDocument();
+  expect(h.calls.filter((r) => r.url.includes("/events"))).toHaveLength(2);
+  h.overrides.set("GET " + eventPath, async () => response(page(2, 25)));
+  fireEvent.click(within(regions[1]).getByRole("button", { name: "Refresh window" }));
+  await within(regions[1]).findByText("2 · REVOKED · " + last.occurredAt);
+  expect(regions[1]).toHaveTextContent("1 · ACTIVATED · " + time);
+  expect(within(regions[1]).queryByRole("alert")).toBeNull();
+  expect(regions[0]).toHaveTextContent("1 · ACTIVATED · " + time);
+  expect(eventQuery(h, 2, 25).options.retry).toBe(false);
+  expect(h.calls.filter((r) => r.url.includes("/events"))).toHaveLength(3);
+  expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+});
+
+test("FRA-02: both known pages survive eviction and control a recreated standard window", async () => {
+  const h = fixture(); await readyProbe(h);
+  const originalHead = eventQuery(h, 2).queryKey;
+  click("Older window"); await screen.findByText("1 · ACTIVATED · " + time);
+  h.cache.removeQueries({ queryKey: originalHead, exact: true });
+  h.overrides.set("GET " + eventPath, async () => response({ items: [last], limit: 25, nextMaxEventNumber: null }));
+  click("Standard first-window observer");
+  await screen.findByRole("alert");
+  const key = eventQuery(h, 2, 25).queryKey;
+  expect(eventQuery(h, 2, 25).state.data).toBeUndefined();
+  h.cache.removeQueries({ queryKey: key, exact: true });
+  fireEvent.click(screen.getByRole("button", { name: /Rerender observers/ }));
+  await waitFor(() => expect(eventQuery(h, 2, 25).getObserversCount()).toBe(1));
+  await waitFor(() => expect(screen.queryByText("Fetching history")).toBeNull());
+  expect(screen.getByRole("alert")).toBeInTheDocument();
+  expect(screen.queryByText("2 · REVOKED · " + last.occurredAt)).toBeNull();
+  h.overrides.set("GET " + eventPath, async () => response(page(2, 25)));
+  const regions = screen.getAllByRole("region", { name: "Observed event window" });
+  fireEvent.click(within(regions[1]).getByRole("button", { name: "Refresh window" }));
+  await within(regions[1]).findByText("2 · REVOKED · " + last.occurredAt);
+  expect(regions[1]).toHaveTextContent("1 · ACTIVATED · " + time);
+  expect(regions[0]).toHaveTextContent("1 · ACTIVATED · " + time);
+  expect(within(regions[0]).queryByRole("alert")).toBeNull();
+  expect(eventQuery(h, 2, 25).options.retry).toBe(false);
+  expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
+});
+
+test.each(["omission-first", "complete-first"])(
+  "FRA-02: concurrent authenticated window responses preserve coherent history: %s", async (order) => {
+    const h = fixture(); mountProbe(h, { initialMax: 1, initialLimit: 2 });
+    await screen.findByText("1 · ACTIVATED · " + time);
+    const omitted = deferred<Response>(), complete = deferred<Response>();
+    let omissionRequests = 0, completeRequests = 0;
+    h.overrides.set("GET " + eventPath, async (request) => {
+      if (new URL(request.url).searchParams.get("limit") === "25") {
+        omissionRequests++; return omitted.promise;
+      }
+      completeRequests++; return complete.promise;
+    });
+    click("Standard first-window observer"); click("Late first-window observer");
+    await waitFor(() => expect([omissionRequests, completeRequests]).toEqual([1, 1]));
+    const bad = { items: [last], limit: 25, nextMaxEventNumber: null };
+    if (order === "omission-first") {
+      await act(async () => omitted.resolve(response(bad)));
+      await screen.findByRole("alert");
+      await act(async () => complete.resolve(response(page(2, 2))));
+    } else {
+      await act(async () => complete.resolve(response(page(2, 2))));
+      await screen.findByText("2 · REVOKED · " + last.occurredAt);
+      await act(async () => omitted.resolve(response(bad)));
+    }
+    await waitFor(() => expect(screen.queryByText("Fetching history")).toBeNull());
+    const regions = screen.getAllByRole("region", { name: "Observed event window" });
+    expect(within(regions[2]).getByRole("alert")).toBeInTheDocument();
+    expect(regions[2]).not.toHaveTextContent("2 · REVOKED");
+    expect(regions[1]).toHaveTextContent("2 · REVOKED · " + last.occurredAt);
+    expect(regions[1]).toHaveTextContent("1 · ACTIVATED · " + time);
+    expect(regions[0]).toHaveTextContent("1 · ACTIVATED · " + time);
+    expect(eventQuery(h, 2, 25).state.data).toBeUndefined();
+    h.overrides.set("GET " + eventPath, async () => response(page(2, 25)));
+    fireEvent.click(within(regions[2]).getByRole("button", { name: "Refresh window" }));
+    await within(regions[2]).findByText("2 · REVOKED · " + last.occurredAt);
+    expect(regions[2]).toHaveTextContent("1 · ACTIVATED · " + time);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(omissionRequests).toBe(1); expect(completeRequests).toBe(1);
+    expect(eventQuery(h, 2, 25).options.retry).toBe(false);
     expect(h.calls.filter((r) => r.method !== "GET" || r.url.endsWith("/content"))).toHaveLength(0);
   },
 );

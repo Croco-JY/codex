@@ -8,10 +8,11 @@ import {
 } from "./model";
 
 type Event = EventHistorySnapshot["items"][number];
+type TrustedWindow = Readonly<{ max: number; page: EventHistorySnapshot }>;
 type History = {
   epoch: object;
   owners: Map<object, number>;
-  windows: Map<string, EventHistorySnapshot>;
+  windows: Map<string, TrustedWindow>;
   ids: Map<string, Event>;
   numbers: Map<number, Event>;
 };
@@ -126,6 +127,28 @@ export function beginEventHistoryRead(
   return receipt;
 }
 
+// The cursor is the first excluded number (inclusive on the next request).
+// Missing older facts are valid only beyond a full page with reachable continuation.
+function checkCoverage(
+  page: EventHistorySnapshot,
+  max: number,
+  numbers: Iterable<number>,
+) {
+  const present = new Set(page.items.map((event) => event.eventNumber));
+  const lowest = page.items.at(-1)?.eventNumber;
+  for (const number of numbers) {
+    if (number > max || present.has(number)) continue;
+    if (
+      page.items.length < page.limit ||
+      lowest === undefined ||
+      number >= lowest ||
+      page.nextMaxEventNumber === null ||
+      number > page.nextMaxEventNumber
+    )
+      throw new ApiError(502);
+  }
+}
+
 function checkedWindow(
   history: History,
   value: unknown,
@@ -134,7 +157,7 @@ function checkedWindow(
   limit: number,
 ) {
   const window = hashKey([max, limit]);
-  const expected = history.windows.get(window);
+  const expected = history.windows.get(window)?.page;
   const page = checkedEvents(value, release, max, limit, expected);
   for (const event of page.items) {
     const id = history.ids.get(event.id);
@@ -145,6 +168,17 @@ function checkedWindow(
     )
       throw new ApiError(502);
   }
+  const known = new Set(history.numbers.keys());
+  for (const trusted of history.windows.values())
+    if (trusted.page.nextMaxEventNumber !== null)
+      known.add(trusted.page.nextMaxEventNumber);
+  checkCoverage(page, max, known);
+  // A first-excluded cursor also witnesses an event's existence, without
+  // inventing its identity or fields before a later page returns them.
+  const introduced = page.items.map((event) => event.eventNumber);
+  if (page.nextMaxEventNumber !== null) introduced.push(page.nextMaxEventNumber);
+  for (const trusted of history.windows.values())
+    checkCoverage(trusted.page, trusted.max, introduced);
   return { window, expected, page };
 }
 
@@ -178,7 +212,7 @@ export function acceptEventHistoryRead(receipt: object, value: unknown) {
   );
   if (!expected) {
     const snapshot = snapshotEvents(page);
-    history.windows.set(window, snapshot);
+    history.windows.set(window, Object.freeze({ max: read.max, page: snapshot }));
     for (const event of snapshot.items) {
       history.ids.set(event.id, event);
       history.numbers.set(event.eventNumber, event);

@@ -5,9 +5,9 @@
 Discovery date: 2026-11-05. Specification:
 `SOURCE-OS-PHASE-3F-CLOSEOUT-3G-0-DISCOVERY-v1`.
 Repository: `Croco-JY/codex`; branch: `phase-3-pattern-operations`;
-inspected implementation: `5df832526e783cd4b7e875c8be934637b8325b6b`.
+original inspected implementation: `5df832526e783cd4b7e875c8be934637b8325b6b`.
 Local HEAD, origin tracking, actual remote and live GitHub branch agreed before
-documentation changes; the checkout was clean and the paginated open-PR count
+the original documentation changes; the checkout was clean and the paginated open-PR count
 was zero. [Implementation CI 41801680429](https://github.com/Croco-JY/codex/actions/runs/41801680429)
 was push/attempt 1/completed/success with 21 successful steps.
 
@@ -16,8 +16,58 @@ Phase 3G is **Cumulative Hardening**, as defined by the immutable
 The default is tests/documentation only, production diff zero, Defect-Stop, no
 default migration and no new product capability. This document is a proposed
 execution contract, not execution authorization or completed 3G acceptance.
-The current task changes only this document, the [3F closeout](phase-3f-independent-acceptance.md)
-and the current [roadmap](roadmap.md) status.
+The original documentation delivery created this document and the
+[3F closeout](phase-3f-independent-acceptance.md), and updated the
+[roadmap](roadmap.md). The reconciliation below changes only this discovery
+record and the roadmap; the historical acceptance record remains unchanged.
+
+### Live-baseline reconciliation — 2026-11-05
+
+The repeated closeout/discovery request was reconciled against live branch HEAD
+`0b1e918b0a3f1a1d55fc982aa10403f66c2343df`, rather than resetting to the
+historical `5df8325`. The intervening commits are:
+
+| Commit | Scope and verified delivery |
+| --- | --- |
+| `7b1734c58ffa735e7b5b4f2a5000a69ed6cd6fa6` | Original closeout/discovery: exactly three documentation files; [push CI 41972900842](https://github.com/Croco-JY/codex/actions/runs/41972900842), attempt 1, success, 21 successful steps |
+| `0b1e918b0a3f1a1d55fc982aa10403f66c2343df` | Separately authorized `3G-DF-01` Measurement cache correction: two production files and two direct regression files; [push CI 41996948719](https://github.com/Croco-JY/codex/actions/runs/41996948719), attempt 1, success, 21 successful steps |
+
+Subsequent authorized cumulative-hardening execution reproduced `3G-DF-01`, a
+MEDIUM/blocking foreign-Style Measurement cache-rendering defect, and stopped.
+The scoped correction now validates cached Spec/history/exact-revision data with
+the existing validators, detaches validated display data from mutable cache
+objects, preserves legitimate drafts read-only on errors, and checks selected
+revision/summary consistency. See [selectors](../apps/web/src/features/measurement/data.ts),
+[rendering guards](../apps/web/src/features/measurement/Measurements.tsx),
+[the unchanged original regression](../apps/web/src/test/phase3gCacheIntegrity.test.tsx)
+and [32 additional cache cases](../apps/web/src/features/measurement/MeasurementCache.test.tsx).
+These tests exercise actual QueryClient replacement, foreign identities, malformed
+points/pages, mutable aliases, safe recovery and Actor/Organization transitions.
+
+**Phase 3G remains PAUSED. Independent correction acceptance is PENDING.**
+The correction agent's successful tests/CI are implementation evidence, not an
+independent acceptance decision. The eight interrupted Phase 3G test files and
+their hash-verified safety archive remain preserved; seven unrelated files were
+not included in the correction commit. G5/G6 and cumulative acceptance are not
+complete. This documentation task neither reviews the correction independently
+nor authorizes Phase 3G resumption, production deployment or a later phase.
+
+The correction report records 1,350 backend tests, 1,915 Vitest tests (including
+138 focused cases), and 143 Chromium cases per origin, with both actual
+fifteen-minute expiry cases completed. These are reused correction-author
+executions, not new discovery tests or a replacement for the earlier independent
+3F acceptance executions. The current task freshly reverified the original
+2,074-payload acceptance archive and live CI metadata; it did not rerun those
+historical tests. Raw CI log contents are not inferred from successful metadata.
+
+The accepted 3F baseline and its 23/23 decision disposition remain `5df8325`.
+No independent acceptance is silently transferred to the later correction.
+V1–V23 and generated API files are byte-identical across these commits. The
+production difference between `5df8325` and `0b1e918` is the authorized Measurement
+correction; **production-diff-zero for this documentation task is measured from
+`0b1e918`**, with that correction preserved. The inventory and G1–G6 proposal below
+retain their original discovery provenance; this status note takes precedence
+over historical statements that no Phase 3G execution had yet been authorized.
 
 ### Contract inventory and precedence
 
@@ -167,7 +217,7 @@ proposals requiring a separate instruction.
 | Actor A→B frontend | [Measurement UI][A-ui] Actor switch aborts pending create; [QA browser][E-browser] Actor switch held response | G1/G4: multi-domain selections/drafts cleared in one session transition |
 | Organization A→B→A | [release UI][R-ui] `ABA uses fresh generation rather than accepting first A response`; [history UI][R-history] late previous generation cases | G4: simultaneous selected histories across Measurement, Grading, QA and Release |
 | Late network response | [Pattern UI][B-ui] late success/403 cannot render or repopulate; [QA UI][E-ui] late mutation success/error | G4: mix old success, old403 and current denial; old403 cannot deny new workspace |
-| Cached foreign data | [release UI][R-ui] cached foreign collection and cached foreign artifact tests | G4: one common corpus with explicit per-domain ownership validators, no generic blind cache trust |
+| Cached foreign data | [release UI][R-ui] cached foreign collection/artifact tests; [Measurement cache regressions][A-cache] and [original DF-01 regression][A-cache-original] after separately authorized correction | Prerequisite: independent DF-01 correction acceptance; then G4 common corpus across domains, preserving scope validation and safe recovery without generic blind cache trust |
 | Immutable history contradiction | [history UI][R-history] IA-01 exact timestamp and FRA-01 recreated Query; [registry][R-trust] immutable overlap/atomic rejection | G4: promote selected original external oracle probes into tracked tests if not redundant |
 | False continuation/EOF | [registry][R-trust] FRA-02 known omissions, reverse facts, first-excluded cursor witnesses; [history UI][R-history] recreated-window omission | G4: retain valid short/full pages, inclusive next bound, new heads above max and rejection recovery |
 | Binary cancellation | [release browser][R-browser] held binary after Actor/Org/ABA/cancel; [artifact UI][C-ui] late binary no URL/click | G4: cross-route pending download cancellation with two simultaneously mounted histories |
@@ -251,9 +301,11 @@ an S3 adapter, infrastructure, deployment, new manager or authorization bypass.
 
 ## 7. Risk-prioritized hardening backlog
 
-These are residual risks to test, not reproduced production defects. Likelihood
-is relative to the accepted protections; impact describes a potential failure.
-No production change is currently established as necessary.
+The original backlog below described residual risks, not confirmed defects.
+The later reproduced DF-01 cache defect and its delivered correction are
+distinguished in the reconciliation above and the updated cache row. Remaining
+likelihoods describe unverified cumulative scenarios, not new findings; no
+additional production correction is established by this documentation task.
 
 | Priority/risk | Protection and existing evidence | Unverified cumulative scenario; likelihood/impact rationale | Smallest proposed action |
 | --- | --- | --- | --- |
@@ -266,7 +318,7 @@ No production change is currently established as necessary.
 | P1 — storage corruption/recovery | Size/hash/create-only storage; C retained partial-state and R bounded/symlink tests | Mixed PENDING/FAILED/READY lineage during archive and ambiguous responses; medium operational likelihood/high integrity impact | G4 reuse real fault adapters, no new storage abstraction or deletion |
 | P1 — audit inconsistency | MANDATORY audit, source Actor event provenance, injected-stage rollback | One common race harness might miss loser effects across domains; low/high | G2 compare expected domain/event/audit deltas at commit and rollback |
 | P1 — Actor/Organization ABA | Monotonic generation, abort/purge and late-response tests | Multi-route concurrent queries/mutations; low/high | G4 defer old successes/403s through A→B→A and Actor switch |
-| P1 — cached data poisoning | Runtime schema/ownership and immutable snapshot checks | Cross-domain cache replacement while another page is pinned; low/high | G4 valid-shaped foreign/contradictory corpus, never trust cache alone |
+| P1 — cached data poisoning | Release immutable snapshot checks; Measurement selectors/rendering corrected in `0b1e918`, with original RED and new regressions retained | DF-01 is a confirmed historical defect with delivered correction awaiting independent acceptance; remaining cross-domain combinations are unverified, with high confidentiality/integrity impact | First independently accept the scoped correction; future authorized G4 retains valid-shaped foreign/contradictory corpus and safe recovery |
 | P1 — false event continuation | Bidirectional known-event/witness coverage; FRA-02 tests and independent oracle | Standard CI does not include all external oracle code; low/high historical-integrity impact | G4 port only nonredundant finite boundary/oracle probes, preserve legal continuations |
 | P1 — unverified upgrade combination | Fresh and per-slice populated upgrade tests, checksums/trigger snapshots | A single cumulative representative fixture is not currently a dedicated Phase 3 test; low/high data-integrity impact | G3 V17→V23 fixture with artifactless and terminal artifacts, full rows/triggers/constraints |
 | P2 — accessibility/regression gaps | Existing width/label/Tab/matrix tests | Cross-route focus return and all denied/conflict states not exhaustively certified; medium/moderate usability impact | G5 bounded width/state/keyboard checklist and assertions, no redesign |
@@ -376,8 +428,12 @@ authorize test/source execution, commit/push, deployment or the next phase.
 
 ## 10. Defect-Stop and excluded capabilities
 
-No deterministic accepted production defect was reproduced during this discovery.
-The gaps/priorities above are not security findings. If future testing reproduces
+No deterministic accepted production defect was reproduced during the original
+`5df8325` discovery. The subsequent DF-01 finding, correction and still-pending
+independent correction acceptance are recorded above; this reconciliation found
+no additional production defect.
+The remaining hypothetical gaps are not new findings; DF-01 retains its separate
+finding record. If future testing reproduces
 a defect, assign a stable `3G-DF-xx` ID with invariant, exact source, synthetic
 reproduction/commands, expected/actual behavior, severity and affected boundaries.
 Record the smallest correction and API/migration/security impact, then stop before
@@ -392,9 +448,11 @@ separate roadmap decision. Paid Pattern Service/pricing ownership remains
 unresolved. No new models/tables/endpoints/business lifecycles, private storage
 paths, workers, services or speculative migration may be inferred from 3G.
 
-**Execution boundary:** the current output closes 3F acceptance and prepares
-3G-0 discovery only. All G1–G6 implementation is PROPOSED / NOT AUTHORIZED.
-No automatic Phase 3G or Phase 4 work follows documentation delivery.
+**Execution boundary:** the original output closed 3F acceptance and proposed
+G1–G6; later execution authority was separate. The current reconciliation is
+documentation only. Phase 3G remains PAUSED at the independent-correction-acceptance
+gate; no remaining G1–G6 work or Phase 4 execution follows this documentation
+delivery automatically.
 
 [A-test]: ../apps/api/src/test/java/com/sourceos/MeasurementTest.java
 [A-db]: ../apps/api/src/test/java/com/sourceos/MeasurementPersistenceTest.java
@@ -447,3 +505,6 @@ No automatic Phase 3G or Phase 4 work follows documentation delivery.
 [R-model]: ../apps/web/src/features/patternrelease/model.test.ts
 [R-browser]: ../apps/web/e2e/pattern-releases.spec.ts
 [Decimal]: ../apps/api/src/test/java/com/sourceos/ExactDecimalTransportTest.java
+
+[A-cache]: ../apps/web/src/features/measurement/MeasurementCache.test.tsx
+[A-cache-original]: ../apps/web/src/test/phase3gCacheIntegrity.test.tsx

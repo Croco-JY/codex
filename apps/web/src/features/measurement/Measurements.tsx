@@ -91,19 +91,30 @@ export function Measurements({
   refreshParents: () => Promise<unknown>;
 }) {
   const query = useMeasurementSpec(project.id, style.id, available);
+  let value = query.data;
+  let error: unknown = query.isError ? query.error : undefined;
+  // An observer may retain its last selected value alongside an error. Recheck
+  // that value before rendering, including aliases modified in the raw cache.
+  // Valid retained facts/drafts can stay read-only during a network outage.
+  try {
+    if (value !== undefined && value !== null) checkedSpec(value, style.id);
+  } catch (invalid) {
+    value = undefined;
+    error = invalid;
+  }
   return (
     <Surface aria-label="Measurement workspace">
       <h2>Measurement Spec</h2>
       {query.isPending && <Skeleton label="Loading Measurement Spec" />}
-      {query.isError && (
-        <ApiErrorState error={query.error} retry={() => void query.refetch()} />
+      {error !== undefined && (
+        <ApiErrorState error={error} retry={() => void query.refetch()} />
       )}
-      {query.data !== undefined && (
+      {value !== undefined && (
         <Workspace
-          value={query.data}
+          value={value}
           projectId={project.id}
           styleId={style.id}
-          available={available && !query.isError && !query.isFetching}
+          available={available && error === undefined && !query.isFetching}
           active={project.status === "ACTIVE" && style.status === "ACTIVE"}
           refreshSpec={() => query.refetch()}
           refreshParents={refreshParents}
@@ -512,7 +523,7 @@ function History({
       {query.isError && (
         <ApiErrorState error={query.error} retry={() => void query.refetch()} />
       )}
-      {query.data && (
+      {!query.isError && query.data && (
         <>
           <ol>
             {query.data.items.map((r) => (
@@ -557,6 +568,18 @@ function History({
     </section>
   );
 }
+function matchesSummary(value: Revision, summary: Summary) {
+  return (
+    value.id === summary.id &&
+    value.styleId === summary.styleId &&
+    value.measurementSpecId === summary.measurementSpecId &&
+    value.revisionNumber === summary.revisionNumber &&
+    value.baseSize === summary.baseSize &&
+    value.unitSystem === summary.unitSystem &&
+    value.createdAt === summary.createdAt &&
+    value.points.length === summary.pointCount
+  );
+}
 function Selected({
   summary,
   spec,
@@ -575,6 +598,8 @@ function Selected({
       summary.id,
       available && !embedded,
     );
+  if (embedded && !matchesSummary(spec.latestRevision, summary))
+    return <ApiErrorState error={new ApiError(502)} />;
   if (embedded)
     return (
       <RevisionFacts
@@ -588,7 +613,7 @@ function Selected({
     return (
       <ApiErrorState error={query.error} retry={() => void query.refetch()} />
     );
-  if (query.data.revisionNumber !== summary.revisionNumber)
+  if (!matchesSummary(query.data, summary))
     return <ApiErrorState error={new ApiError(502)} />;
   return (
     <RevisionFacts

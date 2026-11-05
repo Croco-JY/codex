@@ -3,7 +3,14 @@ import { api, requireData } from "../../api/client";
 import { ApiError } from "../../api/errors";
 import { queryKeys } from "../../api/queryKeys";
 import { useWorkspace } from "../../app/workspace";
-import { checkedSpec, checkedPage, checkedRevision, type Spec } from "./model";
+import {
+  checkedSpec,
+  checkedPage,
+  checkedRevision,
+  type Spec,
+  type Page,
+  type Revision,
+} from "./model";
 export const path =
   "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec" as const;
 export const revisionsPath = `${path}/revisions` as const;
@@ -24,6 +31,9 @@ export function useMeasurementSpec(
     ),
     enabled,
     retry: false,
+    // Keep validated display/draft facts detached from mutable raw cache objects.
+    select: (value: Spec | null) =>
+      value === null ? null : structuredClone(checkedSpec(value, styleId)),
     ...(freshOnMount ? { refetchOnMount: "always" as const } : {}),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
@@ -61,6 +71,8 @@ export function useMeasurementHistory(
     ),
     enabled,
     retry: false,
+    select: (value: Page) =>
+      structuredClone(checkedPage(value, spec.styleId, spec.id, 25, max)),
     ...(freshOnMount ? { refetchOnMount: "always" as const } : {}),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
@@ -102,6 +114,8 @@ export function useMeasurementRevision(
     ),
     enabled,
     retry: false,
+    select: (value: Revision) =>
+      structuredClone(checkedRevision(value, spec.styleId, spec.id, id)),
     queryFn: ({ signal }) =>
       w.run(signal, async () => {
         const r = await api.GET(revisionPath, {

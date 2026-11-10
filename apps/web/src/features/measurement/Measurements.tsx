@@ -12,6 +12,8 @@ import {
   path,
   revisionsPath,
   useMeasurementSpec,
+  useMeasurementAuthority,
+  type MeasurementAuthority,
   useMeasurementHistory,
   useMeasurementRevision,
 } from "./data";
@@ -27,6 +29,12 @@ import {
   type Spec,
   type Summary,
 } from "./model";
+import {
+  beginMeasurementRead,
+  acceptMeasurementSpec,
+  acceptMeasurementRevision,
+  rejectMeasurementRead,
+} from "./measurementTrust";
 import "./measurement.css";
 
 export function RevisionFacts({
@@ -91,13 +99,14 @@ export function Measurements({
   refreshParents: () => Promise<unknown>;
 }) {
   const query = useMeasurementSpec(project.id, style.id, available);
+  const authority = useMeasurementAuthority(project.id, style.id);
   let value = query.data;
   let error: unknown = query.isError ? query.error : undefined;
   // An observer may retain its last selected value alongside an error. Recheck
   // that value before rendering, including aliases modified in the raw cache.
   // Valid retained facts/drafts can stay read-only during a network outage.
   try {
-    if (value !== undefined && value !== null) checkedSpec(value, style.id);
+    if (value !== undefined) authority.retained(value);
   } catch (invalid) {
     value = undefined;
     error = invalid;
@@ -114,7 +123,13 @@ export function Measurements({
           value={value}
           projectId={project.id}
           styleId={style.id}
-          available={available && error === undefined && !query.isFetching}
+          available={
+            available &&
+            error === undefined &&
+            !query.isFetching &&
+            authority.editingAllowed(query.data)
+          }
+          authority={authority}
           active={project.status === "ACTIVE" && style.status === "ACTIVE"}
           refreshSpec={() => query.refetch()}
           refreshParents={refreshParents}
@@ -131,7 +146,9 @@ function Workspace({
   active,
   refreshSpec,
   refreshParents,
+  authority,
 }: {
+  authority: MeasurementAuthority;
   value: Spec | null;
   projectId: string;
   styleId: string;
@@ -183,33 +200,54 @@ function Workspace({
   const command = useWorkspaceCommand(
     [...key, mode ?? "idle"],
     async (draft: Draft, signal) => {
+      authority.requireWrite(value, mode, baseline);
       const params = {
         path: { organizationId: w.organizationId, projectId, styleId },
       };
-      if (mode === "create") {
-        const r = await api.PUT(path, {
-          signal,
-          params: { ...params, header: { "If-None-Match": "*" } },
-          body: bodyOf(draft),
-        });
-        const saved = checkedSpec(requireData(r.data, r.response), styleId);
-        if (saved.latestRevision.revisionNumber !== 1) throw new ApiError(502);
-        return saved.latestRevision;
-      }
-      if (mode !== "revision" || baseline === null || !value)
-        throw new ApiError(400);
-      const r = await api.POST(revisionsPath, {
+      const receipt = beginMeasurementRead(
+        authority.client,
+        authority.context,
+        mode === "create"
+          ? { kind: "spec" }
+          : { kind: "mutation", specId: value?.id },
         signal,
-        params,
-        body: { ...bodyOf(draft), expectedLatestRevisionNumber: baseline },
-      });
-      const saved = checkedRevision(
-        requireData(r.data, r.response),
-        styleId,
-        value.id,
       );
-      if (saved.revisionNumber !== baseline + 1) throw new ApiError(502);
-      return saved;
+      try {
+        if (mode === "create") {
+          const r = await api.PUT(path, {
+            signal,
+            params: { ...params, header: { "If-None-Match": "*" } },
+            body: bodyOf(draft),
+          });
+          const saved = checkedSpec(requireData(r.data, r.response), styleId);
+          if (saved.latestRevision.revisionNumber !== 1)
+            throw new ApiError(502);
+          if (!w.current() || signal.aborted)
+            throw new DOMException("Workspace request cancelled", "AbortError");
+          acceptMeasurementSpec(receipt, saved);
+          return saved.latestRevision;
+        }
+        if (mode !== "revision" || baseline === null || !value)
+          throw new ApiError(400);
+        const r = await api.POST(revisionsPath, {
+          signal,
+          params,
+          body: { ...bodyOf(draft), expectedLatestRevisionNumber: baseline },
+        });
+        const saved = checkedRevision(
+          requireData(r.data, r.response),
+          styleId,
+          value.id,
+        );
+        if (saved.revisionNumber !== baseline + 1) throw new ApiError(502);
+        if (!w.current() || signal.aborted)
+          throw new DOMException("Workspace request cancelled", "AbortError");
+        acceptMeasurementRevision(receipt, saved, true);
+        return saved;
+      } catch (error) {
+        rejectMeasurementRead(receipt);
+        throw error;
+      }
     },
     async () => {
       setMode(null);
@@ -232,6 +270,17 @@ function Workspace({
   );
   function begin() {
     if (!value) return;
+    try {
+      authority.requireWrite(
+        value,
+        "revision",
+        value.latestRevision.revisionNumber,
+      );
+    } catch (error) {
+      setFailure(error instanceof ApiError ? error : new ApiError(502));
+      setConflict(true);
+      return;
+    }
     form.reset(draftOf(value.latestRevision));
     setBaseline(value.latestRevision.revisionNumber);
     setMode("revision");
@@ -241,6 +290,16 @@ function Workspace({
   }
   function reconcile() {
     if (!value) return;
+    try {
+      authority.requireWrite(
+        value,
+        "revision",
+        value.latestRevision.revisionNumber,
+      );
+    } catch (error) {
+      setFailure(error instanceof ApiError ? error : new ApiError(502));
+      return;
+    }
     setBaseline(value.latestRevision.revisionNumber);
     setMode("revision");
     setConflict(false);

@@ -1,27 +1,91 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 import { api, requireData } from "../../api/client";
 import { ApiError } from "../../api/errors";
 import { queryKeys } from "../../api/queryKeys";
 import { useWorkspace } from "../../app/workspace";
+import { type Spec, type Page, type Revision } from "./model";
 import {
-  checkedSpec,
-  checkedPage,
-  checkedRevision,
-  type Spec,
-  type Page,
-  type Revision,
-} from "./model";
+  retainMeasurementTrust,
+  subscribeMeasurementTrust,
+  measurementTrustVersion,
+  beginMeasurementRead,
+  rejectMeasurementRead,
+  acceptMeasurementSpec,
+  acceptMeasurementHistory,
+  acceptMeasurementRevision,
+  selectMeasurementSpec,
+  selectMeasurementHistory,
+  selectMeasurementRevision,
+  hasMeasurementProvenance,
+  retainedMeasurementSpec,
+  measurementEditingAllowed,
+  requireMeasurementWrite,
+  type MeasurementContext,
+} from "./measurementTrust";
 export const path =
   "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec" as const;
 export const revisionsPath = `${path}/revisions` as const;
 export const revisionPath = `${revisionsPath}/{revisionId}` as const;
+
+export function useMeasurementAuthority(projectId: string, styleId: string) {
+  const w = useWorkspace(),
+    client = useQueryClient();
+  const context = useMemo<MeasurementContext>(
+    () => ({
+      scope: w.scope,
+      organizationId: w.organizationId,
+      generation: w.generation,
+      projectId,
+      styleId,
+      current: w.current,
+    }),
+    [client, w.scope, w.organizationId, w.generation, projectId, styleId],
+  );
+  const owner = useMemo(() => ({}), [client, context]);
+  useLayoutEffect(
+    () => retainMeasurementTrust(client, context, owner),
+    [client, context, owner],
+  );
+  useSyncExternalStore(
+    useCallback(
+      (listener) => subscribeMeasurementTrust(client, context, listener),
+      [client, context],
+    ),
+    useCallback(
+      () => measurementTrustVersion(client, context),
+      [client, context],
+    ),
+    () => 0,
+  );
+  return {
+    client,
+    context,
+    retained: (value: Spec | null) =>
+      retainedMeasurementSpec(client, context, value),
+    editingAllowed: (value: Spec | null | undefined) =>
+      measurementEditingAllowed(client, context, value),
+    requireWrite: (
+      value: Spec | null,
+      mode: string | null,
+      baseline: number | null,
+    ) => requireMeasurementWrite(client, context, value, mode, baseline),
+  };
+}
+export type MeasurementAuthority = ReturnType<typeof useMeasurementAuthority>;
 export function useMeasurementSpec(
   projectId: string,
   styleId: string,
   enabled: boolean,
   freshOnMount = false,
 ) {
-  const w = useWorkspace();
+  const w = useWorkspace(),
+    { client, context } = useMeasurementAuthority(projectId, styleId);
   return useQuery({
     queryKey: queryKeys.measurementSpec(
       w.scope,
@@ -31,25 +95,49 @@ export function useMeasurementSpec(
     ),
     enabled,
     retry: false,
-    // Keep validated display/draft facts detached from mutable raw cache objects.
+    structuralSharing: false,
+    refetchOnMount: (query) =>
+      freshOnMount ||
+      !hasMeasurementProvenance(
+        client,
+        context,
+        { kind: "spec" },
+        query.state.data,
+      )
+        ? "always"
+        : true,
     select: (value: Spec | null) =>
-      value === null ? null : structuredClone(checkedSpec(value, styleId)),
-    ...(freshOnMount ? { refetchOnMount: "always" as const } : {}),
-    queryFn: ({ signal }) =>
-      w.run(signal, async () => {
-        try {
-          const r = await api.GET(path, {
-            signal,
-            params: {
-              path: { organizationId: w.organizationId, projectId, styleId },
-            },
-          });
-          return checkedSpec(requireData(r.data, r.response), styleId);
-        } catch (e) {
-          if (e instanceof ApiError && e.status === 404) return null;
-          throw e;
-        }
-      }),
+      selectMeasurementSpec(client, context, value),
+    queryFn: async ({ signal }) => {
+      const receipt = beginMeasurementRead(
+        client,
+        context,
+        { kind: "spec" },
+        signal,
+      );
+      try {
+        const value = await w.run(signal, async () => {
+          try {
+            const r = await api.GET(path, {
+              signal,
+              params: {
+                path: { organizationId: w.organizationId, projectId, styleId },
+              },
+            });
+            return requireData(r.data, r.response);
+          } catch (error) {
+            if (error instanceof ApiError && error.status === 404) return null;
+            throw error;
+          }
+        });
+        if (!w.current() || signal.aborted)
+          throw new DOMException("Workspace request cancelled", "AbortError");
+        return acceptMeasurementSpec(receipt, value);
+      } catch (error) {
+        rejectMeasurementRead(receipt);
+        throw error;
+      }
+    },
   });
 }
 export function useMeasurementHistory(
@@ -59,7 +147,8 @@ export function useMeasurementHistory(
   enabled: boolean,
   freshOnMount = false,
 ) {
-  const w = useWorkspace();
+  const w = useWorkspace(),
+    { client, context } = useMeasurementAuthority(projectId, spec.styleId);
   return useQuery({
     queryKey: queryKeys.measurementRevisions(
       w.scope,
@@ -71,30 +160,49 @@ export function useMeasurementHistory(
     ),
     enabled,
     retry: false,
+    structuralSharing: false,
+    refetchOnMount: (query) =>
+      freshOnMount ||
+      !hasMeasurementProvenance(
+        client,
+        context,
+        { kind: "history", max, limit: 25 },
+        query.state.data,
+      )
+        ? "always"
+        : true,
     select: (value: Page) =>
-      structuredClone(checkedPage(value, spec.styleId, spec.id, 25, max)),
-    ...(freshOnMount ? { refetchOnMount: "always" as const } : {}),
-    queryFn: ({ signal }) =>
-      w.run(signal, async () => {
-        const r = await api.GET(revisionsPath, {
-          signal,
-          params: {
-            path: {
-              organizationId: w.organizationId,
-              projectId,
-              styleId: spec.styleId,
+      selectMeasurementHistory(client, context, value, max, 25),
+    queryFn: async ({ signal }) => {
+      const receipt = beginMeasurementRead(
+        client,
+        context,
+        { kind: "history", specId: spec.id, max, limit: 25 },
+        signal,
+      );
+      try {
+        const value = await w.run(signal, async () => {
+          const r = await api.GET(revisionsPath, {
+            signal,
+            params: {
+              path: {
+                organizationId: w.organizationId,
+                projectId,
+                styleId: spec.styleId,
+              },
+              query: { limit: "25", maxRevisionNumber: String(max) },
             },
-            query: { limit: "25", maxRevisionNumber: String(max) },
-          },
+          });
+          return requireData(r.data, r.response);
         });
-        return checkedPage(
-          requireData(r.data, r.response),
-          spec.styleId,
-          spec.id,
-          25,
-          max,
-        );
-      }),
+        if (!w.current() || signal.aborted)
+          throw new DOMException("Workspace request cancelled", "AbortError");
+        return acceptMeasurementHistory(receipt, value);
+      } catch (error) {
+        rejectMeasurementRead(receipt);
+        throw error;
+      }
+    },
   });
 }
 export function useMeasurementRevision(
@@ -103,7 +211,8 @@ export function useMeasurementRevision(
   id: string,
   enabled: boolean,
 ) {
-  const w = useWorkspace();
+  const w = useWorkspace(),
+    { client, context } = useMeasurementAuthority(projectId, spec.styleId);
   return useQuery({
     queryKey: queryKeys.measurementRevision(
       w.scope,
@@ -114,27 +223,47 @@ export function useMeasurementRevision(
     ),
     enabled,
     retry: false,
+    structuralSharing: false,
+    refetchOnMount: (query) =>
+      !hasMeasurementProvenance(
+        client,
+        context,
+        { kind: "revision", revisionId: id },
+        query.state.data,
+      )
+        ? "always"
+        : true,
     select: (value: Revision) =>
-      structuredClone(checkedRevision(value, spec.styleId, spec.id, id)),
-    queryFn: ({ signal }) =>
-      w.run(signal, async () => {
-        const r = await api.GET(revisionPath, {
-          signal,
-          params: {
-            path: {
-              organizationId: w.organizationId,
-              projectId,
-              styleId: spec.styleId,
-              revisionId: id,
+      selectMeasurementRevision(client, context, value, id),
+    queryFn: async ({ signal }) => {
+      const receipt = beginMeasurementRead(
+        client,
+        context,
+        { kind: "revision", specId: spec.id, revisionId: id },
+        signal,
+      );
+      try {
+        const value = await w.run(signal, async () => {
+          const r = await api.GET(revisionPath, {
+            signal,
+            params: {
+              path: {
+                organizationId: w.organizationId,
+                projectId,
+                styleId: spec.styleId,
+                revisionId: id,
+              },
             },
-          },
+          });
+          return requireData(r.data, r.response);
         });
-        return checkedRevision(
-          requireData(r.data, r.response),
-          spec.styleId,
-          spec.id,
-          id,
-        );
-      }),
+        if (!w.current() || signal.aborted)
+          throw new DOMException("Workspace request cancelled", "AbortError");
+        return acceptMeasurementRevision(receipt, value);
+      } catch (error) {
+        rejectMeasurementRead(receipt);
+        throw error;
+      }
+    },
   });
 }

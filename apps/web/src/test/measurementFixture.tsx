@@ -145,8 +145,13 @@ export function fixture() {
         });
       const base = root(org) + "/measurement-spec",
         current = h.specs.get(org) ?? null;
-      if (p === base && r.method === "GET")
+      if (p === base && r.method === "GET") {
+        // Retain the initially seeded immutable head just as the real service
+        // does when another writer later advances this synthetic server.
+        if (current && !h.revisions.has(current.latestRevision.id))
+          h.revisions.set(current.latestRevision.id, structuredClone(current.latestRevision));
         return response(current ?? {}, current ? 200 : 404);
+      }
       if (p === base && r.method === "PUT") {
         if (current) return response({}, 412);
         const b = await r.clone().json(),

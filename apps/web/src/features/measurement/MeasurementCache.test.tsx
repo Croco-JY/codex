@@ -121,9 +121,10 @@ test.each([1, 3])("DF-01 cached summary cannot relabel embedded/historical revis
   const original = h.cache.getQueryData<Page>(key)!;
   const bad = structuredClone(original); bad.items.find(r => r.revisionNumber === n)!.baseSize = "CONTRADICTORY SUMMARY";
   await act(async () => { h.cache.setQueryData(key, bad); });
-  await screen.findByText(/CONTRADICTORY SUMMARY/);
-  await userEvent.click(screen.getByRole("button", { name: `Open revision ${n}` }));
-  await within(screen.getByRole("region", { name: "Measurement workspace" })).findByRole("alert");
+  const history = within(screen.getByRole("region", { name: "Measurement revision history" }));
+  await history.findByRole("alert");
+  expect(screen.queryByText(/CONTRADICTORY SUMMARY/)).not.toBeInTheDocument();
+  expect(history.queryByRole("button", { name: `Open revision ${n}` })).not.toBeInTheDocument();
   expect(screen.queryByRole("region", { name: `Selected revision ${n}` })).not.toBeInTheDocument();
   noEffects(h);
 });

@@ -25,9 +25,22 @@ import {
   hasMeasurementProvenance,
   retainedMeasurementSpec,
   measurementEditingAllowed,
+  measurementRecoveryRequired,
   requireMeasurementWrite,
   type MeasurementContext,
 } from "./measurementTrust";
+// Preserve TanStack's tracked observer reads. Spreading the result eagerly reads
+// every property and changes its notification behavior. This proxy adds only a
+// view signal; it never mutates a Query, cached data or registry authority.
+function withRecovery<T extends object>(query: T, requiresRecovery: boolean) {
+  return new Proxy(query, {
+    get(target, property, receiver) {
+      return property === "requiresRecovery"
+        ? requiresRecovery
+        : Reflect.get(target, property, receiver);
+    },
+  }) as T & { requiresRecovery: boolean };
+}
 export const path =
   "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec" as const;
 export const revisionsPath = `${path}/revisions` as const;
@@ -68,6 +81,7 @@ export function useMeasurementAuthority(projectId: string, styleId: string) {
     context,
     retained: (value: Spec | null) =>
       retainedMeasurementSpec(client, context, value),
+    recoveryRequired: () => measurementRecoveryRequired(client, context),
     editingAllowed: (value: Spec | null | undefined) =>
       measurementEditingAllowed(client, context, value),
     requireWrite: (
@@ -86,7 +100,7 @@ export function useMeasurementSpec(
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, styleId);
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.measurementSpec(
       w.scope,
       w.organizationId,
@@ -139,6 +153,12 @@ export function useMeasurementSpec(
       }
     },
   });
+  return withRecovery(
+    query,
+    measurementRecoveryRequired(client, context, {
+      kind: "spec",
+    }),
+  );
 }
 export function useMeasurementHistory(
   projectId: string,
@@ -149,7 +169,7 @@ export function useMeasurementHistory(
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, spec.styleId);
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.measurementRevisions(
       w.scope,
       w.organizationId,
@@ -204,6 +224,14 @@ export function useMeasurementHistory(
       }
     },
   });
+  return withRecovery(
+    query,
+    measurementRecoveryRequired(client, context, {
+      kind: "history",
+      max,
+      limit: 25,
+    }),
+  );
 }
 export function useMeasurementRevision(
   projectId: string,
@@ -213,7 +241,7 @@ export function useMeasurementRevision(
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, spec.styleId);
-  return useQuery({
+  const query = useQuery({
     queryKey: queryKeys.measurementRevision(
       w.scope,
       w.organizationId,
@@ -266,4 +294,11 @@ export function useMeasurementRevision(
       }
     },
   });
+  return withRecovery(
+    query,
+    measurementRecoveryRequired(client, context, {
+      kind: "revision",
+      revisionId: id,
+    }),
+  );
 }

@@ -47,7 +47,8 @@ type Registry = {
   facts: Map<string, Fact>;
   numbers: Map<number, string>;
   windows: Map<string, Window>;
-  failures: Set<string>;
+  cacheFailures: Set<string>;
+  networkFailures: Set<string>;
   timer?: ReturnType<typeof setTimeout>;
 };
 type Store = {
@@ -121,18 +122,33 @@ function emit(store: Store, key: string, r?: Registry) {
     store.listeners.get(key)?.forEach((listener) => listener());
   });
 }
-function fault(
+// Cache validation owns only cache failures. It cannot recover an authenticated read.
+function recordCacheValidation(
   store: Store,
   key: string,
   r: Registry,
-  channel: string,
+  request: Request,
   failed: boolean,
 ) {
-  if (r.failures.has(channel) === failed) return;
-  if (failed) r.failures.add(channel);
-  else r.failures.delete(channel);
-  r.failures.delete(`network:${channel}`);
+  const channel = slot(request);
+  if (r.cacheFailures.has(channel) === failed) return;
+  if (failed) r.cacheFailures.add(channel);
+  else r.cacheFailures.delete(channel);
   emit(store, key, r);
+}
+function recordNetworkFailure(
+  store: Store,
+  key: string,
+  r: Registry,
+  request: Request,
+) {
+  const channel = slot(request);
+  if (r.networkFailures.has(channel)) return;
+  r.networkFailures.add(channel);
+  emit(store, key, r);
+}
+function hasBlockingMeasurementFailure(r: Registry) {
+  return r.cacheFailures.size > 0 || r.networkFailures.size > 0;
 }
 function disposeWhenEmpty(client: QueryClient, store: Store) {
   queueMicrotask(() => {
@@ -197,9 +213,9 @@ function storeFor(client: QueryClient) {
         else if (req.kind === "history")
           checkHistory(r, value, req.max!, req.limit!);
         else checkRevision(r, value, req.revisionId!);
-        fault(created, key, r, slot(req), false);
+        recordCacheValidation(created, key, r, req, false);
       } catch {
-        fault(created, key, r, slot(req), true);
+        recordCacheValidation(created, key, r, req, true);
       }
     }
   });
@@ -252,7 +268,8 @@ export function retainMeasurementTrust(
       facts: new Map(),
       numbers: new Map(),
       windows: new Map(),
-      failures: new Set(),
+      cacheFailures: new Set(),
+      networkFailures: new Set(),
     };
     store.contexts.set(key, r);
   }
@@ -453,11 +470,14 @@ function commit(
   r.numbers = next.numbers;
   r.windows = next.windows;
   r.specView = specView;
-  r.failures.delete(channel);
-  r.failures.delete(`network:${channel}`);
+  // Only this fully validated, authenticated commit can recover its read slot.
+  r.cacheFailures.delete(channel);
+  r.networkFailures.delete(channel);
   if (channel === "spec") {
-    r.failures.delete("mutation");
-    r.failures.delete("network:mutation");
+    // Existing explicit Spec reconciliation resolves an ambiguous mutation,
+    // without rebasing a draft or sending another mutation.
+    r.cacheFailures.delete("mutation");
+    r.networkFailures.delete("mutation");
   }
   emit(store, key, r);
 }
@@ -535,10 +555,10 @@ function selection<T>(
   const { store, key, r } = registry(client, c);
   try {
     const value = check(r);
-    fault(store, key, r, slot(request), false);
+    recordCacheValidation(store, key, r, request, false);
     return value;
   } catch (error) {
-    fault(store, key, r, slot(request), true);
+    recordCacheValidation(store, key, r, request, true);
     throw error;
   }
 }
@@ -590,6 +610,27 @@ export function retainedMeasurementSpec(
 ) {
   return checkSpec(registry(client, c).r, value, true);
 }
+// Separate observer failure state from TanStack's cache-success status. A raw
+// alias can change without rerunning a memoized selector; the cache subscription
+// still detects it. A trusted cached value cannot recover a network failure.
+export function measurementRecoveryRequired(
+  client: QueryClient,
+  c: MeasurementContext,
+  request?: Request,
+) {
+  try {
+    const { r } = registry(client, c);
+    return request
+      ? r.cacheFailures.has(slot(request)) ||
+          r.networkFailures.has(slot(request)) ||
+          (request.kind === "spec" &&
+            (r.cacheFailures.has("mutation") ||
+              r.networkFailures.has("mutation")))
+      : hasBlockingMeasurementFailure(r);
+  } catch {
+    return false;
+  }
+}
 export function measurementEditingAllowed(
   client: QueryClient,
   c: MeasurementContext,
@@ -597,7 +638,7 @@ export function measurementEditingAllowed(
 ) {
   try {
     const { r } = registry(client, c);
-    if (r.failures.size || value === undefined) return false;
+    if (hasBlockingMeasurementFailure(r) || value === undefined) return false;
     checkSpec(r, value);
     return true;
   } catch {
@@ -672,7 +713,7 @@ export function rejectMeasurementRead(receipt: object) {
   const store = clients.get(read.client),
     r = store?.contexts.get(read.key);
   if (store && r?.epoch === read.epoch && live(r))
-    fault(store, read.key, r, `network:${slot(read.request)}`, true);
+    recordNetworkFailure(store, read.key, r, read.request);
 }
 function accept<T>(
   receipt: object,
@@ -686,7 +727,7 @@ function accept<T>(
     commit(store, key, r, next, slot(read.request));
     return structuredClone(result);
   } catch (error) {
-    fault(store, key, r, `network:${slot(read.request)}`, true);
+    recordNetworkFailure(store, key, r, read.request);
     throw error;
   }
 }

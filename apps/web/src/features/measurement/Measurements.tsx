@@ -101,7 +101,11 @@ export function Measurements({
   const query = useMeasurementSpec(project.id, style.id, available);
   const authority = useMeasurementAuthority(project.id, style.id);
   let value = query.data;
-  let error: unknown = query.isError ? query.error : undefined;
+  let error: unknown = query.isError
+    ? query.error
+    : query.requiresRecovery
+      ? new ApiError(502)
+      : undefined;
   // An observer may retain its last selected value alongside an error. Recheck
   // that value before rendering, including aliases modified in the raw cache.
   // Valid retained facts/drafts can stay read-only during a network outage.
@@ -123,12 +127,7 @@ export function Measurements({
           value={value}
           projectId={project.id}
           styleId={style.id}
-          available={
-            available &&
-            error === undefined &&
-            !query.isFetching &&
-            authority.editingAllowed(query.data)
-          }
+          available={available && error === undefined && !query.isFetching}
           authority={authority}
           active={project.status === "ACTIVE" && style.status === "ACTIVE"}
           refreshSpec={() => query.refetch()}
@@ -177,7 +176,8 @@ function Workspace({
     [selected, setSelected] = useState<Summary | null>(null);
   const form = useForm<Draft>({ defaultValues: draftOf() }),
     rows = useFieldArray({ control: form.control, name: "points" });
-  const writable = w.writer && active && available;
+  const writable =
+    w.writer && active && available && authority.editingAllowed(value);
   async function refresh() {
     const next = await refreshSpec();
     if (!w.current()) return;
@@ -311,6 +311,11 @@ function Workspace({
   const submitting = command.isPending;
   return (
     <>
+      {authority.recoveryRequired() && (
+        <p role="status">
+          Reload the affected measurement data before editing or submitting.
+        </p>
+      )}
       {!value && <p>No Measurement Spec has been created for this Style.</p>}
       {!w.writer && (
         <p>Your VIEWER membership provides read-only measurement access.</p>
@@ -579,10 +584,13 @@ function History({
       <h3>Revision history</h3>
       <p>History upper bound: {max}. Complete snapshots, newest first.</p>
       {query.isPending && <Skeleton label="Loading Measurement history" />}
-      {query.isError && (
-        <ApiErrorState error={query.error} retry={() => void query.refetch()} />
+      {(query.isError || query.requiresRecovery) && (
+        <ApiErrorState
+          error={query.error ?? new ApiError(502)}
+          retry={() => void query.refetch()}
+        />
       )}
-      {!query.isError && query.data && (
+      {!query.isError && !query.requiresRecovery && query.data && (
         <>
           <ol>
             {query.data.items.map((r) => (
@@ -668,9 +676,12 @@ function Selected({
     );
   if (query.isPending)
     return <Skeleton label="Loading historical Measurement revision" />;
-  if (query.isError)
+  if (query.isError || query.requiresRecovery)
     return (
-      <ApiErrorState error={query.error} retry={() => void query.refetch()} />
+      <ApiErrorState
+        error={query.error ?? new ApiError(502)}
+        retry={() => void query.refetch()}
+      />
     );
   if (!matchesSummary(query.data, summary))
     return <ApiErrorState error={new ApiError(502)} />;

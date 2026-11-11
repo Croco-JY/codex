@@ -36,6 +36,7 @@ import {
   rejectMeasurementRead,
 } from "./measurementTrust";
 import "./measurement.css";
+import { MeasurementRecoveryPanel } from "./Recovery";
 
 export function RevisionFacts({
   value,
@@ -122,6 +123,21 @@ export function Measurements({
       {error !== undefined && (
         <ApiErrorState error={error} retry={() => void query.refetch()} />
       )}
+      {value === undefined && (
+        <MeasurementRecoveryPanel
+          key={JSON.stringify([
+            authority.context.scope,
+            authority.context.organizationId,
+            authority.context.generation,
+            project.id,
+            style.id,
+          ])}
+          authority={authority}
+          visibleChannels={
+            new Set(error !== undefined ? ["spec", "mutation"] : [])
+          }
+        />
+      )}
       {value !== undefined && (
         <Workspace
           value={value}
@@ -130,6 +146,7 @@ export function Measurements({
           available={available && error === undefined && !query.isFetching}
           authority={authority}
           active={project.status === "ACTIVE" && style.status === "ACTIVE"}
+          specRecoveryVisible={error !== undefined}
           refreshSpec={() => query.refetch()}
           refreshParents={refreshParents}
         />
@@ -146,7 +163,9 @@ function Workspace({
   refreshSpec,
   refreshParents,
   authority,
+  specRecoveryVisible,
 }: {
+  specRecoveryVisible: boolean;
   authority: MeasurementAuthority;
   value: Spec | null;
   projectId: string;
@@ -176,6 +195,12 @@ function Workspace({
     [selected, setSelected] = useState<Summary | null>(null);
   const form = useForm<Draft>({ defaultValues: draftOf() }),
     rows = useFieldArray({ control: form.control, name: "points" });
+  const needsReconciliation =
+    conflict ||
+    (mode === "revision" &&
+      baseline !== null &&
+      baseline !== authority.recoveries().head) ||
+    (mode === "create" && authority.recoveries().head > 0);
   const writable =
     w.writer && active && available && authority.editingAllowed(value);
   async function refresh() {
@@ -308,6 +333,16 @@ function Workspace({
       "Draft reconciled to the displayed latest revision. Review and submit explicitly.",
     );
   }
+  const visibleRecoveryChannels = new Set<string>(
+    specRecoveryVisible ? ["spec", "mutation"] : [],
+  );
+  if (value) {
+    visibleRecoveryChannels.add(
+      `history:${cursors.at(-1) ?? value.latestRevision.revisionNumber}:25`,
+    );
+    if (selected && selected.id !== value.latestRevision.id)
+      visibleRecoveryChannels.add(`revision:${selected.id}`);
+  }
   const submitting = command.isPending;
   return (
     <>
@@ -316,6 +351,17 @@ function Workspace({
           Reload the affected measurement data before editing or submitting.
         </p>
       )}
+      <MeasurementRecoveryPanel
+        key={JSON.stringify([
+          authority.context.scope,
+          authority.context.organizationId,
+          authority.context.generation,
+          projectId,
+          styleId,
+        ])}
+        authority={authority}
+        visibleChannels={visibleRecoveryChannels}
+      />
       {!value && <p>No Measurement Spec has been created for this Style.</p>}
       {!w.writer && (
         <p>Your VIEWER membership provides read-only measurement access.</p>
@@ -369,7 +415,7 @@ function Workspace({
                 });
               return;
             }
-            if (writable && !submitting && !conflict)
+            if (writable && !submitting && !needsReconciliation)
               command.mutate(parsed.data);
           })}
         >
@@ -505,7 +551,7 @@ function Workspace({
             </Button>
           </fieldset>
           {writable && (
-            <Button type="submit" disabled={submitting || conflict}>
+            <Button type="submit" disabled={submitting || needsReconciliation}>
               {mode === "create"
                 ? "Create Measurement Spec"
                 : "Create revision"}
@@ -514,7 +560,7 @@ function Workspace({
         </form>
       )}
       {failure && <ApiErrorState error={failure} />}
-      {conflict && (
+      {needsReconciliation && (
         <section role="alert" aria-label="Measurement reconciliation">
           <h3>Review authoritative measurements before submitting again</h3>
           <p>
@@ -674,8 +720,6 @@ function Selected({
         title={`Selected revision ${summary.revisionNumber}`}
       />
     );
-  if (query.isPending)
-    return <Skeleton label="Loading historical Measurement revision" />;
   if (query.isError || query.requiresRecovery)
     return (
       <ApiErrorState
@@ -683,6 +727,8 @@ function Selected({
         retry={() => void query.refetch()}
       />
     );
+  if (query.isPending)
+    return <Skeleton label="Loading historical Measurement revision" />;
   if (!matchesSummary(query.data, summary))
     return <ApiErrorState error={new ApiError(502)} />;
   return (

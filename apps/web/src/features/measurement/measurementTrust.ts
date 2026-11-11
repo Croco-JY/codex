@@ -8,6 +8,7 @@ import {
   checkedSpec,
   checkedPage,
   checkedRevision,
+  uuid,
   type Spec,
   type Revision,
   type Summary,
@@ -67,6 +68,30 @@ type Read = {
 };
 const clients = new WeakMap<QueryClient, Store>();
 const reads = new WeakMap<object, Read>();
+export type MeasurementRecoveryRequest =
+  | Readonly<{ kind: "spec" }>
+  | Readonly<{ kind: "history"; specId: string; max: number; limit: number }>
+  | Readonly<{ kind: "revision"; specId: string; revisionId: string }>;
+export type MeasurementRecovery = Readonly<{
+  channel: string;
+  context: Readonly<Omit<MeasurementContext, "current">>;
+  cacheFailure: boolean;
+  networkFailure: boolean;
+  request?: MeasurementRecoveryRequest;
+  blockedReason?: string;
+}>;
+// These weak bindings authorize only a retry of an existing failure. They do
+// not store failure state or facts; both remain owned by the original registry.
+const recoveryBindings = new WeakMap<
+  object,
+  {
+    client: QueryClient;
+    key: string;
+    epoch: object;
+    channel: string;
+  }
+>();
+export const measurementRecoveryPageSize = 8;
 // Per QueryClient limits. Never evict facts from an active context to make room.
 export const measurementTrustLimits = Object.freeze({
   contexts: 16,
@@ -630,6 +655,193 @@ export function measurementRecoveryRequired(
   } catch {
     return false;
   }
+}
+function recoveryRequest(
+  r: Registry,
+  channel: string,
+): {
+  request?: MeasurementRecoveryRequest;
+  blockedReason?: string;
+} {
+  if (channel === "spec" || channel === "mutation")
+    return { request: Object.freeze({ kind: "spec" }) };
+  if (!r.specId)
+    return {
+      blockedReason:
+        "Load the authoritative Measurement Spec before retrying this request.",
+    };
+  if (channel.startsWith("history:")) {
+    const parts = /^history:(\d+):(\d+)$/.exec(channel),
+      max = Number(parts?.[1]),
+      limit = Number(parts?.[2]);
+    if (
+      !Number.isSafeInteger(max) ||
+      max < 1 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > 100
+    )
+      return {
+        blockedReason:
+          "Valid history request bounds are required before this request can be retried.",
+      };
+    if (max > r.head)
+      return {
+        blockedReason:
+          "Authenticate a Measurement Spec head covering this history window before retrying.",
+      };
+    if (
+      !r.networkFailures.has(channel) &&
+      !r.windows.has(windowKey(max, limit))
+    )
+      return {
+        blockedReason:
+          "An authenticated history window is required before this cached request can be retried.",
+      };
+    return {
+      request: Object.freeze({ kind: "history", specId: r.specId, max, limit }),
+    };
+  }
+  if (channel.startsWith("revision:")) {
+    const revisionId = channel.slice("revision:".length);
+    if (!uuid.safeParse(revisionId).success || !r.facts.has(revisionId))
+      return {
+        blockedReason:
+          "An authenticated revision identity is required before this request can be retried.",
+      };
+    return {
+      request: Object.freeze({
+        kind: "revision",
+        specId: r.specId,
+        revisionId,
+      }),
+    };
+  }
+  return {
+    blockedReason:
+      "A recognized Measurement request is required before recovery is available.",
+  };
+}
+function* failedChannels(r: Registry) {
+  yield* r.cacheFailures;
+  for (const channel of r.networkFailures)
+    if (!r.cacheFailures.has(channel)) yield channel;
+}
+export function measurementRecoveries(
+  client: QueryClient,
+  c: MeasurementContext,
+  offset = 0,
+) {
+  try {
+    const { key, r } = registry(client, c);
+    let total = r.cacheFailures.size;
+    for (const channel of r.networkFailures)
+      if (!r.cacheFailures.has(channel)) total++;
+    const start = Math.min(
+      Number.isSafeInteger(offset) && offset >= 0 ? offset : 0,
+      Math.max(0, Math.ceil(total / measurementRecoveryPageSize) - 1) *
+        measurementRecoveryPageSize,
+    );
+    const context = Object.freeze({
+      scope: c.scope,
+      organizationId: c.organizationId,
+      generation: c.generation,
+      projectId: c.projectId,
+      styleId: c.styleId,
+    });
+    const items: MeasurementRecovery[] = [];
+    let index = 0;
+    for (const channel of failedChannels(r)) {
+      if (index++ < start) continue;
+      const descriptor = Object.freeze({
+        channel,
+        context,
+        cacheFailure: r.cacheFailures.has(channel),
+        networkFailure: r.networkFailures.has(channel),
+        ...recoveryRequest(r, channel),
+      });
+      recoveryBindings.set(descriptor, {
+        client,
+        key,
+        epoch: r.epoch,
+        channel,
+      });
+      items.push(descriptor);
+      if (items.length === measurementRecoveryPageSize) break;
+    }
+    return Object.freeze({
+      items: Object.freeze(items),
+      total,
+      offset: start,
+      head: r.head,
+      unavailable: false,
+    });
+  } catch {
+    return Object.freeze({
+      items: Object.freeze([] as MeasurementRecovery[]),
+      total: 0,
+      offset: 0,
+      head: 0,
+      unavailable: true,
+    });
+  }
+}
+function recoveryOwner(
+  client: QueryClient,
+  c: MeasurementContext,
+  descriptor: MeasurementRecovery,
+) {
+  const binding = recoveryBindings.get(descriptor),
+    { key, r } = registry(client, c);
+  if (
+    !binding ||
+    binding.client !== client ||
+    binding.key !== key ||
+    binding.epoch !== r.epoch
+  )
+    throw denied();
+  return { r, channel: binding.channel };
+}
+export function measurementRecoveryState(
+  client: QueryClient,
+  c: MeasurementContext,
+  descriptor: MeasurementRecovery,
+) {
+  try {
+    const { r, channel } = recoveryOwner(client, c, descriptor);
+    return r.cacheFailures.has(channel) || r.networkFailures.has(channel)
+      ? "pending"
+      : "recovered";
+  } catch {
+    return "retired";
+  }
+}
+export function requireMeasurementRecovery(
+  client: QueryClient,
+  c: MeasurementContext,
+  descriptor: MeasurementRecovery,
+) {
+  const { r, channel } = recoveryOwner(client, c, descriptor);
+  if (!r.cacheFailures.has(channel) && !r.networkFailures.has(channel))
+    throw denied();
+  const { request } = recoveryRequest(r, channel);
+  if (!request) throw denied();
+  return request;
+}
+export function beginMeasurementRecoveryRead(
+  client: QueryClient,
+  c: MeasurementContext,
+  descriptor: MeasurementRecovery,
+  expected: Request,
+  signal: AbortSignal,
+) {
+  const request = requireMeasurementRecovery(client, c, descriptor);
+  if (
+    slot(request) !== slot(expected) ||
+    (request.kind !== "spec" && request.specId !== expected.specId)
+  )
+    throw denied();
+  return beginMeasurementRead(client, c, request, signal);
 }
 export function measurementEditingAllowed(
   client: QueryClient,

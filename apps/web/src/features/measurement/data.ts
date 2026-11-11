@@ -26,15 +26,31 @@ import {
   retainedMeasurementSpec,
   measurementEditingAllowed,
   measurementRecoveryRequired,
+  measurementRecoveries,
+  measurementRecoveryState,
+  requireMeasurementRecovery,
+  beginMeasurementRecoveryRead,
+  type MeasurementRecovery,
   requireMeasurementWrite,
   type MeasurementContext,
 } from "./measurementTrust";
 // Preserve TanStack's tracked observer reads. Spreading the result eagerly reads
 // every property and changes its notification behavior. This proxy adds only a
 // view signal; it never mutates a Query, cached data or registry authority.
-function withRecovery<T extends object>(query: T, requiresRecovery: boolean) {
+function withRecovery<T extends object>(
+  query: T,
+  requiresRecovery: boolean,
+  beforeRefetch?: () => void,
+) {
   return new Proxy(query, {
     get(target, property, receiver) {
+      if (property === "refetch" && beforeRefetch)
+        return (...args: unknown[]) => {
+          beforeRefetch();
+          const refetch: unknown = Reflect.get(target, property, receiver);
+          if (typeof refetch !== "function") throw new ApiError(502);
+          return Reflect.apply(refetch, undefined, args);
+        };
       return property === "requiresRecovery"
         ? requiresRecovery
         : Reflect.get(target, property, receiver);
@@ -82,6 +98,11 @@ export function useMeasurementAuthority(projectId: string, styleId: string) {
     retained: (value: Spec | null) =>
       retainedMeasurementSpec(client, context, value),
     recoveryRequired: () => measurementRecoveryRequired(client, context),
+    recoveries: (offset = 0) => measurementRecoveries(client, context, offset),
+    recoveryState: (descriptor: MeasurementRecovery) =>
+      measurementRecoveryState(client, context, descriptor),
+    requireRecovery: (descriptor: MeasurementRecovery) =>
+      requireMeasurementRecovery(client, context, descriptor),
     editingAllowed: (value: Spec | null | undefined) =>
       measurementEditingAllowed(client, context, value),
     requireWrite: (
@@ -97,16 +118,18 @@ export function useMeasurementSpec(
   styleId: string,
   enabled: boolean,
   freshOnMount = false,
+  recovery?: MeasurementRecovery,
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, styleId);
+  const key = queryKeys.measurementSpec(
+    w.scope,
+    w.organizationId,
+    projectId,
+    styleId,
+  );
   const query = useQuery({
-    queryKey: queryKeys.measurementSpec(
-      w.scope,
-      w.organizationId,
-      projectId,
-      styleId,
-    ),
+    queryKey: recovery ? [...key, "explicit-recovery", recovery.channel] : key,
     enabled,
     retry: false,
     structuralSharing: false,
@@ -123,12 +146,16 @@ export function useMeasurementSpec(
     select: (value: Spec | null) =>
       selectMeasurementSpec(client, context, value),
     queryFn: async ({ signal }) => {
-      const receipt = beginMeasurementRead(
-        client,
-        context,
-        { kind: "spec" },
-        signal,
-      );
+      const request = { kind: "spec" as const };
+      const receipt = recovery
+        ? beginMeasurementRecoveryRead(
+            client,
+            context,
+            recovery,
+            request,
+            signal,
+          )
+        : beginMeasurementRead(client, context, request, signal);
       try {
         const value = await w.run(signal, async () => {
           try {
@@ -146,7 +173,11 @@ export function useMeasurementSpec(
         });
         if (!w.current() || signal.aborted)
           throw new DOMException("Workspace request cancelled", "AbortError");
-        return acceptMeasurementSpec(receipt, value);
+        const accepted = acceptMeasurementSpec(receipt, value);
+        // Publish only an already authenticated/accepted response. Cache writes
+        // never recover network failures; the receipt commit above does that.
+        if (recovery) client.setQueryData(key, accepted);
+        return accepted;
       } catch (error) {
         rejectMeasurementRead(receipt);
         throw error;
@@ -158,26 +189,34 @@ export function useMeasurementSpec(
     measurementRecoveryRequired(client, context, {
       kind: "spec",
     }),
+    recovery
+      ? () => {
+          requireMeasurementRecovery(client, context, recovery);
+        }
+      : undefined,
   );
 }
 export function useMeasurementHistory(
   projectId: string,
-  spec: Spec,
+  spec: Pick<Spec, "id" | "styleId">,
   max: number,
   enabled: boolean,
   freshOnMount = false,
+  limit = 25,
+  recovery?: MeasurementRecovery,
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, spec.styleId);
+  const key = queryKeys.measurementRevisions(
+    w.scope,
+    w.organizationId,
+    projectId,
+    spec.styleId,
+    limit,
+    max,
+  );
   const query = useQuery({
-    queryKey: queryKeys.measurementRevisions(
-      w.scope,
-      w.organizationId,
-      projectId,
-      spec.styleId,
-      25,
-      max,
-    ),
+    queryKey: recovery ? [...key, "explicit-recovery", recovery.channel] : key,
     enabled,
     retry: false,
     structuralSharing: false,
@@ -186,20 +225,24 @@ export function useMeasurementHistory(
       !hasMeasurementProvenance(
         client,
         context,
-        { kind: "history", max, limit: 25 },
+        { kind: "history", max, limit },
         query.state.data,
       )
         ? "always"
         : true,
     select: (value: Page) =>
-      selectMeasurementHistory(client, context, value, max, 25),
+      selectMeasurementHistory(client, context, value, max, limit),
     queryFn: async ({ signal }) => {
-      const receipt = beginMeasurementRead(
-        client,
-        context,
-        { kind: "history", specId: spec.id, max, limit: 25 },
-        signal,
-      );
+      const request = { kind: "history" as const, specId: spec.id, max, limit };
+      const receipt = recovery
+        ? beginMeasurementRecoveryRead(
+            client,
+            context,
+            recovery,
+            request,
+            signal,
+          )
+        : beginMeasurementRead(client, context, request, signal);
       try {
         const value = await w.run(signal, async () => {
           const r = await api.GET(revisionsPath, {
@@ -210,14 +253,16 @@ export function useMeasurementHistory(
                 projectId,
                 styleId: spec.styleId,
               },
-              query: { limit: "25", maxRevisionNumber: String(max) },
+              query: { limit: String(limit), maxRevisionNumber: String(max) },
             },
           });
           return requireData(r.data, r.response);
         });
         if (!w.current() || signal.aborted)
           throw new DOMException("Workspace request cancelled", "AbortError");
-        return acceptMeasurementHistory(receipt, value);
+        const accepted = acceptMeasurementHistory(receipt, value);
+        if (recovery) client.setQueryData(key, accepted);
+        return accepted;
       } catch (error) {
         rejectMeasurementRead(receipt);
         throw error;
@@ -229,26 +274,33 @@ export function useMeasurementHistory(
     measurementRecoveryRequired(client, context, {
       kind: "history",
       max,
-      limit: 25,
+      limit,
     }),
+    recovery
+      ? () => {
+          requireMeasurementRecovery(client, context, recovery);
+        }
+      : undefined,
   );
 }
 export function useMeasurementRevision(
   projectId: string,
-  spec: Spec,
+  spec: Pick<Spec, "id" | "styleId">,
   id: string,
   enabled: boolean,
+  recovery?: MeasurementRecovery,
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, spec.styleId);
+  const key = queryKeys.measurementRevision(
+    w.scope,
+    w.organizationId,
+    projectId,
+    spec.styleId,
+    id,
+  );
   const query = useQuery({
-    queryKey: queryKeys.measurementRevision(
-      w.scope,
-      w.organizationId,
-      projectId,
-      spec.styleId,
-      id,
-    ),
+    queryKey: recovery ? [...key, "explicit-recovery", recovery.channel] : key,
     enabled,
     retry: false,
     structuralSharing: false,
@@ -264,12 +316,20 @@ export function useMeasurementRevision(
     select: (value: Revision) =>
       selectMeasurementRevision(client, context, value, id),
     queryFn: async ({ signal }) => {
-      const receipt = beginMeasurementRead(
-        client,
-        context,
-        { kind: "revision", specId: spec.id, revisionId: id },
-        signal,
-      );
+      const request = {
+        kind: "revision" as const,
+        specId: spec.id,
+        revisionId: id,
+      };
+      const receipt = recovery
+        ? beginMeasurementRecoveryRead(
+            client,
+            context,
+            recovery,
+            request,
+            signal,
+          )
+        : beginMeasurementRead(client, context, request, signal);
       try {
         const value = await w.run(signal, async () => {
           const r = await api.GET(revisionPath, {
@@ -287,7 +347,9 @@ export function useMeasurementRevision(
         });
         if (!w.current() || signal.aborted)
           throw new DOMException("Workspace request cancelled", "AbortError");
-        return acceptMeasurementRevision(receipt, value);
+        const accepted = acceptMeasurementRevision(receipt, value);
+        if (recovery) client.setQueryData(key, accepted);
+        return accepted;
       } catch (error) {
         rejectMeasurementRead(receipt);
         throw error;
@@ -300,5 +362,10 @@ export function useMeasurementRevision(
       kind: "revision",
       revisionId: id,
     }),
+    recovery
+      ? () => {
+          requireMeasurementRecovery(client, context, recovery);
+        }
+      : undefined,
   );
 }

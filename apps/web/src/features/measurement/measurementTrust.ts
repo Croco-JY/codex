@@ -2,6 +2,7 @@ import {
   hashKey,
   type QueryClient,
   type QueryKey,
+  type Query,
 } from "@tanstack/react-query";
 import { ApiError } from "../../api/errors";
 import {
@@ -33,10 +34,22 @@ type Request = {
 };
 type Fact = { summary: Summary; full?: Revision };
 type Window = { max: number; page: Page };
+type HistoryAttempt = {
+  target: Readonly<{ specId: string; max: number; limit: number }>;
+  pending: number;
+};
+type MeasurementQuery = Pick<
+  Query,
+  "queryKey" | "queryHash" | "state" | "getObserversCount"
+>;
 type Registry = {
   epoch: object;
   context: MeasurementContext;
   owners: Map<object, () => boolean>;
+  readers: Map<
+    object,
+    { key: QueryKey; current: () => MeasurementQuery | undefined }
+  >;
   version: number;
   specId?: string;
   identity?: Pick<Spec, "id" | "styleId" | "createdAt">;
@@ -50,10 +63,7 @@ type Registry = {
   windows: Map<string, Window>;
   cacheFailures: Set<string>;
   networkFailures: Set<string>;
-  historyAttempts: Map<
-    string,
-    Readonly<{ specId: string; max: number; limit: number }>
-  >;
+  historyAttempts: Map<string, HistoryAttempt>;
   timer?: ReturnType<typeof setTimeout>;
 };
 type Store = {
@@ -69,6 +79,7 @@ type Read = {
   context: MeasurementContext;
   request: Request;
   signal: AbortSignal;
+  finishAttempt?: () => void;
 };
 const clients = new WeakMap<QueryClient, Store>();
 const reads = new WeakMap<object, Read>();
@@ -107,6 +118,13 @@ export const measurementTrustLimits = Object.freeze({
   orphanMs: 300_000,
 });
 const denied = () => new ApiError(502);
+export class MeasurementHistoryCapacityError extends ApiError {
+  constructor() {
+    super(503);
+    this.message =
+      "The bounded history request capacity is occupied. Retry an existing failed history request, or wait for or cancel an outstanding history read, then retry this request. No request was sent to the server.";
+  }
+}
 const cancelled = () =>
   new DOMException("Measurement request cancelled", "AbortError");
 const contextKey = (c: MeasurementContext) =>
@@ -131,8 +149,16 @@ function matches(key: QueryKey, c: MeasurementContext) {
     key[6] === c.styleId
   );
 }
+function measurementFamily(key: QueryKey) {
+  return typeof key[7] === "string" && key[7].startsWith("measurement");
+}
 function requestFor(key: QueryKey): Request | undefined {
-  if (key[7] === "measurement-spec") return { kind: "spec" };
+  let request: Request | undefined,
+    length = 0;
+  if (key[7] === "measurement-spec") {
+    request = { kind: "spec" };
+    length = 8;
+  }
   if (
     key[7] === "measurement-revisions" &&
     typeof key[8] === "number" &&
@@ -142,11 +168,115 @@ function requestFor(key: QueryKey): Request | undefined {
     typeof key[9] === "number" &&
     Number.isSafeInteger(key[9]) &&
     key[9] >= 1
+  ) {
+    request = { kind: "history", limit: key[8], max: key[9] };
+    length = 10;
+  }
+  if (key[7] === "measurement-revision" && uuid.safeParse(key[8]).success) {
+    request = { kind: "revision", revisionId: key[8] as string };
+    length = 9;
+  }
+  if (!request) return;
+  const suffix = key.slice(length);
+  if (!suffix.length) return request;
+  if (
+    request.kind === "history" &&
+    suffix.length === 1 &&
+    suffix[0] === "explicit-history-request"
   )
-    return { kind: "history", limit: key[8], max: key[9] };
-  if (key[7] === "measurement-revision" && typeof key[8] === "string")
-    return { kind: "revision", revisionId: key[8] };
+    return request;
+  if (
+    suffix.length === 2 &&
+    suffix[0] === "explicit-recovery" &&
+    (suffix[1] === slot(request) ||
+      (request.kind === "spec" && suffix[1] === "mutation"))
+  )
+    return request;
 }
+// These declarations identify application observers, not authenticated data.
+// Mutable cache keys/hash aliases cannot erase the identity of an actual reader.
+export function retainMeasurementReader(
+  client: QueryClient,
+  c: MeasurementContext,
+  owner: object,
+  key: QueryKey,
+  current: () => MeasurementQuery | undefined,
+) {
+  const { store, key: context, r } = registry(client, c);
+  const declaration = { key: Object.freeze([...key]), current };
+  r.readers.set(owner, declaration);
+  emit(store, context, r);
+  return () => {
+    if (r.readers.get(owner) === declaration) {
+      r.readers.delete(owner);
+      if (store.contexts.get(context) === r) emit(store, context, r);
+    }
+  };
+}
+function activeQueriesSafe(
+  client: QueryClient,
+  c: MeasurementContext,
+  r: Registry,
+) {
+  const inspect = (query: MeasurementQuery, expected?: QueryKey) => {
+    if (!query.getObserversCount()) return;
+    if (!Array.isArray(query.queryKey)) throw denied();
+    const key = query.queryKey;
+    if (expected && hashKey(key) !== hashKey(expected)) throw denied();
+    if (
+      query.queryHash !== hashKey(key) ||
+      !matches(key, c) ||
+      !measurementFamily(key)
+    )
+      throw denied();
+    const request = requestFor(key);
+    if (
+      !request ||
+      (request.kind === "history" && (!r.specId || request.max! > r.head))
+    )
+      throw denied();
+    if (
+      query.state.status === "error" ||
+      (query.state.data === undefined
+        ? request.kind === "history"
+          ? !r.windows.has(windowKey(request.max!, request.limit!))
+          : request.kind === "revision"
+            ? !r.facts.get(request.revisionId!)?.full
+            : !r.specView && !r.absence
+        : !hasMeasurementProvenance(client, c, request, query.state.data))
+    )
+      throw denied();
+  };
+  try {
+    // Trusted application declarations also cover evicted queries and keys whose
+    // entire namespace/hash was changed in place. Query identity never owns facts.
+    for (const reader of r.readers.values()) {
+      const query = reader.current();
+      if (!query) throw denied();
+      inspect(query, reader.key);
+    }
+    for (const query of client.getQueryCache().getAll()) {
+      if (!query.getObserversCount()) continue;
+      let original: unknown;
+      try {
+        original = JSON.parse(query.queryHash);
+      } catch {}
+      const relevant =
+        Array.isArray(query.queryKey) &&
+        matches(query.queryKey, c) &&
+        measurementFamily(query.queryKey);
+      const aliased =
+        Array.isArray(original) &&
+        matches(original, c) &&
+        measurementFamily(original);
+      if (relevant || aliased) inspect(query);
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function emit(store: Store, key: string, r?: Registry) {
   if (r) r.version++;
   if (store.queued.has(key)) return;
@@ -236,6 +366,22 @@ function storeFor(client: QueryClient) {
       cleanup(client, created, key);
       if (created.contexts.get(key) !== r || !live(r)) continue;
       if (
+        event.type === "updated" ||
+        event.type === "observerAdded" ||
+        event.type === "observerRemoved"
+      ) {
+        const declared = [...r.readers.values()].some(
+          (reader) => reader.current() === event.query,
+        );
+        if (
+          declared ||
+          (Array.isArray(event.query.queryKey) &&
+            matches(event.query.queryKey, r.context) &&
+            measurementFamily(event.query.queryKey))
+        )
+          emit(created, key, r);
+      }
+      if (
         event.type !== "updated" ||
         event.action.type !== "success" ||
         !matches(event.query.queryKey, r.context)
@@ -243,17 +389,10 @@ function storeFor(client: QueryClient) {
         continue;
       const req = requestFor(event.query.queryKey);
       if (!req) continue;
-      // Unobserved future keys cannot be legitimate current application reads.
-      // They mint neither failure/retry authority nor facts. Real selectors and
-      // the final guard still validate every actually observed request.
-      if (
-        req.kind === "history" &&
-        (!r.specId || req.max! > r.head) &&
-        !event.query.getObserversCount() &&
-        !r.historyAttempts.has(windowKey(req.max!, req.limit!)) &&
-        !r.windows.has(windowKey(req.max!, req.limit!))
-      )
-        continue;
+      // A bound outside the authenticated Spec cannot identify a current
+      // history request. Its active observer is a volatile write blocker, not
+      // authority to manufacture a persistent, unrequestable failure channel.
+      if (req.kind === "history" && (!r.specId || req.max! > r.head)) continue;
       try {
         const value = event.query.state.data;
         if (req.kind === "spec") checkSpec(r, value);
@@ -308,6 +447,7 @@ export function retainMeasurementTrust(
       epoch: {},
       context: c,
       owners: new Map(),
+      readers: new Map(),
       version: 1,
       absence: false,
       observedAbsence: false,
@@ -625,10 +765,13 @@ export const selectMeasurementHistory = (
   value: Page,
   max: number,
   limit: number,
-) =>
-  selection(client, c, { kind: "history", max, limit }, (r) =>
+) => {
+  // Invalid request aliases do not name an authentic failure/recovery channel.
+  measurementHistoryTarget(client, c, max, limit);
+  return selection(client, c, { kind: "history", max, limit }, (r) =>
     checkHistory(r, value, max, limit),
   );
+};
 export const selectMeasurementRevision = (
   client: QueryClient,
   c: MeasurementContext,
@@ -886,9 +1029,14 @@ export function measurementEditingAllowed(
 ) {
   try {
     const { r } = registry(client, c);
+    const version = r.version;
     if (hasBlockingMeasurementFailure(r) || value === undefined) return false;
     checkSpec(r, value);
-    return true;
+    return (
+      activeQueriesSafe(client, c, r) &&
+      r.version === version &&
+      !hasBlockingMeasurementFailure(r)
+    );
   } catch {
     return false;
   }
@@ -901,19 +1049,7 @@ export function requireMeasurementWrite(
   baseline: number | null,
 ) {
   const { r } = registry(client, c);
-  // Inspect actual active raw query values as well, closing the interval between
-  // a cache write and React's batched observer/DOM update.
-  for (const query of client.getQueryCache().getAll()) {
-    if (!matches(query.queryKey, c) || !query.getObserversCount()) continue;
-    const req = requestFor(query.queryKey);
-    if (
-      req &&
-      query.state.data !== undefined &&
-      !hasMeasurementProvenance(client, c, req, query.state.data)
-    )
-      throw denied();
-    if (req && query.state.status === "error") throw denied();
-  }
+  // One shared synchronous condition is used by rendering and final mutation.
   if (!measurementEditingAllowed(client, c, value)) throw denied();
   if (mode === "create") {
     if (value !== null || !r.absence) throw denied();
@@ -972,13 +1108,35 @@ export function runMeasurementHistoryRequest<T>(
   if (target.specId !== specId) throw denied();
   const window = windowKey(target.max, target.limit);
   if (!r.windows.has(window) && !r.historyAttempts.has(window)) {
+    // Only settled attempts with no remaining failure obligation are redundant.
+    // Cache objects never create provenance; reclaiming metadata authenticates
+    // no facts, clears no failures and leaves active receipts/protected retries.
     let count = 0;
     for (const entry of store.contexts.values())
       count += entry.historyAttempts.size;
-    if (count >= measurementTrustLimits.historyAttempts) throw denied();
-    // All scope/receipt/budget checks precede registration. This records the
-    // authorized invocation, even if cancellation prevents physical dispatch.
-    r.historyAttempts.set(window, target);
+    if (count >= measurementTrustLimits.historyAttempts) {
+      for (const [entryKey, entry] of store.contexts) {
+        for (const [attemptKey, attempt] of entry.historyAttempts) {
+          const channel = slot({ kind: "history", ...attempt.target });
+          if (
+            !attempt.pending &&
+            !entry.cacheFailures.has(channel) &&
+            !entry.networkFailures.has(channel)
+          ) {
+            entry.historyAttempts.delete(attemptKey);
+            emit(store, entryKey, entry);
+            count--;
+            if (count < measurementTrustLimits.historyAttempts) break;
+          }
+        }
+        if (count < measurementTrustLimits.historyAttempts) break;
+      }
+    }
+    if (count >= measurementTrustLimits.historyAttempts) {
+      reads.delete(receipt);
+      throw new MeasurementHistoryCapacityError();
+    }
+    r.historyAttempts.set(window, { target, pending: 0 });
     emit(store, key, r);
   }
   if (
@@ -990,6 +1148,17 @@ export function runMeasurementHistoryRequest<T>(
   )
     throw cancelled();
   historyDispatches.add(receipt);
+  const attempt = r.historyAttempts.get(window);
+  if (attempt) {
+    attempt.pending++;
+    const finish = () => {
+      read.signal.removeEventListener("abort", finish);
+      attempt.pending--;
+      read.finishAttempt = undefined;
+    };
+    read.finishAttempt = finish;
+    read.signal.addEventListener("abort", finish, { once: true });
+  }
   return transport();
 }
 export function beginMeasurementRead(
@@ -1014,20 +1183,37 @@ export function beginMeasurementRead(
 function take(receipt: object, kind: Kind) {
   const read = reads.get(receipt);
   reads.delete(receipt);
-  if (!read || read.request.kind !== kind) throw denied();
-  const { store, key, r } = registry(read.client, read.context);
-  if (r.epoch !== read.epoch || read.signal.aborted || !read.context.current())
-    throw cancelled();
-  return { read, store, key, r };
+  if (!read || read.request.kind !== kind) {
+    read?.finishAttempt?.();
+    throw denied();
+  }
+  try {
+    const { store, key, r } = registry(read.client, read.context);
+    if (
+      r.epoch !== read.epoch ||
+      read.signal.aborted ||
+      !read.context.current()
+    )
+      throw cancelled();
+    return { read, store, key, r };
+  } catch (error) {
+    read.finishAttempt?.();
+    throw error;
+  }
 }
 export function rejectMeasurementRead(receipt: object) {
   const read = reads.get(receipt);
   reads.delete(receipt);
-  if (!read || read.signal.aborted || !read.context.current()) return;
-  const store = clients.get(read.client),
-    r = store?.contexts.get(read.key);
-  if (store && r?.epoch === read.epoch && live(r))
-    recordNetworkFailure(store, read.key, r, read.request);
+  if (!read) return;
+  try {
+    if (read.signal.aborted || !read.context.current()) return;
+    const store = clients.get(read.client),
+      r = store?.contexts.get(read.key);
+    if (store && r?.epoch === read.epoch && live(r))
+      recordNetworkFailure(store, read.key, r, read.request);
+  } finally {
+    read.finishAttempt?.();
+  }
 }
 function accept<T>(
   receipt: object,
@@ -1060,6 +1246,8 @@ function accept<T>(
     )
       recordNetworkFailure(store, key, r, read.request);
     throw error;
+  } finally {
+    read.finishAttempt?.();
   }
 }
 export function acceptMeasurementSpec(receipt: object, value: Spec | null) {

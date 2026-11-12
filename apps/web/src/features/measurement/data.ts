@@ -1,6 +1,13 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  hashKey,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+  type QueryKey,
+} from "@tanstack/react-query";
 import {
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useSyncExternalStore,
@@ -12,6 +19,7 @@ import { useWorkspace } from "../../app/workspace";
 import { type Spec, type Page, type Revision } from "./model";
 import {
   retainMeasurementTrust,
+  retainMeasurementReader,
   subscribeMeasurementTrust,
   measurementTrustVersion,
   beginMeasurementRead,
@@ -58,6 +66,30 @@ function withRecovery<T extends object>(
         : Reflect.get(target, property, receiver);
     },
   }) as T & { requiresRecovery: boolean };
+}
+// A narrow, lifetime-bound declaration of the actual Measurement observer.
+// It authenticates no cache data and stores no competing immutable snapshot.
+function useMeasurementReadBoundary(
+  client: QueryClient,
+  context: MeasurementContext,
+  key: QueryKey,
+  owner: object,
+) {
+  const hash = hashKey(key);
+  const expected = useMemo(() => Object.freeze([...key]), [hash]);
+  useEffect(() => {
+    const query = client.getQueryCache().get(hash);
+    const observer = query?.observers.find(
+      (o) => o.options.meta?.measurementReader === owner,
+    );
+    return retainMeasurementReader(
+      client,
+      context,
+      owner,
+      expected,
+      observer ? () => observer.getCurrentQuery() : () => query,
+    );
+  }, [client, context, hash, owner, expected]);
 }
 export const path =
   "/api/v1/organizations/{organizationId}/projects/{projectId}/styles/{styleId}/measurement-spec" as const;
@@ -133,8 +165,13 @@ export function useMeasurementSpec(
     projectId,
     styleId,
   );
+  const reader = useMemo(() => ({}), [client, context]);
+  const observedKey = recovery
+    ? [...key, "explicit-recovery", recovery.channel]
+    : key;
   const query = useQuery({
-    queryKey: recovery ? [...key, "explicit-recovery", recovery.channel] : key,
+    queryKey: observedKey,
+    meta: { measurementReader: reader },
     enabled,
     retry: false,
     structuralSharing: false,
@@ -189,6 +226,7 @@ export function useMeasurementSpec(
       }
     },
   });
+  useMeasurementReadBoundary(client, context, observedKey, reader);
   return withRecovery(
     query,
     measurementRecoveryRequired(client, context, {
@@ -221,12 +259,15 @@ export function useMeasurementHistory(
     limit,
     max,
   );
+  const reader = useMemo(() => ({}), [client, context]);
+  const observedKey = recovery
+    ? [...key, "explicit-recovery", recovery.channel]
+    : explicitRequest
+      ? [...key, "explicit-history-request"]
+      : key;
   const query = useQuery({
-    queryKey: recovery
-      ? [...key, "explicit-recovery", recovery.channel]
-      : explicitRequest
-        ? [...key, "explicit-history-request"]
-        : key,
+    queryKey: observedKey,
+    meta: { measurementReader: reader },
     enabled,
     retry: false,
     structuralSharing: false,
@@ -281,6 +322,7 @@ export function useMeasurementHistory(
       }
     },
   });
+  useMeasurementReadBoundary(client, context, observedKey, reader);
   return withRecovery(
     query,
     measurementRecoveryRequired(client, context, {
@@ -321,8 +363,13 @@ export function useMeasurementRevision(
     spec.styleId,
     id,
   );
+  const reader = useMemo(() => ({}), [client, context]);
+  const observedKey = recovery
+    ? [...key, "explicit-recovery", recovery.channel]
+    : key;
   const query = useQuery({
-    queryKey: recovery ? [...key, "explicit-recovery", recovery.channel] : key,
+    queryKey: observedKey,
+    meta: { measurementReader: reader },
     enabled,
     retry: false,
     structuralSharing: false,
@@ -378,6 +425,7 @@ export function useMeasurementRevision(
       }
     },
   });
+  useMeasurementReadBoundary(client, context, observedKey, reader);
   return withRecovery(
     query,
     measurementRecoveryRequired(client, context, {

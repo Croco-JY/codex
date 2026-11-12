@@ -310,7 +310,7 @@ test.each([
     expect(t.measurementEditingAllowed(h.client, h.c, spec(3))).toBe(false);
   },
 );
-test("bounded attempt storage refuses overflow before invoking transport and active facts are retained", async () => {
+test("settled attempts without failures release bounded capacity before a new transport and active facts are retained", async () => {
   const h = setup();
   t.acceptMeasurementSpec(h.receipt({ kind: "spec" }), spec(400));
   for (let n = 1; n <= t.measurementTrustLimits.historyAttempts; n++) {
@@ -321,10 +321,8 @@ test("bounded attempt storage refuses overflow before invoking transport and act
     t.rejectMeasurementRead(r);
   }
   const transport = vi.fn(async () => h.page());
-  expect(() =>
-    t.runMeasurementHistoryRequest(h.receipt(h.request(257)), transport),
-  ).toThrow();
-  expect(transport).not.toHaveBeenCalled();
+  await t.runMeasurementHistoryRequest(h.receipt(h.request(257)), transport);
+  expect(transport).toHaveBeenCalledTimes(1);
   h.inject(2);
   expect(h.projection().items[0].request).toEqual(h.request());
   expect(t.selectMeasurementSpec(h.client, h.c, spec(400))).toEqual(spec(400));

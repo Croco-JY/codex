@@ -133,6 +133,7 @@ export function Measurements({
             style.id,
           ])}
           authority={authority}
+          refreshSpec={() => query.refetch()}
           visibleChannels={
             new Set(error !== undefined ? ["spec", "mutation"] : [])
           }
@@ -360,6 +361,7 @@ function Workspace({
           styleId,
         ])}
         authority={authority}
+        refreshSpec={refreshSpec}
         visibleChannels={visibleRecoveryChannels}
       />
       {!value && <p>No Measurement Spec has been created for this Style.</p>}

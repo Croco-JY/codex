@@ -50,6 +50,10 @@ type Registry = {
   windows: Map<string, Window>;
   cacheFailures: Set<string>;
   networkFailures: Set<string>;
+  historyAttempts: Map<
+    string,
+    Readonly<{ specId: string; max: number; limit: number }>
+  >;
   timer?: ReturnType<typeof setTimeout>;
 };
 type Store = {
@@ -68,6 +72,7 @@ type Read = {
 };
 const clients = new WeakMap<QueryClient, Store>();
 const reads = new WeakMap<object, Read>();
+const historyDispatches = new WeakSet<object>();
 export type MeasurementRecoveryRequest =
   | Readonly<{ kind: "spec" }>
   | Readonly<{ kind: "history"; specId: string; max: number; limit: number }>
@@ -98,6 +103,7 @@ export const measurementTrustLimits = Object.freeze({
   revisions: 4096,
   points: 8192,
   windows: 256,
+  historyAttempts: 256,
   orphanMs: 300_000,
 });
 const denied = () => new ApiError(502);
@@ -130,7 +136,12 @@ function requestFor(key: QueryKey): Request | undefined {
   if (
     key[7] === "measurement-revisions" &&
     typeof key[8] === "number" &&
-    typeof key[9] === "number"
+    Number.isSafeInteger(key[8]) &&
+    key[8] >= 1 &&
+    key[8] <= 100 &&
+    typeof key[9] === "number" &&
+    Number.isSafeInteger(key[9]) &&
+    key[9] >= 1
   )
     return { kind: "history", limit: key[8], max: key[9] };
   if (key[7] === "measurement-revision" && typeof key[8] === "string")
@@ -232,6 +243,17 @@ function storeFor(client: QueryClient) {
         continue;
       const req = requestFor(event.query.queryKey);
       if (!req) continue;
+      // Unobserved future keys cannot be legitimate current application reads.
+      // They mint neither failure/retry authority nor facts. Real selectors and
+      // the final guard still validate every actually observed request.
+      if (
+        req.kind === "history" &&
+        (!r.specId || req.max! > r.head) &&
+        !event.query.getObserversCount() &&
+        !r.historyAttempts.has(windowKey(req.max!, req.limit!)) &&
+        !r.windows.has(windowKey(req.max!, req.limit!))
+      )
+        continue;
       try {
         const value = event.query.state.data;
         if (req.kind === "spec") checkSpec(r, value);
@@ -295,6 +317,7 @@ export function retainMeasurementTrust(
       windows: new Map(),
       cacheFailures: new Set(),
       networkFailures: new Set(),
+      historyAttempts: new Map(),
     };
     store.contexts.set(key, r);
   }
@@ -495,6 +518,10 @@ function commit(
   r.numbers = next.numbers;
   r.windows = next.windows;
   r.specView = specView;
+  if (channel.startsWith("history:")) {
+    const [, max, limit] = channel.split(":");
+    r.historyAttempts.delete(windowKey(Number(max), Number(limit)));
+  }
   // Only this fully validated, authenticated commit can recover its read slot.
   r.cacheFailures.delete(channel);
   r.networkFailures.delete(channel);
@@ -692,11 +719,12 @@ function recoveryRequest(
       };
     if (
       !r.networkFailures.has(channel) &&
-      !r.windows.has(windowKey(max, limit))
+      !r.windows.has(windowKey(max, limit)) &&
+      !r.historyAttempts.has(windowKey(max, limit))
     )
       return {
         blockedReason:
-          "An authenticated history window is required before this cached request can be retried.",
+          "This cached window has no authenticated request provenance. Use Request authoritative history to choose and authenticate its exact bounds.",
       };
     return {
       request: Object.freeze({ kind: "history", specId: r.specId, max, limit }),
@@ -731,16 +759,22 @@ export function measurementRecoveries(
   client: QueryClient,
   c: MeasurementContext,
   offset = 0,
+  pageSize = measurementRecoveryPageSize,
 ) {
   try {
     const { key, r } = registry(client, c);
+    const size =
+      Number.isSafeInteger(pageSize) &&
+      pageSize >= 1 &&
+      pageSize <= measurementRecoveryPageSize
+        ? pageSize
+        : measurementRecoveryPageSize;
     let total = r.cacheFailures.size;
     for (const channel of r.networkFailures)
       if (!r.cacheFailures.has(channel)) total++;
     const start = Math.min(
       Number.isSafeInteger(offset) && offset >= 0 ? offset : 0,
-      Math.max(0, Math.ceil(total / measurementRecoveryPageSize) - 1) *
-        measurementRecoveryPageSize,
+      Math.max(0, Math.ceil(total / size) - 1) * size,
     );
     const context = Object.freeze({
       scope: c.scope,
@@ -767,13 +801,14 @@ export function measurementRecoveries(
         channel,
       });
       items.push(descriptor);
-      if (items.length === measurementRecoveryPageSize) break;
+      if (items.length === size) break;
     }
     return Object.freeze({
       items: Object.freeze(items),
       total,
       offset: start,
       head: r.head,
+      pageSize: size,
       unavailable: false,
     });
   } catch {
@@ -782,6 +817,7 @@ export function measurementRecoveries(
       total: 0,
       offset: 0,
       head: 0,
+      pageSize: measurementRecoveryPageSize,
       unavailable: true,
     });
   }
@@ -890,6 +926,72 @@ export function requireMeasurementWrite(
   )
     throw denied();
 }
+// Request eligibility is not history provenance. Only the typed application's
+// actual transport callback records an attempt; neither a Query nor its cache
+// can do so. The record survives cancellation, but authenticates no data.
+export function measurementHistoryTarget(
+  client: QueryClient,
+  c: MeasurementContext,
+  max: number,
+  limit: number,
+) {
+  const { r } = registry(client, c);
+  if (
+    !r.specId ||
+    !r.identity ||
+    !Number.isSafeInteger(max) ||
+    max < 1 ||
+    max > r.head ||
+    !Number.isSafeInteger(limit) ||
+    limit < 1 ||
+    limit > 100
+  )
+    throw denied();
+  return Object.freeze({ specId: r.specId, max, limit });
+}
+export function runMeasurementHistoryRequest<T>(
+  receipt: object,
+  transport: () => Promise<T>,
+): Promise<T> {
+  const read = reads.get(receipt);
+  if (
+    !read ||
+    read.request.kind !== "history" ||
+    historyDispatches.has(receipt)
+  )
+    throw denied();
+  const { r, store, key } = registry(read.client, read.context);
+  if (r.epoch !== read.epoch || read.signal.aborted) throw cancelled();
+  const { specId, max, limit } = read.request;
+  const target = measurementHistoryTarget(
+    read.client,
+    read.context,
+    max!,
+    limit!,
+  );
+  if (target.specId !== specId) throw denied();
+  const window = windowKey(target.max, target.limit);
+  if (!r.windows.has(window) && !r.historyAttempts.has(window)) {
+    let count = 0;
+    for (const entry of store.contexts.values())
+      count += entry.historyAttempts.size;
+    if (count >= measurementTrustLimits.historyAttempts) throw denied();
+    // All scope/receipt/budget checks precede registration. This records the
+    // authorized invocation, even if cancellation prevents physical dispatch.
+    r.historyAttempts.set(window, target);
+    emit(store, key, r);
+  }
+  if (
+    !read.context.current() ||
+    !live(r) ||
+    store.contexts.get(key) !== r ||
+    r.epoch !== read.epoch ||
+    read.signal.aborted
+  )
+    throw cancelled();
+  historyDispatches.add(receipt);
+  return transport();
+}
 export function beginMeasurementRead(
   client: QueryClient,
   c: MeasurementContext,
@@ -904,7 +1006,7 @@ export function beginMeasurementRead(
     key,
     epoch: r.epoch,
     context: c,
-    request,
+    request: Object.freeze({ ...request }),
     signal,
   });
   return receipt;
@@ -936,10 +1038,27 @@ function accept<T>(
   try {
     const next = draft(r),
       result = update(next, read);
+    // Validation is synchronous, but a faulting getter/current-context provider
+    // may cancel or retire a read during it. No partial facts may then commit.
+    if (
+      !read.context.current() ||
+      !live(r) ||
+      read.signal.aborted ||
+      store.contexts.get(key) !== r ||
+      r.epoch !== read.epoch
+    )
+      throw cancelled();
     commit(store, key, r, next, slot(read.request));
     return structuredClone(result);
   } catch (error) {
-    recordNetworkFailure(store, key, r, read.request);
+    if (
+      !read.signal.aborted &&
+      read.context.current() &&
+      live(r) &&
+      store.contexts.get(key) === r &&
+      r.epoch === read.epoch
+    )
+      recordNetworkFailure(store, key, r, read.request);
     throw error;
   }
 }

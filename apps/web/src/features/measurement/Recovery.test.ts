@@ -226,7 +226,10 @@ test("untrusted cached request keys cannot bootstrap a recovery identity or inva
     expect(d.blockedReason).toBeTruthy();
     expect(() => t.requireMeasurementRecovery(h.client, h.c, d)).toThrow();
   }
-  expect(h.all().total).toBe(3);
+  // Invalid bounds cannot name an application request at all. Both valid-shaped
+  // unproven entries still have no capability; the malformed key creates none.
+  expect(h.all().items.map((d) => d.channel)).not.toContain("history:NaN:500");
+  expect(h.all().total).toBe(2);
 });
 test("projection pagination bounds allocated descriptors and does not add query observers", () => {
   const h = setup();

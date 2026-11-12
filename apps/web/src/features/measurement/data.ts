@@ -15,6 +15,8 @@ import {
   subscribeMeasurementTrust,
   measurementTrustVersion,
   beginMeasurementRead,
+  runMeasurementHistoryRequest,
+  measurementHistoryTarget,
   rejectMeasurementRead,
   acceptMeasurementSpec,
   acceptMeasurementHistory,
@@ -98,7 +100,10 @@ export function useMeasurementAuthority(projectId: string, styleId: string) {
     retained: (value: Spec | null) =>
       retainedMeasurementSpec(client, context, value),
     recoveryRequired: () => measurementRecoveryRequired(client, context),
-    recoveries: (offset = 0) => measurementRecoveries(client, context, offset),
+    recoveries: (offset = 0, pageSize?: number) =>
+      measurementRecoveries(client, context, offset, pageSize),
+    historyTarget: (max: number, limit: number) =>
+      measurementHistoryTarget(client, context, max, limit),
     recoveryState: (descriptor: MeasurementRecovery) =>
       measurementRecoveryState(client, context, descriptor),
     requireRecovery: (descriptor: MeasurementRecovery) =>
@@ -204,6 +209,7 @@ export function useMeasurementHistory(
   freshOnMount = false,
   limit = 25,
   recovery?: MeasurementRecovery,
+  explicitRequest = false,
 ) {
   const w = useWorkspace(),
     { client, context } = useMeasurementAuthority(projectId, spec.styleId);
@@ -216,7 +222,11 @@ export function useMeasurementHistory(
     max,
   );
   const query = useQuery({
-    queryKey: recovery ? [...key, "explicit-recovery", recovery.channel] : key,
+    queryKey: recovery
+      ? [...key, "explicit-recovery", recovery.channel]
+      : explicitRequest
+        ? [...key, "explicit-history-request"]
+        : key,
     enabled,
     retry: false,
     structuralSharing: false,
@@ -244,24 +254,26 @@ export function useMeasurementHistory(
           )
         : beginMeasurementRead(client, context, request, signal);
       try {
-        const value = await w.run(signal, async () => {
-          const r = await api.GET(revisionsPath, {
-            signal,
-            params: {
-              path: {
-                organizationId: w.organizationId,
-                projectId,
-                styleId: spec.styleId,
+        const value = await w.run(signal, () =>
+          runMeasurementHistoryRequest(receipt, async () => {
+            const r = await api.GET(revisionsPath, {
+              signal,
+              params: {
+                path: {
+                  organizationId: w.organizationId,
+                  projectId,
+                  styleId: spec.styleId,
+                },
+                query: { limit: String(limit), maxRevisionNumber: String(max) },
               },
-              query: { limit: String(limit), maxRevisionNumber: String(max) },
-            },
-          });
-          return requireData(r.data, r.response);
-        });
+            });
+            return requireData(r.data, r.response);
+          }),
+        );
         if (!w.current() || signal.aborted)
           throw new DOMException("Workspace request cancelled", "AbortError");
         const accepted = acceptMeasurementHistory(receipt, value);
-        if (recovery) client.setQueryData(key, accepted);
+        if (recovery || explicitRequest) client.setQueryData(key, accepted);
         return accepted;
       } catch (error) {
         rejectMeasurementRead(receipt);
@@ -280,7 +292,17 @@ export function useMeasurementHistory(
       ? () => {
           requireMeasurementRecovery(client, context, recovery);
         }
-      : undefined,
+      : explicitRequest
+        ? () => {
+            const target = measurementHistoryTarget(
+              client,
+              context,
+              max,
+              limit,
+            );
+            if (target.specId !== spec.id) throw new ApiError(502);
+          }
+        : undefined,
   );
 }
 export function useMeasurementRevision(

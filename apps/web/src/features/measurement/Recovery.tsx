@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { Button } from "../../ui";
+import { useId, useLayoutEffect, useRef, useState } from "react";
+import { Button, Input } from "../../ui";
 import { ApiErrorState } from "../../ui/ApiErrorState";
 import { ApiError } from "../../api/errors";
 import {
@@ -17,6 +17,7 @@ import {
 type Props = {
   authority: MeasurementAuthority;
   visibleChannels: ReadonlySet<string>;
+  refreshSpec: () => Promise<unknown>;
 };
 function label(d: MeasurementRecovery) {
   const request = d.request;
@@ -28,15 +29,25 @@ function label(d: MeasurementRecovery) {
     return d.channel === "mutation"
       ? "authoritative measurements after the uncertain submission"
       : "failed Measurement Spec";
+  const history = /^history:(\d+):(\d+)$/.exec(d.channel);
+  if (history)
+    return `failed history window through revision ${history[1]} (${history[2]} per page)`;
   return "unavailable Measurement request";
 }
 export function MeasurementRecoveryPanel({
   authority,
   visibleChannels,
+  refreshSpec,
 }: Props) {
   const [offset, setOffset] = useState(0),
     [completed, setCompleted] = useState("");
-  const page = authority.recoveries(offset);
+  const [requestOpen, setRequestOpen] = useState(false);
+  // Reserve one observer for the independently chosen ordinary read, rather
+  // than exceed the existing eight-observer recovery budget.
+  const page = authority.recoveries(
+    offset,
+    requestOpen ? measurementRecoveryPageSize - 1 : measurementRecoveryPageSize,
+  );
   const previous = useRef<readonly MeasurementRecovery[]>([]);
   useLayoutEffect(() => {
     // Bounded presentation history only. Authority and failure ownership remain
@@ -96,19 +107,34 @@ export function MeasurementRecoveryPanel({
           </li>
         ))}
       </ul>
-      {page.total > measurementRecoveryPageSize && (
+      {page.items.some((d) => !d.request) && (
+        <div>
+          <Button onClick={() => void refreshSpec()}>
+            Refresh authoritative Measurement Spec
+          </Button>
+          <Button onClick={() => setRequestOpen(true)}>
+            Request authoritative history
+          </Button>
+          <p>
+            Choose history bounds from the authenticated Spec. A cached key is
+            not request authorization or trusted history.
+          </p>
+        </div>
+      )}
+      {requestOpen && page.total > 0 && (
+        <HistoryRequest authority={authority} />
+      )}
+      {page.total > page.pageSize && (
         <nav aria-label="Recovery requests">
           <Button
             disabled={page.offset === 0}
-            onClick={() =>
-              setOffset(Math.max(0, page.offset - measurementRecoveryPageSize))
-            }
+            onClick={() => setOffset(Math.max(0, page.offset - page.pageSize))}
           >
             Previous recovery requests
           </Button>
           <Button
             disabled={page.offset + page.items.length >= page.total}
-            onClick={() => setOffset(page.offset + measurementRecoveryPageSize)}
+            onClick={() => setOffset(page.offset + page.pageSize)}
           >
             More recovery requests
           </Button>
@@ -233,6 +259,140 @@ function RecoveryAction({
       )}
       <Button disabled={busy} onClick={() => void retry()}>
         Reload {label(descriptor)}
+      </Button>
+    </div>
+  );
+}
+
+// An ordinary, explicit application read is the prerequisite for a cache-only
+// unknown window. Its target is chosen by the user and validated against trusted
+// Spec authority, not minted from a cached key or a recovery descriptor.
+function HistoryRequest({ authority }: { authority: MeasurementAuthority }) {
+  const id = useId();
+  const [maximum, setMaximum] = useState(String(authority.recoveries().head));
+  const [limit, setLimit] = useState("25");
+  const [target, setTarget] = useState<Readonly<{
+    specId: string;
+    max: number;
+    limit: number;
+  }> | null>(null);
+  const [invalid, setInvalid] = useState(false);
+  return (
+    <section aria-label="Authoritative history request">
+      <h4>Choose an authoritative history request</h4>
+      <form
+        aria-label="Choose history bounds"
+        onSubmit={(e) => {
+          e.preventDefault();
+          try {
+            if (!/^[1-9]\d*$/.test(maximum) || !/^[1-9]\d*$/.test(limit))
+              throw new ApiError(400);
+            setTarget(authority.historyTarget(Number(maximum), Number(limit)));
+            setInvalid(false);
+          } catch {
+            setInvalid(true);
+            setTarget(null);
+          }
+        }}
+      >
+        <label htmlFor={id + "-max"}>Historical maximum</label>
+        <Input
+          id={id + "-max"}
+          inputMode="numeric"
+          value={maximum}
+          onChange={(e) => setMaximum(e.target.value)}
+        />
+        <label htmlFor={id + "-limit"}>History page limit</label>
+        <Input
+          id={id + "-limit"}
+          inputMode="numeric"
+          value={limit}
+          onChange={(e) => setLimit(e.target.value)}
+        />
+        <Button type="submit">Choose history request</Button>
+        {invalid && (
+          <p role="alert">
+            Choose a positive maximum no greater than the authenticated Spec
+            head, and a page limit between 1 and 100. Refresh the Spec if its
+            head is unavailable or outdated.
+          </p>
+        )}
+      </form>
+      {target && (
+        <HistoryRequestAction
+          key={JSON.stringify(target)}
+          authority={authority}
+          target={target}
+        />
+      )}
+    </section>
+  );
+}
+function HistoryRequestAction({
+  authority,
+  target,
+}: {
+  authority: MeasurementAuthority;
+  target: Readonly<{ specId: string; max: number; limit: number }>;
+}) {
+  const c = authority.context;
+  const query = useMeasurementHistory(
+    c.projectId,
+    { id: target.specId, styleId: c.styleId },
+    target.max,
+    false,
+    false,
+    target.limit,
+    undefined,
+    true,
+  );
+  const [busy, setBusy] = useState(false),
+    [error, setError] = useState<unknown>(),
+    [complete, setComplete] = useState(false);
+  const owner = useRef<{ active: boolean } | null>(null);
+  useLayoutEffect(() => {
+    const token = { active: true };
+    owner.current = token;
+    return () => {
+      token.active = false;
+    };
+  }, []);
+  async function read() {
+    const token = owner.current;
+    if (!token?.active || busy) return;
+    setBusy(true);
+    setError(undefined);
+    setComplete(false);
+    try {
+      await query.refetch({ throwOnError: true });
+      if (token.active && c.current()) setComplete(true);
+    } catch (failure) {
+      if (token.active && c.current()) setError(failure);
+    } finally {
+      if (token.active) setBusy(false);
+    }
+  }
+  return (
+    <div>
+      <p>
+        Selected history maximum {target.max}, limit {target.limit}. Choosing
+        bounds has not authenticated any history.
+      </p>
+      {busy && <p role="status">Authoritative history request in progress.</p>}
+      {error !== undefined && (
+        <ApiErrorState
+          error={error}
+          title="Authoritative history request failed"
+        />
+      )}
+      {complete && (
+        <p role="status">
+          The selected history response was authenticated and validated. Other
+          outstanding channels and draft reconciliation remain independent.
+        </p>
+      )}
+      <Button disabled={busy} onClick={() => void read()}>
+        Load selected history window
       </Button>
     </div>
   );

@@ -170,9 +170,36 @@ test.each(["namespace", "hash", "length"])(
     else k.length = 0;
     expect(() => h.write()).toThrow();
     off();
+    // A reader's declaration must end with its lifecycle, not merely lose its
+    // Query observers. Otherwise a stale declaration could hide a replacement.
+    expect(() => h.write()).toThrow();
+    unbind();
     expect(() => h.write()).not.toThrow();
   },
 );
+test("unresolved reader blocks until its own declaration is cleaned up", () => {
+  const h = setup();
+  const unbind = t.retainMeasurementReader(h.client, h.c, {}, h.key(), () => undefined);
+  dispose.push(unbind);
+  expect(() => h.write()).toThrow();
+  expect(t.measurementRecoveries(h.client, h.c).total).toBe(0);
+  unbind();
+  expect(() => h.write()).not.toThrow();
+});
+test("old reader cleanup cannot delete its owner's replacement declaration", () => {
+  const h = setup(), owner = {}, { q, off } = h.observe(h.key());
+  const old = t.retainMeasurementReader(h.client, h.c, owner, h.key(), () => undefined);
+  const current = t.retainMeasurementReader(h.client, h.c, owner, h.key(), () => q);
+  dispose.push(current);
+  old();
+  expect(() => h.write()).not.toThrow();
+  off();
+  expect(() => h.write()).toThrow();
+  old();
+  expect(() => h.write()).toThrow();
+  current();
+  expect(() => h.write()).not.toThrow();
+});
 test.each([
   "inactive",
   "foreign organization",

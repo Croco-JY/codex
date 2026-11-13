@@ -252,7 +252,9 @@ function activeQueriesSafe(
     // entire namespace/hash was changed in place. Query identity never owns facts.
     for (const reader of r.readers.values()) {
       const query = reader.current();
-      if (!query) throw denied();
+      // A live declaration must identify an actually observed Query. Inactive
+      // cache entries may be ignored below, but cannot satisfy reader ownership.
+      if (!query || !query.getObserversCount()) throw denied();
       inspect(query, reader.key);
     }
     for (const query of client.getQueryCache().getAll()) {

@@ -78,16 +78,26 @@ function useMeasurementReadBoundary(
   const hash = hashKey(key);
   const expected = useMemo(() => Object.freeze([...key]), [hash]);
   useEffect(() => {
-    const query = client.getQueryCache().get(hash);
-    const observer = query?.observers.find(
-      (o) => o.options.meta?.measurementReader === owner,
-    );
+    const findObserver = () =>
+      client
+        .getQueryCache()
+        .get(hash)
+        ?.observers.find((o) => o.options.meta?.measurementReader === owner);
+    let observer = findObserver();
     return retainMeasurementReader(
       client,
       context,
       owner,
       expected,
-      observer ? () => observer.getCurrentQuery() : () => query,
+      () => {
+        // Registration can race cache replacement. Never use a cache object as
+        // a substitute for this hook's native observer; deny until it is found.
+        observer ??= findObserver();
+        const query = observer?.getCurrentQuery();
+        return observer && query?.observers.includes(observer)
+          ? query
+          : undefined;
+      },
     );
   }, [client, context, hash, owner, expected]);
 }

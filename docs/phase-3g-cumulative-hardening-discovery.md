@@ -21,7 +21,24 @@ The original documentation delivery created this document and the
 [roadmap](roadmap.md). The reconciliation below changes only this discovery
 record and the roadmap; the historical acceptance record remains unchanged.
 
-### Live-baseline reconciliation — 2026-11-05
+### Current defect-gate status — 2026-11-16
+
+[3G-DF-01 is formally closed](phase-3g-df01-formal-closure.md) under
+SOURCE-OS-3G-DF01-FORMAL-CLOSURE-v1, following the separate independent
+reacceptance of implementation 1a7ad604ca8799cb80769c6e61f708fdc1d0fbfe.
+The reader lifecycle, IA-DF01-05 and IA-DF01-07 were independently accepted;
+the applicable IA-DF01-01 through IA-DF01-04 requirements were satisfied.
+All five historical failed assertions retain their original results and
+supported dispositions. IA-DF01-06 remains LOW / NON-BLOCKING / QUALIFIED /
+OPEN, and 3E-R02 remains LOW / NON-BLOCKING / OPEN.
+
+**Phase 3G remains PAUSED pending a separate execution instruction.** Closing
+this defect-stop gate does not complete cumulative acceptance or authorize
+G1–G6, deployment or Phase 4. The original inventory, proposal and historical
+reconciliation below retain their original provenance; their earlier pending
+correction-acceptance statements are historical, not the current gate status.
+
+### Historical live-baseline reconciliation — 2026-11-05
 
 The repeated closeout/discovery request was reconciled against live branch HEAD
 `0b1e918b0a3f1a1d55fc982aa10403f66c2343df`, rather than resetting to the
@@ -44,6 +61,7 @@ and [32 additional cache cases](../apps/web/src/features/measurement/Measurement
 These tests exercise actual QueryClient replacement, foreign identities, malformed
 points/pages, mutable aliases, safe recovery and Actor/Organization transitions.
 
+Historical state recorded at that reconciliation:
 **Phase 3G remains PAUSED. Independent correction acceptance is PENDING.**
 The correction agent's successful tests/CI are implementation evidence, not an
 independent acceptance decision. The eight interrupted Phase 3G test files and
@@ -449,9 +467,11 @@ unresolved. No new models/tables/endpoints/business lifecycles, private storage
 paths, workers, services or speculative migration may be inferred from 3G.
 
 **Execution boundary:** the original output closed 3F acceptance and proposed
-G1–G6; later execution authority was separate. The current reconciliation is
-documentation only. Phase 3G remains PAUSED at the independent-correction-acceptance
-gate; no remaining G1–G6 work or Phase 4 execution follows this documentation
+G1–G6; later execution authority was separate. The
+[formal DF-01 closure](phase-3g-df01-formal-closure.md) is documentation only
+and removes that defect-stop gate after independent correction acceptance.
+Phase 3G remains PAUSED pending a separate execution instruction; no remaining
+G1–G6 work, cumulative acceptance or Phase 4 execution follows this documentation
 delivery automatically.
 
 [A-test]: ../apps/api/src/test/java/com/sourceos/MeasurementTest.java

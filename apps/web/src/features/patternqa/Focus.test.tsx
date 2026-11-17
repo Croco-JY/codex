@@ -124,3 +124,92 @@ test("QA focus restoration never substitutes for an explicit affirmative assessm
   await screen.findByText("QA assessment recorded."); expect(h.writes()).toHaveLength(1);
   expect(await h.writes()[0].clone().json()).toEqual({ expectedLatestAssessmentNumber: 1, outcome: "HUMAN_REVIEWED", evidenceBasis: "READY_ARTIFACT", artifactId: id(900), notes });
 });
+
+const affirmative = () => within(dialog()).getByRole("button", { name: "Confirm human review attestation" });
+const artifactUrl = root() + "/patterns/" + PID + "/revisions/" + revision().id + "/artifact";
+const readyArtifact = () => ({ id: id(900), patternRevisionId: revision().id, patternId: PID, styleId: S,
+  declaredFormat: "PDF", displayName: "focus.pdf", sizeBytes: 10, state: "READY", failureCode: null, createdAt: time, updatedAt: time });
+function parentKey(h: Awaited<ReturnType<typeof setup>>, parent: string) {
+  return parent === "Project" ? queryKeys.project(h.scope, A, P)
+    : parent === "Style" ? queryKeys.style(h.scope, A, P, S) : queryKeys.pattern(h.scope, A, P, S, PID);
+}
+function archive(h: Awaited<ReturnType<typeof setup>>, parent: string, archived: boolean) {
+  if (parent === "Project") h.projectStatus = archived ? "ARCHIVED" : "ACTIVE";
+  else if (parent === "Style") h.styleStatus = archived ? "ARCHIVED" : "ACTIVE";
+  else h.patterns.set(A, [{ ...pattern(2), status: archived ? "ARCHIVED" : "ACTIVE", version: archived ? 1 : 2 }]);
+}
+for (const parent of ["Project", "Style", "Pattern"]) for (const alreadyOnCancel of [false, true]) {
+  test(`QA open confirmation repairs ${parent} archive focus; already on Cancel=${alreadyOnCancel}`, async () => {
+    const h = await setup(true), before = snapshot(); await open(h);
+    const action = cancel(); if (alreadyOnCancel) await h.user.tab();
+    const focused = vi.spyOn(action, "focus");
+    archive(h, parent, true);
+    await act(async () => h.cache.refetchQueries({ queryKey: parentKey(h, parent), exact: true }));
+    await waitFor(() => expect(affirmative()).toBeDisabled()); expect(action).toHaveFocus(); expect(dialog()).toBeVisible();
+    expect(focused).toHaveBeenCalledTimes(alreadyOnCancel ? 0 : 1);
+    for (const shift of [false, true, false]) { await h.user.tab({ shift }); expect(action).toHaveFocus(); }
+    const calls = focused.mock.calls.length;
+    await act(async () => h.cache.refetchQueries({ queryKey: parentKey(h, parent), exact: true }));
+    expect(focused).toHaveBeenCalledTimes(calls);
+    expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+    await h.user.keyboard(parent === "Project" ? "{Escape}" : parent === "Style" ? "{Enter}" : " ");
+    expect(screen.queryByRole("alertdialog")).toBeNull(); expect(heading()).toHaveFocus(); expect(trigger()).toBeDisabled();
+    expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+    expect(screen.getByRole("form", { name: "QA assessment draft" })).toHaveTextContent("Draft baseline assessment 1; current latest 1");
+  });
+}
+
+test("QA reactivation preserves Cancel focus and requires an explicit affirmative action", async () => {
+  const h = await setup(true), before = snapshot(); await open(h);
+  archive(h, "Pattern", true);
+  await act(async () => h.cache.refetchQueries({ queryKey: parentKey(h, "Pattern"), exact: true }));
+  await waitFor(() => expect(affirmative()).toBeDisabled()); expect(cancel()).toHaveFocus(); const focused = vi.spyOn(cancel(), "focus");
+  archive(h, "Pattern", false);
+  await act(async () => h.cache.refetchQueries({ queryKey: parentKey(h, "Pattern"), exact: true }));
+  await waitFor(() => expect(affirmative()).toBeEnabled()); expect(cancel()).toHaveFocus(); expect(focused).not.toHaveBeenCalled();
+  expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+  await h.user.keyboard("{Escape}"); expect(trigger()).toHaveFocus();
+  await open(h); await h.user.keyboard("{Enter}"); await screen.findByText("QA assessment recorded.");
+  expect(h.writes()).toHaveLength(1);
+  expect(await h.writes()[0].clone().json()).toEqual({ expectedLatestAssessmentNumber: 1, outcome: "HUMAN_REVIEWED", evidenceBasis: "READY_ARTIFACT", artifactId: id(900), notes });
+});
+
+test.each(["parent error", "artifact error", "artifact pending"])("QA open confirmation keeps safe focus through %s", async mode => {
+  const h = await setup(true), before = snapshot(); await open(h);
+  let accept!: (r: Response) => void;
+  const pending = new Promise<Response>(r => { accept = r; });
+  const target = mode === "parent error" ? queryKeys.project(h.scope, A, P)
+    : queryKeys.patternArtifact(h.scope, A, P, S, PID, revision().id);
+  h.overrides.set("GET " + (mode === "parent error" ? `/api/v1/organizations/${A}/projects/${P}` : artifactUrl),
+    () => mode === "artifact pending" ? pending : response({}, 503));
+  let read!: Promise<void>;
+  await act(async () => {
+    read = mode === "artifact pending" ? h.cache.resetQueries({ queryKey: target, exact: true })
+      : h.cache.refetchQueries({ queryKey: target, exact: true });
+    if (mode !== "artifact pending") await read;
+  });
+  await waitFor(() => expect(affirmative()).toBeDisabled()); expect(cancel()).toHaveFocus();
+  await h.user.tab(); expect(cancel()).toHaveFocus(); await h.user.tab({ shift: true }); expect(cancel()).toHaveFocus();
+  expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+  if (mode === "artifact pending") {
+    const focused = vi.spyOn(cancel(), "focus");
+    await act(async () => { accept(response(readyArtifact())); await read; });
+    await waitFor(() => expect(affirmative()).toBeEnabled()); expect(cancel()).toHaveFocus(); expect(focused).not.toHaveBeenCalled();
+  }
+  await h.user.keyboard("{Escape}"); expect(screen.queryByRole("alertdialog")).toBeNull();
+  expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+});
+
+test.each(["unmount", "Actor", "Organization", "revision"])("QA late eligibility response never focuses a retired Cancel after %s", async mode => {
+  const h = await setup(true); await open(h); const old = cancel(), focused = vi.spyOn(old, "focus");
+  let accept!: (r: Response) => void;
+  h.overrides.set("GET " + `/api/v1/organizations/${A}/projects/${P}`, () => new Promise<Response>(r => { accept = r; }));
+  let read!: Promise<void>;
+  await act(async () => { read = h.cache.refetchQueries({ queryKey: parentKey(h, "Project"), exact: true }); });
+  if (mode === "unmount") h.mounted.unmount();
+  else if (mode === "Actor") await act(async () => setLocalSubject("eligibility-replacement-actor"));
+  else await h.user.click(screen.getByRole("button", { name: mode === "Organization" ? "Other Organization" : "Other revision" }));
+  await waitFor(() => expect(old.isConnected).toBe(false));
+  await act(async () => { accept(response({}, 503)); await read; });
+  expect(focused).not.toHaveBeenCalled(); expect(h.writes()).toHaveLength(0);
+});

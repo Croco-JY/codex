@@ -507,24 +507,33 @@ function Editor({
     !artifact.isPending;
   const submitControl = useRef<HTMLButtonElement>(null),
     editorHeading = useRef<HTMLHeadingElement>(null),
+    confirmationRegion = useRef<HTMLElement>(null),
+    cancelControl = useRef<HTMLButtonElement>(null),
     returnFocus = useRef<{ scope: string; current: () => boolean } | null>(null);
   const editorScope = JSON.stringify([w.generation, ...key]);
   useLayoutEffect(() => () => { returnFocus.current = null; }, []);
   useLayoutEffect(() => {
-    if (confirmation) return;
-    const intent = returnFocus.current;
-    returnFocus.current = null;
-    if (!intent || intent.scope !== editorScope || !intent.current() || !w.current()) return;
     const visible = (element: HTMLElement | null) => {
       if (!element?.isConnected || element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
       if (element.checkVisibility) return element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
       const style = getComputedStyle(element);
       return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
     };
+    if (confirmation) {
+      const region = confirmationRegion.current, cancel = cancelControl.current;
+      if (!w.current() || !region?.isConnected) return;
+      const active = region.ownerDocument.activeElement;
+      if (active instanceof HTMLButtonElement && region.contains(active) && !active.disabled && visible(active)) return;
+      if (cancel && region.contains(cancel) && !cancel.disabled && visible(cancel)) cancel.focus();
+      return;
+    }
+    const intent = returnFocus.current;
+    returnFocus.current = null;
+    if (!intent || intent.scope !== editorScope || !intent.current() || !w.current()) return;
     const trigger = submitControl.current;
     if (trigger && !trigger.disabled && visible(trigger)) trigger.focus();
     else if (visible(editorHeading.current)) editorHeading.current!.focus();
-  }, [confirmation, editorScope, w.current]);
+  }, [confirmation, allowed, editorScope, w.current]);
   function dismissConfirmation() {
     returnFocus.current = { scope: editorScope, current: w.current };
     setConfirmation(null);
@@ -635,6 +644,7 @@ function Editor({
       </Button>
       {confirmation && (
         <section
+          ref={confirmationRegion}
           role="alertdialog"
           aria-label="Confirm human review attestation"
           onKeyDown={(e) => {
@@ -669,7 +679,7 @@ function Editor({
           >
             Confirm human review attestation
           </Button>
-          <Button type="button" onClick={dismissConfirmation}>
+          <Button ref={cancelControl} type="button" onClick={dismissConfirmation}>
             Cancel attestation
           </Button>
         </section>

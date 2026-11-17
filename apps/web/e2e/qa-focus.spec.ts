@@ -121,3 +121,63 @@ test("QA Actor replacement during dismissal cannot focus the retired editor or s
   })).toEqual({ connected: false, calls: [] });
   expect(mutations).toEqual([]);
 });
+
+for (const width of [390, 1440]) for (const parent of ["Project", "Style", "Pattern"] as const) {
+  test(`QA ${parent} archive transfers open confirmation focus safely, width=${width}`, async ({ page, request }, info) => {
+    test.setTimeout(95000); // Two genuine 31-second stale windows in the reactivation case.
+    const f = await setup(request), mutations: string[] = [], posts: unknown[] = [];
+    page.on("request", r => {
+      if (r.method() !== "GET" && new URL(r.url()).pathname.startsWith("/api/")) mutations.push(r.method() + " " + new URL(r.url()).pathname);
+      if (r.method() === "POST" && new URL(r.url()).pathname === f.qa + "/assessments") posts.push(r.postDataJSON());
+    });
+    await page.setViewportSize({ width, height: 1000 }); await draft(page, f);
+    const before = await snapshot(page), originalUrl = page.url(); await open(page);
+    const alreadyOnCancel = parent === "Pattern" && width === 1440;
+    if (alreadyOnCancel) { await page.keyboard.press("Tab"); await expect(cancel(page)).toBeFocused(); }
+    await cancel(page).evaluate(e => {
+      const original = e.focus.bind(e), calls: { connected: boolean }[] = [];
+      Object.defineProperty(window, "qaEligibilityFocus", { value: calls });
+      e.focus = (...args) => { calls.push({ connected: e.isConnected }); original(...args); };
+    });
+    const project = `/api/v1/organizations/${f.a.id}/projects/${f.project.id}`;
+    const endpoint = parent === "Project" ? project : parent === "Style" ? project + `/styles/${f.style.id}`
+      : project + `/styles/${f.style.id}/patterns/${f.pattern.id}`;
+    const archiveBody = parent === "Project" ? { name: f.project.name, description: f.project.description, status: "ARCHIVED", version: 0 }
+      : parent === "Style" ? { name: f.style.name, styleCode: f.style.styleCode, description: f.style.description, status: "ARCHIVED", version: 0 }
+      : { status: "ARCHIVED", version: 0 };
+    const archived = await request.put(api + endpoint, { headers: f.headers, data: archiveBody });
+    expect(archived.status()).toBe(200); const archivedValue = await archived.json();
+    // Exercise real parent Query refetch after its unchanged production stale interval.
+    await page.waitForTimeout(31000); await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
+    await expect(page.getByText("QA is read-only while the Project, Style or Pattern is archived.", { exact: true })).toBeVisible();
+    await expect(confirm(page)).toBeDisabled(); await expect(cancel(page)).toBeEnabled();
+    await expect(cancel(page)).toBeFocused(); // No manual focus or keypress repairs the transition.
+    expect(await cancel(page).evaluate(e => e === document.activeElement && e.isConnected && e.getClientRects().length > 0)).toBe(true);
+    expect(await page.evaluate(() => (window as unknown as { qaEligibilityFocus: { connected: boolean }[] }).qaEligibilityFocus))
+      .toEqual(alreadyOnCancel ? [] : [{ connected: true }]);
+    await info.attach("eligibility-focus", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+    for (const key of ["Tab", "Shift+Tab", "Tab"]) { await page.keyboard.press(key); await expect(cancel(page)).toBeFocused(); }
+    await confirm(page).evaluate((e: HTMLButtonElement) => e.click()); // Native disabled activation cannot submit.
+    expect(mutations).toEqual([]); expect(posts).toEqual([]); expect(await snapshot(page)).toEqual(before);
+    await expect(dialog(page)).toContainText(f.ready.artifact.id);
+    await expect(page.getByRole("form", { name: "QA assessment draft" })).toContainText("Draft baseline assessment 1; current latest 1");
+    await page.keyboard.press(parent === "Project" ? "Escape" : parent === "Style" ? "Enter" : "Space");
+    await expect(dialog(page)).toHaveCount(0); await expect(submit(page)).toBeDisabled();
+    const fallback = page.getByRole("heading", { name: "Record a human assessment", exact: true });
+    await expect(fallback).toBeFocused();
+    expect(await fallback.evaluate(e => e.isConnected && e.getClientRects().length > 0 && !!e.closest('form[aria-label="QA assessment draft"]'))).toBe(true);
+    expect(await snapshot(page)).toEqual(before); expect(page.url()).toBe(originalUrl); expect(mutations).toEqual([]);
+    const current = await request.get(api + f.qa, { headers: f.headers }); expect(current.status()).toBe(200);
+    expect((await current.json()).latestAssessment.assessmentNumber).toBe(1);
+    if (alreadyOnCancel) {
+      const reactivated = await request.put(api + endpoint, { headers: f.headers, data: { status: "ACTIVE", version: archivedValue.version } });
+      expect(reactivated.status()).toBe(200);
+      await page.waitForTimeout(31000); await page.evaluate(() => window.dispatchEvent(new Event("visibilitychange")));
+      await expect(submit(page)).toBeEnabled(); expect(await snapshot(page)).toEqual(before); expect(mutations).toEqual([]);
+      await open(page); await page.keyboard.press("Enter"); await expect(page.getByText("QA assessment recorded.", { exact: true })).toBeVisible();
+      expect(posts).toEqual([{ expectedLatestAssessmentNumber: 1, outcome: "HUMAN_REVIEWED", evidenceBasis: "READY_ARTIFACT", artifactId: f.ready.artifact.id, notes }]);
+      expect(mutations).toEqual(["POST " + f.qa + "/assessments"]);
+    }
+    await info.attach("eligibility-draft-and-network", { body: JSON.stringify({ width, parent, alreadyOnCancel, before, mutations, posts, revision: f.ready.revision.id, artifact: f.ready.artifact.id }), contentType: "application/json" });
+  });
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -505,6 +505,30 @@ function Editor({
     !command.isPending &&
     !artifact.isError &&
     !artifact.isPending;
+  const submitControl = useRef<HTMLButtonElement>(null),
+    editorHeading = useRef<HTMLHeadingElement>(null),
+    returnFocus = useRef<{ scope: string; current: () => boolean } | null>(null);
+  const editorScope = JSON.stringify([w.generation, ...key]);
+  useLayoutEffect(() => () => { returnFocus.current = null; }, []);
+  useLayoutEffect(() => {
+    if (confirmation) return;
+    const intent = returnFocus.current;
+    returnFocus.current = null;
+    if (!intent || intent.scope !== editorScope || !intent.current() || !w.current()) return;
+    const visible = (element: HTMLElement | null) => {
+      if (!element?.isConnected || element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
+      if (element.checkVisibility) return element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+      const style = getComputedStyle(element);
+      return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
+    };
+    const trigger = submitControl.current;
+    if (trigger && !trigger.disabled && visible(trigger)) trigger.focus();
+    else if (visible(editorHeading.current)) editorHeading.current!.focus();
+  }, [confirmation, editorScope, w.current]);
+  function dismissConfirmation() {
+    returnFocus.current = { scope: editorScope, current: w.current };
+    setConfirmation(null);
+  }
   function submit(draft: Draft) {
     if (!allowed) return;
     try {
@@ -521,7 +545,7 @@ function Editor({
   }
   return (
     <form aria-label="QA assessment draft" onSubmit={form.handleSubmit(submit)}>
-      <h3>Record a human assessment</h3>
+      <h3 ref={editorHeading} tabIndex={-1}>Record a human assessment</h3>
       <p>
         Draft baseline assessment {baseline}; current latest{" "}
         {current.latestAssessment?.assessmentNumber ?? 0}.
@@ -606,7 +630,7 @@ function Editor({
           Reconcile QA baseline without changing draft
         </Button>
       )}
-      <Button type="submit" disabled={!allowed || !!confirmation}>
+      <Button ref={submitControl} type="submit" disabled={!allowed || !!confirmation}>
         Submit QA assessment
       </Button>
       {confirmation && (
@@ -614,7 +638,18 @@ function Editor({
           role="alertdialog"
           aria-label="Confirm human review attestation"
           onKeyDown={(e) => {
-            if (e.key === "Escape") setConfirmation(null);
+            if (e.key === "Escape") {
+              e.preventDefault();
+              e.stopPropagation();
+              dismissConfirmation();
+            } else if (e.key === "Tab") {
+              const controls = e.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
+              const first = controls[0], last = controls[controls.length - 1];
+              if (first && last && ((!e.shiftKey && e.target === last) || (e.shiftKey && e.target === first))) {
+                e.preventDefault();
+                (e.shiftKey ? last : first).focus();
+              }
+            }
           }}
         >
           <p>{qualification}</p>
@@ -627,13 +662,14 @@ function Editor({
             disabled={!allowed}
             onClick={() => {
               const body = confirmation;
+              returnFocus.current = null;
               setConfirmation(null);
               command.mutate(body);
             }}
           >
             Confirm human review attestation
           </Button>
-          <Button onClick={() => setConfirmation(null)}>
+          <Button type="button" onClick={dismissConfirmation}>
             Cancel attestation
           </Button>
         </section>

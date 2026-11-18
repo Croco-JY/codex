@@ -181,3 +181,103 @@ for (const width of [390, 1440]) for (const parent of ["Project", "Style", "Patt
     await info.attach("eligibility-draft-and-network", { body: JSON.stringify({ width, parent, alreadyOnCancel, before, mutations, posts, revision: f.ready.revision.id, artifact: f.ready.artifact.id }), contentType: "application/json" });
   });
 }
+
+for (const width of [390, 1440]) {
+  for (const mode of ["hidden", "disabled", "inert", "aria-hidden", "opacity", "class", "ancestor", "disconnected", "replaced"] as const) {
+    test(`QA external eligibility repair preserves native keyboard continuation, width=${width}, mode=${mode}`, async ({ page, request }, info) => {
+      const f = await setup(request), mutations: string[] = [];
+      await page.setViewportSize({ width, height: 1000 }); await draft(page, f);
+      page.on("request", r => { if (!["GET", "HEAD", "OPTIONS"].includes(r.method()) && new URL(r.url()).pathname.startsWith("/api/")) mutations.push(r.method()); });
+      const before = await snapshot(page); await open(page);
+      await confirm(page).evaluate((button: HTMLButtonElement, mode) => {
+        if (mode === "hidden") button.hidden = true;
+        else if (mode === "disabled") button.disabled = true;
+        else if (mode === "opacity") button.style.opacity = "0";
+        else if (mode === "class") {
+          const style = document.createElement("style"); style.textContent = ".qa-external-hidden { display:none; }";
+          document.head.append(style); button.classList.add("qa-external-hidden");
+        } else if (mode === "ancestor") {
+          const wrapper = document.createElement("span"); button.before(wrapper); wrapper.append(button); wrapper.style.visibility = "hidden";
+        } else if (mode === "disconnected") button.remove();
+        else if (mode === "replaced") { const replacement = button.cloneNode(true) as HTMLButtonElement; replacement.hidden = true; button.replaceWith(replacement); }
+        else button.setAttribute(mode, mode === "aria-hidden" ? "true" : "");
+      }, mode);
+      // Automatic repair must precede any repair key or manual focus operation.
+      await expect(cancel(page)).toBeFocused();
+      expect(await cancel(page).evaluate((e: HTMLButtonElement) => e.isConnected && !e.disabled && e.checkVisibility({ opacityProperty: true, visibilityProperty: true }))).toBe(true);
+      for (const key of ["Shift+Tab", "Tab", "Tab", "Shift+Tab"]) { await page.keyboard.press(key); await expect(cancel(page)).toBeFocused(); }
+      await page.keyboard.press("Escape"); await expect(submit(page)).toBeFocused();
+      expect(await snapshot(page)).toEqual(before); expect(mutations).toEqual([]);
+      await expect(page.getByRole("form", { name: "QA assessment draft" })).toContainText("Draft baseline assessment 1; current latest 1");
+      const current = await request.get(api + f.qa, { headers: f.headers }); expect(current.status()).toBe(200);
+      expect((await current.json()).latestAssessment.assessmentNumber).toBe(1);
+      await info.attach("residual-invariants", { body: JSON.stringify({ width, mode, before, after: await snapshot(page), artifact: f.ready.artifact.id, revision: f.ready.revision.id, mutations }), contentType: "application/json" });
+    });
+  }
+  test(`QA BODY keyboard boundary, container fallback and restored actions, width=${width}`, async ({ page, request }) => {
+    const f = await setup(request), mutations: string[] = [];
+    await page.setViewportSize({ width, height: 1000 }); await draft(page, f);
+    page.on("request", r => { if (!["GET", "HEAD", "OPTIONS"].includes(r.method()) && new URL(r.url()).pathname.startsWith("/api/")) mutations.push(r.method()); });
+    const before = await snapshot(page); await open(page);
+    for (const key of ["Tab", "Shift+Tab"]) {
+      await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+      expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+      await page.keyboard.press(key);
+      expect(await dialog(page).evaluate(e => e.contains(document.activeElement))).toBe(true);
+    }
+    await dialog(page).evaluate(e => e.querySelectorAll("button").forEach(b => b.disabled = true));
+    await expect(dialog(page)).toBeFocused();
+    await page.keyboard.press("Tab"); await expect(dialog(page)).toBeFocused();
+    await page.keyboard.press("Shift+Tab"); await expect(dialog(page)).toBeFocused();
+    await cancel(page).evaluate((e: HTMLButtonElement) => e.disabled = false); await expect(cancel(page)).toBeFocused();
+    await confirm(page).evaluate((e: HTMLButtonElement) => e.disabled = false); await expect(cancel(page)).toBeFocused();
+    await page.keyboard.press("Shift+Tab"); await expect(confirm(page)).toBeFocused();
+    await page.evaluate(() => (document.activeElement as HTMLElement).blur());
+    await page.keyboard.press("Escape"); await expect(submit(page)).toBeFocused();
+    expect(await snapshot(page)).toEqual(before); expect(mutations).toEqual([]);
+    // Closing must remove the BODY-origin keyboard boundary.
+    await submit(page).blur(); const event = await page.evaluate(() => {
+      const e = new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true });
+      document.body.dispatchEvent(e); return e.defaultPrevented;
+    }); expect(event).toBe(false);
+  });
+}
+
+for (const width of [390, 1440]) test(`QA CSSOM-only visibility changes are contained at the keyboard boundary, width=${width}`, async ({ page, request }) => {
+  const f = await setup(request), mutations: string[] = [];
+  await page.setViewportSize({ width, height: 1000 }); await draft(page, f);
+  page.on("request", r => { if (!["GET", "HEAD", "OPTIONS"].includes(r.method()) && new URL(r.url()).pathname.startsWith("/api/")) mutations.push(r.method()); });
+  const before = await snapshot(page); await open(page);
+  await confirm(page).evaluate(e => {
+    e.id = "qa-cssom-action";
+    const style = document.createElement("style"); style.id = "qa-cssom-style"; document.head.append(style);
+  });
+  // CSSOM rule insertion has no subtree/attribute MutationObserver signal.
+  await page.evaluate(() => (document.getElementById("qa-cssom-style") as HTMLStyleElement).sheet!.insertRule("#qa-cssom-action { visibility: hidden; }"));
+  await page.keyboard.press("Shift+Tab"); await expect(cancel(page)).toBeFocused();
+  await page.keyboard.press("Tab"); await expect(cancel(page)).toBeFocused();
+  await page.evaluate(() => (document.getElementById("qa-cssom-style") as HTMLStyleElement).sheet!.deleteRule(0));
+  await page.keyboard.press("Shift+Tab"); await expect(confirm(page)).toBeFocused();
+  await page.keyboard.press("Escape"); await expect(submit(page)).toBeFocused();
+  expect(await snapshot(page)).toEqual(before); expect(mutations).toEqual([]);
+});
+
+
+for (const width of [390, 1440]) for (const key of ["Enter", "Space", "Space release"] as const) {
+  test(`QA CSSOM-only opacity loss cannot activate an invisible action, width=${width}, key=${key}`, async ({ page, request }) => {
+    const f = await setup(request), mutations: string[] = [];
+    await page.setViewportSize({ width, height: 1000 }); await draft(page, f);
+    page.on("request", r => { if (!["GET", "HEAD", "OPTIONS"].includes(r.method()) && new URL(r.url()).pathname.startsWith("/api/")) mutations.push(r.method()); });
+    const before = await snapshot(page); await open(page);
+    await confirm(page).evaluate(e => {
+      e.id = "qa-opacity-action"; const style = document.createElement("style"); style.id = "qa-opacity-style"; document.head.append(style);
+    });
+    if (key === "Space release") await page.keyboard.down("Space");
+    await page.evaluate(() => (document.getElementById("qa-opacity-style") as HTMLStyleElement).sheet!.insertRule("#qa-opacity-action { opacity:0; }"));
+    if (key === "Space release") await page.keyboard.up("Space"); else await page.keyboard.press(key);
+    await expect(cancel(page)).toBeFocused(); expect(await snapshot(page)).toEqual(before); expect(mutations).toEqual([]);
+    await page.keyboard.press("Escape"); await expect(submit(page)).toBeFocused(); expect(mutations).toEqual([]);
+    const current = await request.get(api + f.qa, { headers: f.headers }); expect(current.status()).toBe(200);
+    expect((await current.json()).latestAssessment.assessmentNumber).toBe(1);
+  });
+}

@@ -213,3 +213,55 @@ test.each(["unmount", "Actor", "Organization", "revision"])("QA late eligibility
   await act(async () => { accept(response({}, 503)); await read; });
   expect(focused).not.toHaveBeenCalled(); expect(h.writes()).toHaveLength(0);
 });
+
+// Residual IR-DF02-01: mutations do not schedule a React render.
+test.each(["disabled", "hidden", "inert", "aria-hidden", "aria-disabled", "style", "class", "removed"])("QA observes external action eligibility without a React commit: %s", async mode => {
+  const h = await setup(true), before = snapshot(); await open(h);
+  const action = affirmative(), safe = cancel();
+  await act(async () => {
+    if (mode === "removed") action.remove();
+    else if (mode === "style") action.style.visibility = "hidden";
+    else if (mode === "class") {
+      const style = document.createElement("style"); style.textContent = ".qa-residual-hidden { display: none; }";
+      document.head.append(style); action.className += " qa-residual-hidden";
+    } else action.setAttribute(mode, mode.startsWith("aria-") ? "true" : "");
+  });
+  expect(safe).toHaveFocus(); await h.user.tab({ shift: true }); expect(safe).toHaveFocus();
+  expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+  await h.user.keyboard("{Escape}"); expect(trigger()).toHaveFocus();
+});
+
+test("QA container fallback contains BODY-origin keys and exits without a write", async () => {
+  const h = await setup(true), before = snapshot(); await open(h);
+  const region = dialog(), yes = affirmative() as HTMLButtonElement, no = cancel() as HTMLButtonElement;
+  await act(async () => { yes.disabled = true; no.disabled = true; });
+  expect(region).toHaveFocus(); await h.user.tab(); expect(region).toHaveFocus();
+  await h.user.tab({ shift: true }); expect(region).toHaveFocus();
+  await act(async () => { region.blur(); });
+  expect(document.body).toHaveFocus(); await h.user.keyboard("{Escape}");
+  expect(screen.queryByRole("alertdialog")).toBeNull(); expect(trigger()).toHaveFocus();
+  expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+});
+
+test("QA live focus subscriptions retire with the editor, including queued changes", async () => {
+  const h = await setup(true); await open(h);
+  const region = dialog(), safe = cancel(), focused = vi.spyOn(safe, "focus");
+  await act(async () => { affirmative().hidden = true; h.mounted.unmount(); });
+  expect(region.isConnected).toBe(false); expect(focused).not.toHaveBeenCalled();
+  const outside = document.createElement("button"); document.body.append(outside); outside.focus();
+  try {
+    await h.user.keyboard("{Tab}{Escape}");
+    expect(focused).not.toHaveBeenCalled(); expect(h.writes()).toHaveLength(0);
+  } finally { outside.remove(); }
+});
+
+
+test.each(["Enter", "Space", "Space release"])("QA rechecks no-signal eligibility before native activation: %s", async mode => {
+  const h = await setup(true), before = snapshot(); await open(h);
+  const action = affirmative();
+  if (mode === "Space release") await h.user.keyboard("[Space>]");
+  Object.defineProperty(action, "checkVisibility", { configurable: true, value: () => false });
+  await h.user.keyboard(mode === "Enter" ? "{Enter}" : mode === "Space" ? " " : "[/Space]");
+  expect(cancel()).toHaveFocus(); expect(snapshot()).toEqual(before); expect(h.writes()).toHaveLength(0);
+  await h.user.keyboard("{Escape}"); expect(trigger()).toHaveFocus();
+});

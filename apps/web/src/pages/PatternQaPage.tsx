@@ -34,6 +34,24 @@ import {
 import { ApiErrorState } from "../ui/ApiErrorState";
 import { Button, Surface, Stack, Skeleton } from "../ui";
 
+// Shared by dismissal, live focus repair and keyboard boundaries. Focus is a
+// presentation concern; this predicate never grants permission to submit QA.
+function qaFocusVisible(element: HTMLElement | null): element is HTMLElement {
+  if (!element?.isConnected || element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
+  if (element.checkVisibility) return element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
+  const view = element.ownerDocument.defaultView;
+  for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+    const style = view?.getComputedStyle(node);
+    if (style?.display === "none" || style?.visibility === "hidden" || style?.visibility === "collapse" || style?.opacity === "0") return false;
+  }
+  return true;
+}
+function qaFocusActions(region: HTMLElement) {
+  return [...region.querySelectorAll<HTMLButtonElement>("button")].filter(
+    button => !button.matches(":disabled") && button.getAttribute("aria-disabled") !== "true" && qaFocusVisible(button),
+  );
+}
+
 const qualification =
   "Human review recorded. This is not automated validation, sample approval, production verification, or authorization to manufacture.";
 export default function PatternQaPage() {
@@ -513,27 +531,91 @@ function Editor({
   const editorScope = JSON.stringify([w.generation, ...key]);
   useLayoutEffect(() => () => { returnFocus.current = null; }, []);
   useLayoutEffect(() => {
-    const visible = (element: HTMLElement | null) => {
-      if (!element?.isConnected || element.closest('[hidden], [inert], [aria-hidden="true"]')) return false;
-      if (element.checkVisibility) return element.checkVisibility({ opacityProperty: true, visibilityProperty: true });
-      const style = getComputedStyle(element);
-      return style.display !== "none" && style.visibility !== "hidden" && style.opacity !== "0";
-    };
-    if (confirmation) {
-      const region = confirmationRegion.current, cancel = cancelControl.current;
-      if (!w.current() || !region?.isConnected) return;
-      const active = region.ownerDocument.activeElement;
-      if (active instanceof HTMLButtonElement && region.contains(active) && !active.disabled && visible(active)) return;
-      if (cancel && region.contains(cancel) && !cancel.disabled && visible(cancel)) cancel.focus();
+    if (!confirmation) {
+      const intent = returnFocus.current;
+      returnFocus.current = null;
+      if (!intent || intent.scope !== editorScope || !intent.current() || !w.current()) return;
+      const trigger = submitControl.current;
+      if (trigger && !trigger.disabled && qaFocusVisible(trigger)) trigger.focus();
+      else if (qaFocusVisible(editorHeading.current)) editorHeading.current.focus();
       return;
     }
-    const intent = returnFocus.current;
-    returnFocus.current = null;
-    if (!intent || intent.scope !== editorScope || !intent.current() || !w.current()) return;
-    const trigger = submitControl.current;
-    if (trigger && !trigger.disabled && visible(trigger)) trigger.focus();
-    else if (visible(editorHeading.current)) editorHeading.current!.focus();
+    const region = confirmationRegion.current;
+    if (!region) return;
+    const doc = region.ownerDocument, view = doc.defaultView;
+    let retired = false, repairing = false;
+    const repair = () => {
+      // Revalidate on every DOM/event callback, including queued observer delivery.
+      if (retired || repairing || !w.current() || !qaFocusVisible(region)) return;
+      const actions = qaFocusActions(region), active = doc.activeElement;
+      if (actions.some(button => button === active) || (!actions.length && active === region)) return;
+      const cancel = cancelControl.current;
+      const target = actions.find(button => button === cancel) ?? actions[0] ?? region;
+      repairing = true;
+      try { target.focus(); } finally { repairing = false; }
+    };
+    const observer = new MutationObserver(repair);
+    const attributes = ["disabled", "hidden", "inert", "aria-hidden", "aria-disabled", "style", "class"];
+    observer.observe(region, { subtree: true, childList: true, attributes: true, attributeFilter: attributes });
+    // Ancestor eligibility can change without a React render. Observe attributes
+    // only there, not every mutation in the surrounding application.
+    for (let node = region.parentElement; node; node = node.parentElement)
+      observer.observe(node, { attributes: true, attributeFilter: attributes });
+    const outsideKey = (event: KeyboardEvent) => {
+      if (!retired && !region.contains(event.target as Node | null)) handleConfirmationKey(event);
+    };
+    const focus = (event: FocusEvent) => {
+      if (event.target === doc.body || event.target === doc.documentElement || region.contains(event.target as Node | null)) repair();
+    };
+    // BODY-origin keyboard events never reach the section's React handler.
+    doc.addEventListener("keydown", outsideKey, true);
+    doc.addEventListener("focusin", focus, true);
+    doc.addEventListener("keyup", protectConfirmationActivation, true);
+    region.addEventListener("transitionend", repair);
+    region.addEventListener("animationend", repair);
+    view?.addEventListener("resize", repair);
+    repair();
+    return () => {
+      retired = true;
+      observer.disconnect();
+      doc.removeEventListener("keydown", outsideKey, true);
+      doc.removeEventListener("focusin", focus, true);
+      doc.removeEventListener("keyup", protectConfirmationActivation, true);
+      region.removeEventListener("transitionend", repair);
+      region.removeEventListener("animationend", repair);
+      view?.removeEventListener("resize", repair);
+    };
   }, [confirmation, allowed, editorScope, w.current]);
+  function handleConfirmationKey(event: Pick<KeyboardEvent, "key" | "shiftKey" | "preventDefault" | "stopPropagation">) {
+    const region = confirmationRegion.current;
+    if (!confirmation || !w.current() || !qaFocusVisible(region)) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      dismissConfirmation();
+    } else if (event.key === "Tab") {
+      const actions = qaFocusActions(region), active = region.ownerDocument.activeElement;
+      const index = actions.findIndex(button => button === active);
+      if (index < 0 || (!event.shiftKey && index === actions.length - 1) || (event.shiftKey && index === 0)) {
+        event.preventDefault();
+        event.stopPropagation();
+        (event.shiftKey ? actions.at(-1) ?? region : actions[0] ?? region).focus();
+      }
+    } else protectConfirmationActivation(event);
+  }
+  function protectConfirmationActivation(event: Pick<KeyboardEvent, "key" | "preventDefault" | "stopPropagation">) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const region = confirmationRegion.current;
+    if (!confirmation || !w.current() || !qaFocusVisible(region)) return;
+    const doc = region.ownerDocument, active = doc.activeElement, actions = qaFocusActions(region);
+    if (actions.some(button => button === active) || (active !== doc.body && active !== doc.documentElement && !region.contains(active))) return;
+    // A CSSOM-only change can leave an invisible action focused. Consume its
+    // activation key (including Space release) before the browser clicks it.
+    event.preventDefault();
+    event.stopPropagation();
+    const target = actions.find(button => button === cancelControl.current) ?? actions[0] ?? region;
+    if (target !== active) target.focus();
+  }
   function dismissConfirmation() {
     returnFocus.current = { scope: editorScope, current: w.current };
     setConfirmation(null);
@@ -647,20 +729,8 @@ function Editor({
           ref={confirmationRegion}
           role="alertdialog"
           aria-label="Confirm human review attestation"
-          onKeyDown={(e) => {
-            if (e.key === "Escape") {
-              e.preventDefault();
-              e.stopPropagation();
-              dismissConfirmation();
-            } else if (e.key === "Tab") {
-              const controls = e.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
-              const first = controls[0], last = controls[controls.length - 1];
-              if (first && last && ((!e.shiftKey && e.target === last) || (e.shiftKey && e.target === first))) {
-                e.preventDefault();
-                (e.shiftKey ? last : first).focus();
-              }
-            }
-          }}
+          tabIndex={-1}
+          onKeyDown={handleConfirmationKey}
         >
           <p>{qualification}</p>
           <p>

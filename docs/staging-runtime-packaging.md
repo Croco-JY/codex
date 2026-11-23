@@ -51,21 +51,46 @@ Run from the repository root. Python 3 and Git suffice for static verification:
 ```
 
 Static mode does not execute Docker, Maven, Java, a network request or tests.
-It checks every baseline file outside the four packaging files using Git's
+It checks every baseline file outside the authorized packaging/policy files using Git's
 attribute normalization, including all committed migrations, contracts and tests.
-Its Dockerfile checks are a restricted static lint; a Docker parser/build has
-not run. No arbitrary preexisting JAR can be registered as a verified build.
+Its Dockerfile checks are a restricted static lint; this mode does not run
+Docker's parser or build. No arbitrary preexisting JAR can be registered as a verified build.
 
-The following commands are for a future environment with **separate explicit
-build, Testcontainers and network workload authorization**. The flag records the
-operator's assertion of authority; it does not obtain or grant permission:
+**P1 correction: container-capable Maven verification is blocked.** There is no
+independently controlled platform approval mechanism integrated into this
+verifier. Both the CLI and the build function reject before any Maven command,
+including the wrapper version check. The following build invocation exits
+non-zero, even when supplied with `--authorized-execution`:
 
 ```sh
 ./scripts/stg-1a-verify.sh build --authorized-execution
-./scripts/stg-1a-verify.sh context
 ```
 
-Build mode requires a Java 25 JDK and runs the unchanged wrapper with
+Caller flags, socket availability, environment variables and property files
+cannot enable this path. `TESTCONTAINERS_RYUK_PRIVILEGED=false` is not the Java
+privileged setting; Testcontainers 2.0.5 uses
+`TESTCONTAINERS_RYUK_CONTAINER_PRIVILEGED` / `ryuk.container.privileged`, defaulting
+to `true`. For that property, a non-empty environment override takes precedence
+over `~/.testcontainers.properties`, then merged classpath
+`testcontainers.properties`, then the default. Classpath properties merge with
+first-write precedence (alphabetical URLs; `file:` before `jar:`). The verifier
+does not assume that a partial scan establishes the effective Java classpath.
+
+Neither setting the correct privileged variable to `false` nor setting
+`TESTCONTAINERS_RYUK_DISABLED=true` grants execution authority. The gate rejects
+all configurations, including unknown, conflicting and disabled Ryuk, without
+changing any override or disabling cleanup. Future enabling work must integrate
+an independently controlled, workload-specific approval channel and verify the
+effective settings, privilege policy, daemon-socket mounts and a separately
+approved cleanup arrangement when Ryuk is disabled. This correction supplies no
+such runtime authorization. Static mode remains available. Offline policy tests:
+
+```sh
+python3 scripts/stg-1a-policy-test.py
+```
+
+The retained build implementation behind this closed gate requires a Java 25
+JDK and, only after a future reviewed authorization integration, would run
 `./mvnw -B clean verify` from `apps/api`. It clears no caches or unrelated files;
 Maven clean removes only the API build output. Do not run it where an existing
 `target` directory contains protected evidence. Export a verified copy first
@@ -85,7 +110,7 @@ this is only a headroom gate: separately budget Maven/JDK downloads, Docker's
 data root, PostgreSQL test volumes and retained evidence. Stop when capacity is
 insufficient; this slice does not authorize cleanup or privileged operations.
 
-Context mode validates the record and prints an exact `docker build` command
+Context mode validates an existing record and prints an exact `docker build` command
 with source and JAR hash arguments. It does not execute that command. Once
 container builds are explicitly authorized, execute that printed command from
 the repository root. Its final context argument is **`apps/api`** and the image

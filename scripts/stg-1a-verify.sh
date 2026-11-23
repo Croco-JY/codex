@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Static by default. Executing build/image modes requires explicit workload authority.
+# Static by default. Maven builds are blocked pending independent platform approval.
 set -euo pipefail
 export STG_1A_REPO_ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 exec python3 - "$@" <<'PY'
@@ -19,7 +19,8 @@ from xml.etree import ElementTree as ET
 BASELINE = 'd648d7aff2418adc728b1274632f6c7df2be9ab3'
 BASE_IMAGE = 'eclipse-temurin:25-jre-noble@sha256:334f294a3edd3fc7c2a7b12ed0f4b3f43c2e9bd39de2867996b4ae6a652721bf'
 ALLOWED = {'apps/api/Dockerfile', 'apps/api/.dockerignore',
-           'scripts/stg-1a-verify.sh', 'docs/staging-runtime-packaging.md'}
+           'scripts/stg-1a-verify.sh', 'scripts/stg-1a-policy-test.py',
+           'docs/staging-runtime-packaging.md'}
 JAR_PATH = 'apps/api/target/source-os-api-0.0.1-SNAPSHOT.jar'
 ROOT = Path(os.environ['STG_1A_REPO_ROOT'])
 EVIDENCE = ROOT / '.local/stg-1a'
@@ -147,7 +148,23 @@ def test_reports():
         require(name in executed, 'Missing backend test suite: ' + name)
     return {p.name: digest(p) for p in reports}
 
+def require_testcontainers_authorization():
+    # No independently controlled approval channel is integrated. Caller flags,
+    # environment variables, sockets and property files cannot grant authority.
+    # Deny all configurations, including privileged/disabled/conflicting Ryuk,
+    # before Maven can resolve dependencies or launch containers. Do not replace
+    # this gate with caller-supplied approval or automatically disable cleanup.
+    raise ValueError(
+        'NOT EXECUTED — AUTHORIZATION BLOCKED: container-capable Maven verification '
+        'is disabled because no independently controlled platform approval channel '
+        'is integrated. Caller flags and Ryuk environment/property overrides are '
+        'not authorization. Use static mode. A separately approved channel must '
+        'verify the effective configuration, privilege and Docker socket-mount '
+        'permissions, and approved cleanup if Ryuk is disabled before enabling builds.'
+    )
+
 def build(state):
+    require_testcontainers_authorization()
     require(not git('status', '--porcelain'), 'Commit reviewed packaging before building; source SHA must identify the complete source')
     for name in ('MAVEN_ARGS','MAVEN_OPTS','JAVA_TOOL_OPTIONS','JDK_JAVA_OPTIONS'):
         require(not os.environ.get(name), 'Clear build-injection environment variable: ' + name)
@@ -216,12 +233,13 @@ def main():
     parser = argparse.ArgumentParser(description='STG-1A static lint and explicitly gated provenance checks')
     parser.add_argument('mode', choices=['static','build','context','image'], nargs='?', default='static')
     parser.add_argument('--authorized-execution', action='store_true',
-                        help='Assert separately obtained authority for this build/container workload')
+                        help='Caller intent only; never proof of platform authorization')
     parser.add_argument('--image', help='Existing local image for explicitly authorized image probes')
     args = parser.parse_args()
-    if args.mode in {'build','image'}:
-        require(args.authorized_execution, 'NOT EXECUTED — AUTHORIZATION BLOCKED: explicit workload authority required')
+    if args.mode == 'build':
+        require_testcontainers_authorization()
     if args.mode == 'image':
+        require(args.authorized_execution, 'NOT EXECUTED — AUTHORIZATION BLOCKED: explicit workload authority required')
         require(args.image, '--image is required')
     state = static_checks()
     if args.mode == 'build':

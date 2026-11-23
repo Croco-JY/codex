@@ -1,0 +1,7 @@
+# Deny by default. This file applies only when the context is apps/api.
+**
+!Dockerfile
+!.dockerignore
+!target/
+target/**
+!target/source-os-api-0.0.1-SNAPSHOT.jar

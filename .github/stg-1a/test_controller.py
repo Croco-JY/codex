@@ -119,10 +119,12 @@ class ApprovalTests(TestCase):
                "actor": {"id": ACTOR}, "triggering_actor": {"id": ACTOR}, "created_at": timestamp(-60)}
         self.rows = {
             self.run_path: run, self.run_path + "/attempts/1": deepcopy(run),
-            self.run_path + "/attempts/1/jobs": {"total_count": 1, "jobs": [{
+            self.run_path + "/attempts/1/jobs": {"total_count": 2, "jobs": [{
                 "name": "verify", "head_sha": WORKFLOW_SHA, "run_id": int(RUN),
                 "status": "in_progress", "run_attempt": 1, "labels": ["ubuntu-24.04"],
-                "id": 1001, "runner_id": 1002, "runner_name": "GitHub Actions 1002"}]},
+                "id": 1001, "runner_id": 1002, "runner_name": "GitHub Actions 1002"}, {
+                "name": "context", "conclusion": "success", "head_sha": WORKFLOW_SHA,
+                "run_id": int(RUN), "run_attempt": 1}]},
             self.run_path + "/approvals": [{
                 "state": "approved", "environments": [{"id": ENV_ID}],
                 "user": {"id": REVIEWER, "login": "reviewer"}}],
@@ -345,7 +347,7 @@ class WorkloadTests(TestCase):
     def test_cleanup_verifies_removal(self):
         inv = c.Inventory(self.cmd, RUN)
         identity = inv.add("container", "a" * 64)
-        row = {"Id": identity, "Config": {"Labels": {"com.sourceos.stg1a.run": RUN}}}
+        row = {"Id": identity, "Mounts": [], "Config": {"Labels": {"com.sourceos.stg1a.run": RUN}}}
         self.executor.side_effect = [(0, json.dumps([row])), (0, ""), (1, "No such container")]
         self.assertEqual(inv.cleanup()["verified_owned_resources"], 1)
 
@@ -364,14 +366,16 @@ class WorkloadTests(TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp)
             stages = {name: {"passed": True} for name in c.STAGES}
-            evidence = {"stages": stages, "blockers": [], "candidate_sha": c.CANDIDATE,
-                        "controller_sha": WORKFLOW_SHA, "attempt": 1, "reviewer_id": REVIEWER,
-                        "environment_id": ENV_ID, "run_id": RUN, "approval_ref": "/approvals",
-                        "capacity_samples": {"start": [1], "export": [1]}, "capacity_peak": [1]}
+            approval = ApprovalTests()
+            approval.setUp()
+            evidence = c.AuthorizedEvidence(approval.accept(), {
+                "stages": stages, "blockers": [], "capacity_samples": {"start": [1], "export": [1]},
+                "capacity_peak": [1]})
             with self.assertRaises(c.Blocked):
                 c.finish_evidence(out, evidence, True)
             jar = "a" * 64
-            stages["maven"] |= {"tests": 59, "suites": 40, "failures": 0, "errors": 0, "skipped": 0,
+            stages["maven"] |= {"expiry": {"method": c.EXPIRY_CASE, "class": c.EXPIRY_CLASS,
+                                          "deadline_seconds": 900}, "tests": 59, "suites": 40, "failures": 0, "errors": 0, "skipped": 0,
                                 "ryuk_privileged": False, "ryuk_cleanup_verified": True, "sha256": jar}
             stages["image"] |= {"packaged_jar_sha256": "b" * 64, "oci_manifest": "sha256:" + "b" * 64,
                                 "runtime_id": "sha256:" + "c" * 64, "uid": 10001, "gid": 10001}
@@ -405,7 +409,9 @@ class WorkloadTests(TestCase):
     def test_actual_ryuk_inspection_rejects_privilege_or_extra_socket_mount(self):
         approvals = {"Privileged": False, "NetworkMode": "default",
                      "Binds": [str(c.SOCKET) + ":/var/run/docker.sock:rw"]}
-        details = {"HostConfig": approvals, "State": {"Running": True}}
+        details = {"HostConfig": approvals, "State": {"Running": True},
+                   "Mounts": [{"Type": "bind", "Source": str(c.SOCKET),
+                               "Destination": "/var/run/docker.sock", "RW": True}]}
         self.assertTrue(c.validate_ryuk(details))
         for change in ({"Privileged": True}, {"NetworkMode": "host"},
                        {"Binds": approvals["Binds"] + ["/:/host"]},

@@ -9,13 +9,14 @@ controller owns the independently authorized execution path.
 
 ## Configure independent approval
 
-1. Create the GitHub Environment `stg-1a-runtime` explicitly. Configure custom
+1. Set the owner-controlled repository variable `STG1A_CONTROLLER_SHA` to the approved default-branch revision. The unconditional context job checks this pin before the protected job. The authenticated Environment policy must independently allow the same revision.
+2. Create the GitHub Environment `stg-1a-runtime` explicitly. Configure custom
    deployment branch rules to permit only the branch `main`. Set required
    reviewers to designated individual users, enable prevention of self-review,
    and disable administrator bypass. The reviewer must be a non-admin with
    repository access, distinct from the dispatcher. This implementation rejects
    owner approval and settings that would permit self-review.
-2. Supply `STG1A_REVIEW_TOKEN` as an Environment secret. Use a dedicated
+3. Supply `STG1A_REVIEW_TOKEN` as an Environment secret. Use a dedicated
    expiring, read-only credential scoped to this repository. Start with Actions
    read, Environments read and GitHub's implicit Metadata read. Verify it can
    read run and first-attempt details, jobs, approval history, Environment
@@ -25,7 +26,7 @@ controller owns the independently authorized execution path.
    the repository owner should review the specific endpoint and grant only its
    required read access. Use no general write capability. The default workflow
    token retains only contents read, plus GitHub OIDC token issuance.
-3. Put the reviewed policy JSON in the Environment variable
+4. Put the reviewed policy JSON in the Environment variable
    `STG1A_RUNTIME_POLICY`. The controller reads it using the authenticated GitHub
    API. A local environment variable or file with the same name cannot change
    the policy. Record the Environment ID, exact reviewed controller commit,
@@ -49,12 +50,12 @@ cleanup               ryuk-and-owned-inventory
 profile_sha256        <SHA-256 of /etc/stg-1a/profile.json>
 fixture_image         <digest-pinned linux/amd64 python:TAG@sha256:DIGEST>
 storage.start         <per-path additional bytes and inodes before the workload>
+storage.pre_maven     <remaining per-path budget before Maven verification>
 storage.export        <per-path additional bytes and inodes before the OCI export>
 reserve               <bytes and inodes to leave free on each underlying device>
 ```
 
-Each `storage` phase must specify `workspace`, `maven`, `docker`, `oci` and
-`evidence`. Each path entry and the reserve have positive integer `bytes` and
+Each storage phase must specify `workspace`, `maven`, `target`, `scratch`, `temporary`, `docker`, `oci` and `evidence`. Budget the isolated source copy, frozen JAR context and both OCI archive copies on their actual devices. Each path entry and the reserve have positive integer `bytes` and
 `inodes`. Include the isolated source copy, Maven cache, compiled output and
 concurrent PostgreSQL data in the budget for their backing mounts.
 
@@ -114,7 +115,7 @@ privileged operations or route around the controller.
   no host networking, no other host binds, and permits the exact Ryuk socket
   bind to `/var/run/docker.sock`. Qualify all required Docker calls and allowed
   image pulls, and test rejection of unauthorized operations in the policy's
-  own offline test suite. Prevent access to an alternate daemon. The qualified
+  own offline test suite. Qualify the bounded ephemeral tmpfs at /var/lib/postgresql and inspected, run-labelled volume removal. The fixture uses PGDATA under /tmp. Prevent access to an alternate daemon. The qualified
   Buildx builder must export single-platform OCI archives that this daemon can
   import with `docker image load`. An image-cache or platform compatibility
   issue blocks execution. A standard Docker CLI and an OIDC token alone cannot

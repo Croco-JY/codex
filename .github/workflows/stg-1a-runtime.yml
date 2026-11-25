@@ -11,7 +11,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  context:
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Validate dispatch identity
+        env:
+          APPROVED_SHA: ${{ vars.STG1A_CONTROLLER_SHA }}
+          WORKFLOW_SHA: ${{ github.workflow_sha }}
+        run: |
+          set -eu
+          [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]
+          [[ "$GITHUB_REF" == refs/heads/main && "$GITHUB_RUN_ATTEMPT" == 1 ]]
+          [[ "$GITHUB_WORKFLOW_REF" == Croco-JY/codex/.github/workflows/stg-1a-runtime.yml@refs/heads/main ]]
+          [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ && "$GITHUB_SHA" == "$APPROVED_SHA" ]]
+          [[ "$WORKFLOW_SHA" == "$GITHUB_SHA" ]]
+
   verify:
+    needs: context
     if: github.ref == 'refs/heads/main' && github.run_attempt == '1'
     runs-on: ubuntu-24.04
     environment: stg-1a-runtime

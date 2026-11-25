@@ -1,5 +1,8 @@
 """Trusted STG-1A execution controller. Only main() connects to GitHub or launches commands."""
+from contextlib import ExitStack, contextmanager
 import datetime
+import io
+import math
 import hashlib
 import json
 import os
@@ -216,8 +219,11 @@ def authorize(claims, api, workflow_sha, run_id, now):
     require(remote["ref"] == "refs/heads/" + BRANCH and remote["object"]["type"] == "commit"
             and remote["object"]["sha"] == CANDIDATE, "Remote candidate ref does not match approved SHA")
     jobs = api(run_path + "/attempts/1/jobs")
-    require(jobs["total_count"] == 1 and len(jobs["jobs"]) == 1, "Unexpected jobs in approved attempt")
-    job = jobs["jobs"][0]
+    require(jobs["total_count"] == len(jobs["jobs"]) == 2, "Unexpected jobs in approved attempt")
+    context_job, job = sorted(jobs["jobs"], key=lambda item: item["name"])
+    require(context_job["name"] == "context" and context_job["conclusion"] == "success"
+            and context_job["head_sha"] == workflow_sha and context_job["run_id"] == int(run_id)
+            and context_job["run_attempt"] == 1, "Dispatch context check did not pass")
     require(job["name"] == "verify" and job["head_sha"] == workflow_sha
             and job["run_attempt"] == 1 and job["run_id"] == int(run_id) and job["status"] == "in_progress"
             and job["labels"] == ["ubuntu-24.04"]
@@ -252,6 +258,7 @@ def capacity(paths, budgets, reserve, measure=os.statvfs):
         require(set(budget) == {"bytes", "inodes"} and all(type(v) is int and v > 0 for v in budget.values()),
                 "Storage qualification must include bytes and inodes")
         fs = measure(path)
+        require(path == path.resolve(strict=True), "Redirected capacity measurement")
         key = path.stat().st_dev
         row = mounts.setdefault(key, {"paths": [], "required_bytes": reserve["bytes"],
                                      "required_inodes": reserve["inodes"],
@@ -274,30 +281,62 @@ class StorageMonitor:
 
     def __init__(self, paths, reserve, measure=os.statvfs):
         import threading
-        self.paths, self.reserve, self.measure = paths, reserve, measure
+        self.paths, self.reserve, self.measure = paths.copy(), reserve, measure
+        self.mounts = {}
         self.done = threading.Event()
         self.worker = threading.Thread(target=self.watch, daemon=True)
+        self.lock = threading.Lock()
+        self.phase = "preparation"
+        self.errors = []
         self.rows = {}
         self.failed = False
 
-    def sample(self):
-        for name, path in self.paths.items():
-            fs = self.measure(path)
-            device = path.stat().st_dev
-            available = {"bytes": fs.f_bavail * fs.f_frsize, "inodes": fs.f_favail}
-            row = self.rows.setdefault(device, {"paths": set(), "initial": available.copy(),
-                                                "low_water": available.copy()})
-            row["paths"].add(name)
-            for key in available:
-                row["low_water"][key] = min(row["low_water"][key], available[key])
-                self.failed |= available[key] < self.reserve[key]
+    def sample(self, phase=None, paths=None):
+        with self.lock:
+            if paths is not None:
+                self.paths = paths.copy()
+            if phase:
+                self.phase = phase
+            for name, path in self.paths.items():
+                try:
+                    require(path == path.resolve(strict=True), "Storage path redirected")
+                    fd = os.open(path, os.O_PATH | os.O_DIRECTORY | os.O_NOFOLLOW)
+                    try:
+                        device = os.fstat(fd).st_dev
+                        info = Path(f"/proc/self/fdinfo/{fd}").read_text()
+                        mount_id = re.search(r"^mnt_id:\s*(\d+)$", info, re.M)
+                        require(mount_id, "Mount identity unavailable")
+                        mount = (device, int(mount_id[1]))
+                        require(self.mounts.setdefault(name, mount) == mount, "Workload mount changed")
+                        fs = self.measure(path)
+                    finally:
+                        os.close(fd)
+                    available = {"bytes": fs.f_bavail * fs.f_frsize, "inodes": fs.f_favail}
+                    require(min(available.values()) >= 0, "Unknown filesystem capacity")
+                except (Blocked, OSError, ValueError) as exc:
+                    self.failed = True
+                    self.errors.append(f"{self.phase}/{name}: {type(exc).__name__}")
+                    raise
+                row = self.rows.setdefault(device, {"paths": set(), "initial": available.copy(),
+                                                    "low_water": available.copy(), "phases": {}})
+                row["paths"].add(name)
+                phase_low = row["phases"].setdefault(self.phase, available.copy())
+                row["final"] = available
+                for key in available:
+                    row["low_water"][key] = min(row["low_water"][key], available[key])
+                    phase_low[key] = min(phase_low[key], available[key])
+                    self.failed |= available[key] < self.reserve[key]
 
     def watch(self):
         try:
             while not self.done.wait(1):
                 self.sample()
-        except (OSError, ValueError):
+        except (Blocked, OSError, ValueError):
             self.failed = True
+        finally:
+            if not self.done.is_set():
+                self.failed = True
+                self.errors.append("Storage sampling worker stopped unexpectedly")
 
     def start(self):
         self.sample()
@@ -307,12 +346,15 @@ class StorageMonitor:
         self.done.set()
         self.worker.join(10)
         require(not self.worker.is_alive(), "Storage monitoring did not finish")
-        self.sample()
-        return [{"paths": sorted(row["paths"]), "initial": row["initial"],
+        self.sample("final")
+        require(not self.errors, "Storage peak unavailable after measurement failure")
+        return [{"device": device, "paths": sorted(row["paths"]), "initial": row["initial"],
+                 "mount_ids": sorted({self.mounts[name][1] for name in row["paths"]}),
+                 "final": row["final"], "phase_low_water": row["phases"],
                  "low_water": row["low_water"],
                  "peak_growth": {key: max(0, row["initial"][key] - row["low_water"][key])
                                  for key in row["initial"]}}
-                for row in self.rows.values()]
+                for device, row in self.rows.items()]
 
 
 def admin_file(path, label):
@@ -346,7 +388,7 @@ def clean_env(home, java):
 
 
 def execute(args, cwd, env, limit):
-    with tempfile.TemporaryFile() as output:
+    with tempfile.TemporaryFile(dir="/tmp") as output:
         proc = subprocess.Popen(args, cwd=cwd, env=env, stdout=output,
                                 stderr=subprocess.STDOUT, start_new_session=True)
         try:
@@ -388,12 +430,13 @@ class Commands:
                             or a.startswith(("--volumes-from", "--device", "--cap-add", "--pid=host",
                                                 "--ipc=host", "--driver=host", "--network=container:",
                                                 "--net=container:"))
+                            or (a.startswith("--tmpfs") and a != "--tmpfs=/var/lib/postgresql:rw,nosuid,nodev,noexec,size=1m")
                             or a in ("-v", "--volume", "--network", "--net", "--pid", "--ipc", "--driver")
                             or (a == "--volumes" and args[0] != "rm") for a in args)
-                and not (args[0] == "image" and args[1:2] not in (("inspect",), ("load",), ("rm",)))
+                and not (args[0] == "image" and args[1:2] not in (("inspect",), ("load",), ("rm",), ("ls",)))
                 and not (args[0] == "network" and args[1:2] not in (
                     ("create",), ("inspect",), ("disconnect",), ("rm",), ("ls",)))
-                and not (args[0] == "volume" and args[1:2] != ("ls",))
+                and not (args[0] == "volume" and args[1:2] not in (("ls",), ("rm",)))
                 and not (args[0] == "buildx" and args[1:2] != ("build",)),
                 "Prohibited Docker operation")
         return self.call(("/usr/bin/docker", *args), limit=limit, allow_failure=allow_failure)
@@ -408,6 +451,32 @@ def validate_checkout(root, git):
             "Unexpected candidate origin")
 
 
+@contextmanager
+def confined(root, relative, *, directory=False):
+    """Open every component relative to a pinned directory descriptor on Linux."""
+    parts = Path(relative).parts
+    require(root.is_absolute() and parts and not Path(relative).is_absolute()
+            and ".." not in parts, "Invalid artifact path")
+    flags = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+    with ExitStack() as stack:
+        try:
+            fd = os.open("/", flags | os.O_DIRECTORY)
+            stack.callback(os.close, fd)
+            for part in (*root.parts[1:], *parts[:-1]):
+                fd = os.open(part, flags | os.O_DIRECTORY, dir_fd=fd)
+                stack.callback(os.close, fd)
+            fd = os.open(parts[-1], flags | (os.O_DIRECTORY if directory else 0), dir_fd=fd)
+            stack.callback(os.close, fd)
+            mode = os.fstat(fd).st_mode
+            require(stat.S_ISDIR(mode) if directory else stat.S_ISREG(mode),
+                    "Unexpected artifact type")
+            if not directory:
+                require(os.fstat(fd).st_nlink == 1, "Shared artifact inode")
+        except OSError as exc:
+            raise Blocked("Required confined artifact is missing or redirected") from exc
+        yield fd if directory else stack.enter_context(os.fdopen(fd, "rb", closefd=False))
+
+
 def source_bytes(root, listing):
     recorded = {}
     for row in listing.split("\0"):
@@ -415,13 +484,11 @@ def source_bytes(root, listing):
             continue
         metadata, filename = row.split("\t", 1)
         mode, kind, oid = metadata.split()
-        path = root / filename
-        require(kind == "blob" and mode in ("100644", "100755")
-                and path.is_file() and not path.is_symlink()
-                and path.resolve().is_relative_to(root)
-                and bool(path.stat().st_mode & stat.S_IXUSR) == (mode == "100755"),
-                "Unexpected candidate file type or mode")
-        content = path.read_bytes()
+        with confined(root, filename) as stream:
+            require(kind == "blob" and mode in ("100644", "100755")
+                    and bool(os.fstat(stream.fileno()).st_mode & stat.S_IXUSR) == (mode == "100755"),
+                    "Unexpected tracked file mode")
+            content = stream.read()
         # The accepted tree's only explicit CRLF checkout file is the Windows wrapper.
         canonical = content.replace(b"\r\n", b"\n") if filename == "apps/api/mvnw.cmd" else content
         obj = hashlib.sha1(f"blob {len(canonical)}\0".encode() + canonical, usedforsecurity=False)
@@ -431,8 +498,43 @@ def source_bytes(root, listing):
     return recorded
 
 
+def check_working_files(root, snapshot, *, built=False):
+    dirs_expected = {str(parent) for name in snapshot for parent in Path(name).parents}
+    for folder, dirs, files in os.walk(root):
+        if not built and Path(folder) == root:
+            dirs.remove(".git")
+        if built and Path(folder) == root / "apps/api" and "target" in dirs:
+            dirs.remove("target")
+        for name in dirs + files:
+            path = Path(folder) / name
+            relative = str(path.relative_to(root))
+            require(not path.is_symlink() and relative in (dirs_expected if name in dirs else snapshot),
+                    "Unexpected file in candidate workspace")
+
+
 def write_evidence(path, value):
-    path.write_text(json.dumps(value, sort_keys=True, indent=2) + "\n")
+    with path.open("x") as stream:
+        json.dump(value, stream, sort_keys=True, indent=2)
+        stream.write("\n")
+
+
+class AuthorizedEvidence(dict):
+    """Keep the authenticated server decision separate from serialized stage data."""
+
+    def __init__(self, auth, stages):
+        super().__init__(stages)
+        self.auth = auth
+        self.update(self.receipt())
+
+    def receipt(self):
+        auth = self.auth
+        return dict(repository_id=REPO_ID, workflow_ref=f"{REPO}/{WORKFLOW}@{REF}",
+                    controller_sha=auth.workflow_sha, candidate_sha=auth.policy["candidate_sha"],
+                    environment=ENVIRONMENT, environment_id=auth.environment_id,
+                    decision="approved", approval_ref=f"/actions/runs/{auth.run_id}/approvals",
+                    policy_sha256=hashlib.sha256(json.dumps(auth.policy, sort_keys=True).encode()).hexdigest(),
+                    dispatcher_id=auth.actor_id, reviewer_id=auth.reviewer_id, run_id=auth.run_id,
+                    attempt=1, job_id=auth.job_id, runner_id=auth.runner_id, runner_name=auth.runner_name)
 
 
 def finish_evidence(directory, evidence, success):
@@ -440,6 +542,9 @@ def finish_evidence(directory, evidence, success):
         isinstance(result, dict) and result.get("passed") is True
         for result in evidence["stages"].values())
     if success:
+        require(isinstance(evidence, AuthorizedEvidence) and
+                all(evidence.get(k) == v for k, v in evidence.receipt().items()),
+                "Final receipt differs from the independently authorized run")
         require(complete and not evidence["blockers"], "Incomplete verification cannot pass")
         stages = evidence["stages"]
         maven, image = stages["maven"], stages["image"]
@@ -448,6 +553,9 @@ def finish_evidence(directory, evidence, success):
                 and all(evidence.get(field) for field in ("reviewer_id", "environment_id", "run_id", "approval_ref"))
                 and set(evidence.get("capacity_samples", {})) == {"start", "export"}
                 and bool(evidence.get("capacity_peak"))
+                and maven.get("expiry", {}).get("method") == EXPIRY_CASE
+                and maven["expiry"].get("class") == EXPIRY_CLASS
+                and maven["expiry"].get("deadline_seconds") == 900
                 and maven.get("suites", 0) > 0 and maven.get("tests", 0) > 0
                 and all(maven.get(key) == 0 for key in ("failures", "errors", "skipped"))
                 and maven.get("ryuk_privileged") is False and maven.get("ryuk_cleanup_verified") is True
@@ -476,21 +584,70 @@ def finish_evidence(directory, evidence, success):
 
 
 def verify_evidence(directory):
-    manifest = json.loads((directory / "sha256.json").read_bytes())
-    require(set(manifest) == {"result.json"} and manifest["result.json"] == sha256(directory / "result.json"),
+    with confined(directory, "sha256.json") as stream:
+        manifest = json.load(stream)
+    require(set(manifest) == {"result.json"}, "Unexpected evidence manifest")
+    (directory / "result.json").lstat()
+    with confined(directory, "result.json") as stream:
+        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+    require(manifest["result.json"] == digest,
             "Evidence hash mismatch")
 
 
-def jar_provenance(root, java, maven):
+EXPIRY_CLASS = "com.sourceos.PatternReleaseExpiryTest"
+EXPIRY_CASE = "actualConsentDeadlineAfterObservedLockWaitAndConsumedConsentExpiry"
+
+
+def expiry_evidence(root, duration):
+    with confined(root, "apps/api/target/pattern-release-evidence/expiry-real-15-minute-lock-wait.json") as f:
+        result = json.load(f)
+    issued, deadline, started, released = (
+        utc(result[key]) for key in ("consentIssued", "consentDeadline", "transactionStarted", "lockReleased"))
+    require(abs(deadline - issued - 900) < 0.000001 and issued <= started < deadline <= released
+            and math.isfinite(duration) and 899.999 <= duration <= 1020
+            and released - issued <= duration + 0.001
+            and result["result"] == 409 and result["partialReleaseRows"] == 0
+            and result["consumedConsentExpiredButReleaseStillAccessible"] is True
+            and all(type(result[k]) is int and result[k] > 0 for k in ("writerPid", "blockingPid"))
+            and result["writerPid"] != result["blockingPid"], "Contradictory real expiry evidence")
+    return {"class": EXPIRY_CLASS, "method": EXPIRY_CASE, "seconds": duration,
+            "deadline_seconds": 900, "database_times": {k: result[k] for k in
+                ("consentIssued", "consentDeadline", "transactionStarted", "lockReleased")}}
+
+
+def jar_provenance(root, java, maven, context=None, expected=None):
     import zipfile
-    api = root / "apps/api"
-    expected = {".".join(p.relative_to(api / "src/test/java").with_suffix("").parts)
-                for p in (api / "src/test/java").rglob("*Test.java")}
-    reports = list((api / "target/surefire-reports").glob("TEST-*.xml"))
+    prefix = Path("apps/api/src/test/java")
+    if expected is None:
+        expected = [str(p.relative_to(root)) for p in (root / prefix).rglob("*Test.java")]
+    suites = {".".join(Path(name).relative_to(prefix).with_suffix("").parts)
+              for name in expected if Path(name).is_relative_to(prefix) and name.endswith("Test.java")}
+    report_dir = Path("apps/api/target/surefire-reports")
+    with confined(root, report_dir, directory=True) as fd:
+        reports = sorted(os.listdir(fd))
+    expiry = None
     totals = dict.fromkeys(("tests", "failures", "errors", "skipped"), 0)
     observed = set()
-    for path in reports:
-        suite = ET.parse(path).getroot()
+    for report in reports:
+        with confined(root, report_dir / report) as stream:
+            if not (report.startswith("TEST-") and report.endswith(".xml")):
+                continue
+            suite = ET.parse(stream).getroot()
+        cases = suite.findall("testcase")
+        require(suite.tag == "testsuite" and len(cases) == int(suite.attrib["tests"])
+                and all(case.find("failure") is None and case.find("error") is None
+                        and case.find("skipped") is None and case.find("disabled") is None
+                        and case.get("disabled", "false") == "false"
+                        and case.get("status", "passed") in ("passed", "run")
+                        for case in cases), "Missing or non-passing Surefire testcase")
+        for case in cases:
+            if case.get("classname") == EXPIRY_CLASS or case.get("name") == EXPIRY_CASE:
+                require(suite.get("name") == EXPIRY_CLASS, "Substituted expiry suite")
+        if suite.get("name") == EXPIRY_CLASS:
+            require(len(cases) == 1 and cases[0].get("classname") == EXPIRY_CLASS
+                    and cases[0].get("name") == EXPIRY_CASE and not expiry,
+                    "Required genuine expiry testcase is missing or duplicated")
+            expiry = expiry_evidence(root, float(cases[0].get("time", "nan")))
         name = suite.attrib["name"]
         require(name not in observed and int(suite.attrib["tests"]) > 0, "Invalid Surefire suite")
         observed.add(name)
@@ -498,11 +655,14 @@ def jar_provenance(root, java, maven):
             count = int(suite.attrib[key])
             require(count > 0 if key == "tests" else count == 0, "Non-passing Surefire suite")
             totals[key] += count
-    require(expected and expected <= observed and all(totals[k] == 0 for k in ("failures", "errors", "skipped"))
+    require(suites and suites <= observed and all(totals[k] == 0 for k in ("failures", "errors", "skipped"))
             and "com.sourceos.PatternReleaseExpiryTest" in observed, "Incomplete backend or real-expiry regression")
-    artifact = api / JAR
-    require(artifact.is_file() and not artifact.is_symlink(), "Executable JAR is absent")
-    with zipfile.ZipFile(artifact) as archive:
+    require(expiry, "Missing real expiry evidence")
+    with confined(root, Path("apps/api") / JAR) as stream:
+        content = stream.read()
+    if context is not None:
+        (context / JAR).write_bytes(content)
+    with zipfile.ZipFile(io.BytesIO(content)) as archive:
         manifest = archive.read("META-INF/MANIFEST.MF").decode().replace("\r\n", "\n")
         require(archive.testzip() is None
                 and "Main-Class: org.springframework.boot.loader.launch.JarLauncher\n" in manifest
@@ -510,7 +670,7 @@ def jar_provenance(root, java, maven):
                 and any(name.startswith("BOOT-INF/lib/") for name in archive.namelist())
                 and archive.read("BOOT-INF/classes/com/sourceos/SourceOsApplication.class")[:8]
                 == bytes.fromhex("cafebabe00000045"), "Unexpected executable JAR")
-    return {"passed": True, "sha256": sha256(artifact), "java_version": java,
+    return {"passed": True, "sha256": hashlib.sha256(content).hexdigest(), "expiry": expiry, "java_version": java,
             "maven_version": maven, "suites": len(observed), **totals}
 
 
@@ -540,42 +700,188 @@ class Inventory:
     def __init__(self, commands, label):
         self.commands, self.label = commands, label
         self.resources = []
+        self.container_mounts = {}
 
     def add(self, kind, identity):
-        require(kind in ("container", "network", "image"), "Unexpected Docker resource kind")
-        require(re.fullmatch(r"[0-9a-f]{64}", identity), "Docker did not return an immutable resource ID")
-        self.resources.append((kind, identity))
+        require(kind in ("container", "network", "image", "volume"), "Unexpected Docker resource kind")
+        valid = r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}" if kind == "volume" else r"[0-9a-f]{64}"
+        require(re.fullmatch(valid, identity), "Invalid Docker resource identity")
+        if (kind, identity) not in self.resources:
+            self.resources.append((kind, identity))
         return identity
 
-    def cleanup(self):
-        for kind, identity in reversed(self.resources):
-            result, text = self.commands.docker("inspect", "--type=" + kind, identity, allow_failure=True)
-            if result:
-                require("no such" in text.lower(), "Could not resolve resource ownership")
-                continue
-            row, = json.loads(text)
-            labels = row["Config"]["Labels"] if kind == "container" else (
-                row["Labels"] if kind == "network" else row["Config"]["Labels"])
-            require(labels.get("com.sourceos.stg1a.run") == self.label
-                    and row.get("Id", row.get("ID", "")).removeprefix("sha256:") == identity,
-                    "Cleanup refused an unowned or substituted resource")
-            if kind == "container":
-                self.commands.docker("rm", "-f", "--volumes", identity)
-            else:
-                self.commands.docker(kind, "rm", identity)
-            code, output = self.commands.docker("inspect", "--type=" + kind, identity, allow_failure=True)
-            require(code != 0 and "no such" in output.lower(), "Cleanup could not verify resource removal")
-        return {"passed": True, "verified_owned_resources": len(self.resources)}
+    def track_created(self, identity):
+        # Register the ID first so cleanup still accounts for a failed first inspect.
+        self.add("container", identity)
+        require(self.inspect("container", identity) is not None,
+                "Created container disappeared before attachment inventory: " + identity)
+        return identity
+
+    def record_mounts(self, identity, row):
+        require((row["Config"]["Labels"] or {}).get("com.sourceos.stg1a.run") == self.label,
+                "Cannot inventory an unowned container")
+        mounts = row.get("Mounts")
+        require(isinstance(mounts, list), "Missing effective container mounts")
+        volumes = set()
+        for mount in mounts:
+            require(isinstance(mount, dict) and mount.get("Type") in ("bind", "volume", "tmpfs"),
+                    "Unknown effective container mount")
+            if mount["Type"] == "volume":
+                name = mount.get("Name")
+                require(isinstance(name, str) and re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}", name),
+                        "Unidentified attached volume")
+                volumes.add(name)
+        snapshot = tuple(sorted(json.dumps(mount, sort_keys=True) for mount in mounts))
+        require(self.container_mounts.setdefault(identity, snapshot) == snapshot,
+                "Effective attachments differ from the recorded container inventory")
+        for name in sorted(volumes):
+            self.add("volume", name)
+
+    def inspect(self, kind, identity):
+        code, text = self.commands.docker("inspect", "--type=" + kind, identity, allow_failure=True)
+        if code:
+            require(not re.search(r"denied|unauthorized|forbidden", text, re.I),
+                    "Docker denied resource inspection")
+            missing = (r"(?:\[\]\s*)?(?:Error(?: response from daemon)?:\s*)?No such "
+                       + rf"(?:object|{kind})(?::\s*{re.escape(identity)})?")
+            require(code == 1 and re.fullmatch(missing, text.strip(), re.I),
+                    "Could not confirm resource absence")
+            return None
+        try:
+            rows = json.loads(text)
+        except ValueError as exc:
+            raise Blocked("Malformed Docker inspection JSON") from exc
+        require(isinstance(rows, list) and len(rows) == 1 and isinstance(rows[0], dict),
+                "Missing or ambiguous Docker inspection object")
+        row = rows[0]
+        actual = row.get("Name") if kind == "volume" else row.get("Id", row.get("ID"))
+        require(isinstance(actual, str)
+                and (actual.removeprefix("sha256:") if kind == "image" else actual) == identity,
+                "Resource inspection identity mismatch")
+        metadata = row.get("Config") if kind in ("container", "image") else row
+        require(isinstance(metadata, dict) and "Labels" in metadata
+                and (metadata["Labels"] is None or isinstance(metadata["Labels"], dict)),
+                "Malformed ownership evidence")
+        if kind == "container":
+            self.record_mounts(identity, row)
+        return row
+
+    def remove(self, kind, identity):
+        row = self.inspect(kind, identity)
+        if row is None:
+            require(kind != "container" or identity in self.container_mounts,
+                    "Container absent with unresolved attachment inventory")
+            return
+        labels = row["Config"]["Labels"] if kind in ("container", "image") else row["Labels"]
+        require(labels and labels.get("com.sourceos.stg1a.run") == self.label,
+                "Ownership or identity mismatch")
+        if kind == "container":
+            # Never implicitly delete an attached volume before inspecting its label.
+            self.commands.docker("rm", "-f", identity)
+        else:
+            # Non-forced volume rm also checks attachments atomically at the daemon.
+            self.commands.docker(kind, "rm", identity)
+        require(self.inspect(kind, identity) is None, "Resource still present after removal")
+
+    def cleanup_session(self, report=None):
+        # A create/load may succeed before its CLI reply reaches the controller.
+        # Discover such resources, still requiring a fresh ownership inspection.
+        if report is None:
+            report = {}
+        outcomes = []
+        residual = []
+        scans_failed = []
+        report.pop("verified_owned_resources", None)
+        report.update(passed=False, resources=outcomes, residual=residual, scans_failed=scans_failed)
+        errors = []
+        selectors = {"container": ("ps", "-aq", "--no-trunc"),
+                     "network": ("network", "ls", "-q", "--no-trunc"),
+                     "image": ("image", "ls", "-q", "--no-trunc"),
+                     "volume": ("volume", "ls", "-q")}
+
+        def discover(phase):
+            for kind, argv in selectors.items():
+                incomplete = False
+                try:
+                    code, output = self.commands.docker(*argv, "--filter=label=com.sourceos.stg1a.run=" + self.label)
+                    require(code == 0 and isinstance(output, str), "Invalid resource listing")
+                    for line in output.splitlines():
+                        try:
+                            identity = self.add(kind, line.removeprefix("sha256:") if kind == "image" else line)
+                        except Blocked:
+                            incomplete = True
+                            continue
+                        if phase == "final":
+                            residual.append({"kind": kind, "identity": identity})
+                except InterruptedError:
+                    raise
+                except Exception:
+                    incomplete = True
+                if incomplete:
+                    scans_failed.append({"phase": phase, "kind": kind})
+                    errors.append(f"Incomplete {phase} inventory of {kind}")
+
+        discover("initial")
+        try:
+            result = self.cleanup(outcomes)
+        except Blocked as exc:
+            errors.append(str(exc))
+        discover("final")
+        if residual:
+            errors.append("Run-owned resources remain")
+        require(not errors, "Session cleanup incomplete: " + "; ".join(errors))
+        report.update(result)
+        return report
+
+    def cleanup(self, outcomes=None):
+        if outcomes is None:
+            outcomes = []
+        failures = []
+        for resource_kind in ("container", "network", "image", "volume"):
+            for kind, identity in reversed(self.resources.copy()):
+                if kind != resource_kind:
+                    continue
+                record = {"kind": kind, "identity": identity}
+                try:
+                    self.remove(kind, identity)
+                except InterruptedError:
+                    raise
+                except Exception:
+                    # Identity was validated by add(). Never serialize a decoder
+                    # exception, daemon payload or arbitrary exception argument.
+                    reason = "ownership or removal unverified"
+                    if kind == "container" and identity not in self.container_mounts:
+                        reason = "unresolved attachment inventory"
+                    record.update(status="unresolved", reason=reason)
+                    failures.append(f"{kind} {identity}: {reason}")
+                else:
+                    record["status"] = "confirmed_absent"
+                outcomes.append(record)
+        if failures:
+            # Keep the human diagnostic bounded. The report retains every outcome.
+            raise Blocked(f"Cleanup unresolved ({len(failures)}): " + "; ".join(failures[:4]))
+        return {"passed": True, "verified_owned_resources": len(outcomes)}
 
 
 def validate_ryuk(details):
     host = details["HostConfig"]
     bind = str(SOCKET) + ":/var/run/docker.sock"
-    require(host["Privileged"] is False and host["NetworkMode"] != "host"
+    require(host["Privileged"] is False and host["NetworkMode"] in ("bridge", "default")
             and host["Binds"] in ([bind], [bind + ":rw"])
-            and not host.get("Mounts") and not host.get("CapAdd") and not host.get("Devices"),
+            and host.get("Mounts") in (None, []) and host.get("VolumesFrom") in (None, [])
+            and not host.get("CapAdd") and not host.get("Devices"),
             "Ryuk did not use the approved Docker policy")
-    return details["State"]["Running"] is True
+    effective = details.get("Mounts")
+    require(isinstance(effective, list) and len(effective) == 1 and isinstance(effective[0], dict),
+            "Expected exactly one effective Ryuk mount")
+    mount = effective[0]
+    require(mount.get("Type") == "bind" and mount.get("Source") == str(SOCKET)
+            and mount.get("Destination") == "/var/run/docker.sock" and mount.get("RW") is True
+            and mount.get("Mode", "") in ("", "rw"),
+            "Effective Ryuk socket mount differs from approved bind")
+    running = details["State"]["Running"]
+    require(type(running) is bool, "Ryuk state is unavailable")
+    return running
 
 
 def monitor_maven(commands):
@@ -583,37 +889,77 @@ def monitor_maven(commands):
 
     done = threading.Event()
     observed = {}
-    errors = []
+    last_running = {}
+    samples = {}
+    lifecycle = threading.Condition()
+    state = "starting"
 
     def inspect_ryuk():
-        while not done.is_set():
-            try:
+        nonlocal state
+        try:
+            with lifecycle:
+                if state != "starting":
+                    return
+                state = "running"
+                lifecycle.notify_all()
+            while not done.is_set():
                 _, names = commands.docker("ps", "-aq", "--no-trunc",
                                            "--filter=label=org.testcontainers=true", limit=10)
-                for identity in names.splitlines():
-                    if identity in observed:
-                        continue
+                listed = names.splitlines()
+                require(len(set(listed)) == len(listed) and set(observed).issubset(listed),
+                        "Tracked Ryuk disappeared during active observation")
+                for identity in listed:
                     require(re.fullmatch(r"[0-9a-f]{64}", identity), "Unexpected Testcontainers identity")
                     code, data = commands.docker("inspect", "--type=container", identity,
                                                  limit=10, allow_failure=True)
-                    if code:
-                        continue
+                    require(code == 0, "Docker inspection unavailable during Testcontainers verification")
                     row, = json.loads(data)
+                    require(isinstance(row, dict) and row.get("Id") == identity
+                            and isinstance(row.get("Name"), str), "Invalid container inspection identity")
+                    if identity in observed:
+                        require(row["Name"].startswith("/testcontainers-ryuk-"), "Tracked Ryuk identity changed")
                     if row["Name"].startswith("/testcontainers-ryuk-"):
-                        observed[identity] = validate_ryuk(row)
-            except (Blocked, ValueError, KeyError, TypeError, OSError) as error:
-                errors.append(error)
-                return
-            done.wait(0.4)
+                        require(row["Id"] == identity and
+                                row["Config"]["Image"] == "testcontainers/ryuk:0.14.0",
+                                "Ryuk container or image identity mismatch")
+                        running = validate_ryuk(row)
+                        require(not observed.get(identity) or running, "Ryuk stopped during verification")
+                        observed[identity] = running
+                        if running:
+                            samples[identity] = samples.get(identity, 0) + 1
+                            last_running[identity] = time.monotonic()
+                done.wait(0.4)
+            with lifecycle:
+                if state == "stop requested":
+                    state = "completed normally"
+        except Exception:
+            # Do not copy decoder, daemon or workload-controlled text into evidence.
+            with lifecycle:
+                state = "inspection failed"
+        finally:
+            with lifecycle:
+                if state not in ("completed normally", "inspection failed"):
+                    state = "abnormal exit"
+                lifecycle.notify_all()
 
     observer = threading.Thread(target=inspect_ryuk, daemon=True)
     observer.start()
     try:
+        with lifecycle:
+            require(lifecycle.wait_for(lambda: state != "starting", timeout=10)
+                    and state == "running", "Ryuk observer did not enter active monitoring")
         commands.maven(MAVEN)
+        with lifecycle:
+            if state == "running":
+                state = "stop requested"
     finally:
         done.set()
         observer.join(20)
-    require(not observer.is_alive() and not errors and len(observed) == 1 and all(observed.values()),
+        require(not observer.is_alive(), "Ryuk observer did not terminate within the deadline")
+    with lifecycle:
+        require(state == "completed normally", "Ryuk observer could not verify completion: " + state)
+    require(len(observed) == 1 and all(observed.values())
+            and all(samples[k] >= 2 and time.monotonic() - last_running[k] <= 30 for k in observed),
             "Non-privileged Ryuk was not verified during Maven")
     until = time.monotonic() + 30
     for _ in range(31):
@@ -621,6 +967,11 @@ def monitor_maven(commands):
         _, networks = commands.docker("network", "ls", "-q", "--filter=label=org.testcontainers=true", limit=10)
         _, volumes = commands.docker("volume", "ls", "-q", "--filter=label=org.testcontainers=true", limit=10)
         if not (containers or networks or volumes):
+            # Maven has completed. Confirm absence by immutable ID independently
+            # of mutable labels, using an all-states container listing.
+            identity, = observed
+            _, remaining = commands.docker("ps", "-aq", "--filter=id=" + identity, limit=10)
+            require(not remaining, "Tracked Ryuk remains after workload completion")
             return
         if time.monotonic() >= until:
             break
@@ -681,7 +1032,7 @@ def runtime_fixtures(commands, inventory, image_id, fixture, directory, java, st
                  "--security-opt=no-new-privileges"]
         if envfile is not None:
             flags += ["--env-file", str(envfile)]
-        return inventory.add("container", commands.docker("create", *flags, *args, image, *entry)[1])
+        return inventory.track_created(commands.docker("create", *flags, *args, image, *entry)[1])
 
     def env_file(name, values):
         path = directory / name
@@ -697,7 +1048,10 @@ def runtime_fixtures(commands, inventory, image_id, fixture, directory, java, st
     db_env = env_file("pg.env", {"POSTGRES_DB": "source_os", "POSTGRES_USER": "source_os",
                                  "POSTGRES_PASSWORD": password, "PGDATA": "/tmp/stg-pgdata"})
     # The fixture starts as the image's postgres UID, so no root entrypoint capabilities are needed.
-    db = create(PG, "--network-alias", "pg", "--user", "postgres", envfile=db_env)
+    # Cover the image-declared VOLUME with an ephemeral empty tmpfs. PostgreSQL
+    # stores the fixture database in PGDATA on its container writable layer.
+    db = create(PG, "--network-alias", "pg", "--user", "postgres",
+                "--tmpfs=/var/lib/postgresql:rw,nosuid,nodev,noexec,size=1m", envfile=db_env)
     commands.docker("start", db)
     poll(lambda: commands.docker("exec", db, "pg_isready", "-h", "127.0.0.1", "-U",
                                  "source_os", "-d", "source_os", limit=5, allow_failure=True)[0] == 0, 90)
@@ -814,8 +1168,67 @@ except (OSError,http.client.HTTPException):
 
 
 def git_at(root, *args):
-    env = {"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null"}
-    code, output = execute(("/usr/bin/git", *args), root, env, 20)
+    allowed = {("status", "--porcelain", "--untracked-files=all"), ("rev-parse", "HEAD"),
+               ("rev-parse", "--abbrev-ref", "HEAD"), ("remote", "get-url", "origin"),
+               ("ls-tree", "-rz", "HEAD")}
+    require(args in allowed and root == root.resolve(), "Unsafe Git inspection request")
+    metadata = root / ".git"
+    require(metadata.is_dir() and not metadata.is_symlink(), "Redirected Git metadata")
+    for path in (root, metadata):
+        require(path.stat().st_uid == os.getuid() and not path.stat().st_mode & 0o022,
+                "Checkout is outside controller ownership")
+    for directory, folders, files in os.walk(metadata):
+        for name in folders + files:
+            item = Path(directory) / name
+            require(item.lstat().st_uid == os.getuid() and not item.lstat().st_mode & 0o022
+                    and not item.is_symlink() and (item.is_dir() or item.is_file()),
+                    "Indirect or special Git metadata")
+    for name in ("commondir", "gitdir", "config.worktree", "objects/info/alternates",
+                 "objects/info/http-alternates", "info/grafts", "modules"):
+        require(not (metadata / name).exists(), "Unsupported Git metadata redirection")
+    # Accept only simple literal settings emitted by checkout. Reject Git's
+    # quoting, continuation and include syntaxes rather than reinterpreting them.
+    section = ""
+    settings = {
+        "core": {"repositoryformatversion": "0", "filemode": "true", "bare": "false",
+                 "logallrefupdates": "true", "fsmonitor": "(?:true|false)"},
+        "gc": {"auto": "0"},
+        'remote "origin"': {"url": r"https://github\.com/Croco-JY/codex(?:\.git)?",
+                            "tagopt": "--no-tags", "fetch": r"[+a-zA-Z0-9*/:_-]+"},
+        "branch": {"remote": "origin", "merge": r"refs/heads/[a-zA-Z0-9/_-]+"},
+    }
+    for line in (metadata / "config").read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = line[1:-1]
+            if re.fullmatch(r'branch "[A-Za-z0-9/_-]+"', section):
+                section = "branch"
+            require(section in settings, "Unapproved Git configuration section")
+            continue
+        key, sep, value = line.partition("=")
+        pattern = settings.get(section, {}).get(key.strip().lower())
+        require(sep and pattern and re.fullmatch(pattern, value.strip()),
+                "Unapproved checkout-local Git configuration")
+    env = {"PATH": "/usr/bin:/bin", "GIT_CONFIG_NOSYSTEM": "1", "GIT_CONFIG_GLOBAL": "/dev/null",
+           "GIT_ATTR_NOSYSTEM": "1", "GIT_OPTIONAL_LOCKS": "0", "GIT_NO_REPLACE_OBJECTS": "1",
+           "GIT_ALLOW_PROTOCOL": "", "GIT_NO_LAZY_FETCH": "1"}
+    # Compare the index to HEAD without asking Git to traverse untrusted
+    # working files, embedded repositories, attributes or submodule settings.
+    # The caller separately verifies the complete working tree against pinned blobs.
+    if args[0] == "status":
+        args = ("diff-index", "--cached", "--name-only", "--no-ext-diff", "--no-textconv",
+                "--ignore-submodules=all", "HEAD", "--")
+    # Inspect the index without walking nested worktrees or invoking diff drivers.
+    # source_bytes and check_working_files verify working files independently.
+    if args[0] == "status":
+        args = ("diff-index", "--cached", "--no-ext-diff", "--no-textconv",
+                "--ignore-submodules=all", "--name-only", "HEAD", "--")
+    command = ["/usr/bin/git", "--git-dir=" + str(metadata), "--work-tree=" + str(root),
+               "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null",
+               "-c", "submodule.recurse=false", "-c", "diff.ignoreSubmodules=all", *args]
+    code, output = execute(command, root, env, 20)
     require(code == 0, "Trusted Git source inspection failed")
     return output.strip()
 
@@ -833,6 +1246,7 @@ def verify_profile(commands, profile):
 
 
 def verify_image(cmd, inventory, auth, fixture_directory, jar, profile, storage_check):
+    storage_check()
     base_layers = None
     for image in (BASE, PG, auth.policy["fixture_image"]):
         cmd.docker("pull", "--platform=linux/amd64", image, limit=300)
@@ -853,7 +1267,12 @@ def verify_image(cmd, inventory, auth, fixture_directory, jar, profile, storage_
                "--network=none", "--provenance=false", "--sbom=false",
                "--build-arg", "SOURCE_REVISION=" + CANDIDATE, "--build-arg", "JAR_SHA256=" + jar,
                "--label", "com.sourceos.stg1a.run=" + inventory.label, "--tag", tag,
-               "--output=type=oci,dest=" + str(archive), str(cmd.root / "apps/api"), limit=600)
+               "--output=type=oci,dest=" + str(archive), str(fixture_directory / "context"), limit=600)
+    frozen = fixture_directory / "verified-image.oci.tar"
+    with confined(fixture_directory, "generated/image.oci.tar") as src, frozen.open("xb") as dst:
+        shutil.copyfileobj(src, dst)
+    frozen.chmod(0o444)
+    archive = frozen
     manifest, image_id = oci_identity(archive)
     cmd.docker("image", "load", "--input=" + str(archive), limit=300)
     _, raw = cmd.docker("image", "inspect", image_id)
@@ -869,13 +1288,13 @@ def verify_image(cmd, inventory, auth, fixture_directory, jar, profile, storage_
             and config["Labels"]["org.opencontainers.image.revision"] == CANDIDATE
             and config["Labels"]["com.sourceos.jar.sha256"] == jar,
             "Runtime image identity, provenance labels or entrypoint differ")
-    probe = inventory.add("container", cmd.docker("create", "--network=none", "--cap-drop=ALL",
+    probe = inventory.track_created(cmd.docker("create", "--network=none", "--cap-drop=ALL",
                           "--security-opt=no-new-privileges", "--read-only",
                           "--label", "com.sourceos.stg1a.run=" + inventory.label,
                           "--entrypoint=/usr/bin/sha256sum", image_id, "/app/source-os-api.jar")[1])
     _, output = cmd.docker("start", "-a", probe)
     require(output.split() == [jar, "/app/source-os-api.jar"], "Packaged JAR digest differs")
-    probe = inventory.add("container", cmd.docker("create", "--network=none", "--cap-drop=ALL",
+    probe = inventory.track_created(cmd.docker("create", "--network=none", "--cap-drop=ALL",
                           "--security-opt=no-new-privileges", "--read-only",
                           "--label", "com.sourceos.stg1a.run=" + inventory.label,
                           "--entrypoint=/opt/java/openjdk/bin/java", image_id, "-version")[1])
@@ -895,7 +1314,7 @@ def verified_capacity(evidence, paths, policy, phase):
 def prepare_workspace(source, scratch, account, authorization):
     require(isinstance(authorization, Authorization), "Unapproved workload workspace preparation")
     work = scratch / "candidate"
-    shutil.copytree(source, work, symlinks=True)
+    shutil.copytree(source, work, symlinks=True, ignore=shutil.ignore_patterns(".git"))
     home = scratch / "home"
     temp = scratch / "fixtures"
     home.mkdir(mode=0o700)
@@ -916,6 +1335,7 @@ def main():
     # GitHub-signed claims and authenticated server records, never a local flag or file.
     workdir = Path(__file__).resolve().parents[2]
     out = Path(os.environ["RUNNER_TEMP"]) / "stg-1a-evidence"
+    require(out.parent == out.parent.resolve(), "Redirected evidence directory")
     out.mkdir(mode=0o700, exist_ok=False)
     evidence = {"candidate_sha": CANDIDATE, "attempt": 1, "stages": {},
                 "blockers": [], "capacity_samples": {}}
@@ -936,18 +1356,15 @@ def main():
         for key in ("STG1A_REVIEW_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN",
                     "ACTIONS_RUNTIME_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"):
             os.environ.pop(key, None)
-        evidence.update(controller_sha=auth.workflow_sha, run_id=auth.run_id,
-                        environment_id=auth.environment_id, reviewer_id=auth.reviewer_id,
-                        dispatcher_id=auth.actor_id, approval_ref=f"/actions/runs/{auth.run_id}/approvals",
-                        job_id=auth.job_id, runner_id=auth.runner_id, runner_name=auth.runner_name)
+        evidence = AuthorizedEvidence(auth, evidence)
         source = workdir.parent / "candidate"
         validate_checkout(source, lambda *args: git_at(source, *args))
-        require(git_at(source, "rev-parse", "HEAD:apps/api/Dockerfile")
-                == git_at(source, "hash-object", str(source / "apps/api/Dockerfile")),
-                "Candidate Dockerfile differs from accepted Git object")
         listing = git_at(source, "ls-tree", "-rz", "HEAD")
+        require(hashlib.sha256(listing.encode()).hexdigest() ==
+                "c122ad649c61dcc6106a1e90b9001d782d18565c53b500d082e38818d5f8c593",
+                "Candidate file listing differs from the accepted Git tree")
         snapshot = source_bytes(source, listing)
-        require(not git_at(source, "clean", "-ndx"), "Unexpected ignored material in candidate checkout")
+        check_working_files(source, snapshot)
         evidence["stages"]["source"] = {"passed": True, "detached": True, "clean": True,
                                           "tracked_files": len(snapshot)}
         policy = auth.policy
@@ -963,34 +1380,55 @@ def main():
         java = Path(os.environ["JAVA_HOME"]).resolve()
         require((java / "bin/java").is_file() and re.fullmatch(r"[A-Za-z0-9/._+-]+", str(java)),
                 "Reviewed Java installation path is unavailable")
-        paths = {"workspace": source, "maven": Path("/tmp"),
-                 "docker": Path(profile["docker_root"]), "oci": Path("/tmp"), "evidence": out}
+        scratch = Path(tempfile.mkdtemp(prefix="stg1a-", dir="/tmp"))
+        require(scratch == scratch.resolve(strict=True), "Redirected workload scratch")
+        # The isolated target/cache and both OCI archive copies reside under scratch.
+        # /tmp also covers JVM, CLI and controller temporary files on this runner.
+        paths = {"workspace": source, "maven": scratch, "target": scratch,
+                 "scratch": scratch, "temporary": Path("/tmp"),
+                 "docker": Path(profile["docker_root"]), "oci": scratch, "evidence": out}
         verified_capacity(evidence, paths, policy, "start")
-        monitor = StorageMonitor(paths, policy["reserve"])
-        monitor.start()
         evidence["stages"]["capacity"] = {"passed": True, "runner_label": policy["runner_label"],
                                            "profile_sha256": policy["profile_sha256"]}
-        scratch = Path(tempfile.mkdtemp(prefix="stg1a-"))
+        monitor = StorageMonitor(paths, policy["reserve"])
+        monitor.start()
         root, home, fixture = prepare_workspace(source, scratch, account, auth)
+        paths.update(maven=home, target=root / "apps/api", oci=fixture / "generated")
+        monitor.sample("toolchain", paths)
         require(source_bytes(root, listing) == snapshot, "Isolated copy changed the accepted source")
         commands = Commands(auth, home, java, root)
-        inventory = Inventory(commands, auth.run_id + "-1")
         evidence["stages"]["docker_policy"] = verify_profile(commands, profile)
+        inventory = Inventory(commands, auth.run_id + "-1")
         _, java_version = commands.call((str(java / "bin/java"), "-version"))
         require(re.search(r'(?:openjdk|java) version "25(?:\.|")', java_version), "Build runtime is not Java 25")
         maven = commands.maven(("./mvnw", "-version"), 180)
         require("Apache Maven 3.9.11 " in maven and re.search(r"Java version: 25(?:\.|,)", maven),
                 "Maven wrapper or its Java runtime was not pinned")
+        before_maven = capacity(paths, policy["storage"]["pre_maven"], policy["reserve"])
+        check_capacity(before_maven)
+        evidence["capacity_before_maven"] = before_maven
+        monitor.sample("maven")
         monitor_maven(commands)
         ryuk_cleanup = True
         require(not monitor.failed, "Filesystem reserve was exceeded during Maven")
-        code, git_state = commands.call(("/usr/bin/git", "status", "--porcelain", "--untracked-files=all"))
-        require(code == 0 and not git_state, "Maven modified the approved source checkout")
-        require(commands.call(("/usr/bin/git", "rev-parse", "HEAD"))[1] == CANDIDATE
-                and source_bytes(root, listing) == snapshot, "Maven source revision or tracked bytes changed")
+        monitor.sample("image")
+        require(source_bytes(root, listing) == snapshot, "Maven modified tracked source")
+        check_working_files(root, snapshot, built=True)
         java_release = next(line for line in java_version.splitlines()
                             if re.search(r'(?:openjdk|java) version "25(?:\.|")', line))
-        jar = jar_provenance(root, java_release, "3.9.11")
+        context = fixture / "context"
+        (context / "target").mkdir(parents=True)
+        for name in ("Dockerfile", ".dockerignore"):
+            with confined(source, Path("apps/api") / name) as stream:
+                content = stream.read()
+            require(hashlib.sha256(content).hexdigest() == snapshot["apps/api/" + name],
+                    "Build context input changed")
+            (context / name).write_bytes(content)
+        jar = jar_provenance(root, java_release, "3.9.11", context, snapshot)
+        for path in (context, context / "target"):
+            path.chmod(0o755)
+        for path in (context / JAR, context / "Dockerfile", context / ".dockerignore"):
+            path.chmod(0o444)
         jar["ryuk_privileged"] = False
         jar["ryuk_cleanup_verified"] = True
         evidence["stages"]["maven"] = jar
@@ -998,25 +1436,34 @@ def main():
                              lambda: verified_capacity(evidence, paths, policy, "export"))
         require(not monitor.failed, "Filesystem reserve was exceeded during image build")
         evidence["stages"]["image"] = image
+        monitor.sample("runtime")
         runtime_fixtures(commands, inventory, image["runtime_id"], policy["fixture_image"],
                          fixture, java, evidence["stages"])
     except (Blocked, KeyError, OSError, TypeError, ValueError, OverflowError, ET.ParseError) as exc:
         error = str(exc) if isinstance(exc, Blocked) else f"Required runtime evidence invalid ({type(exc).__name__})"
         evidence["blockers"].append(error)
     finally:
-        if monitor is not None and monitor.worker.ident is not None:
+        if inventory is not None:
+            cleanup_report = {"passed": False}
+            evidence["stages"]["cleanup"] = cleanup_report
             try:
+                inventory.cleanup_session(cleanup_report)
+                require(ryuk_cleanup, "Testcontainers cleanup is unverified")
+            except Blocked as exc:
+                cleanup_report["passed"] = False
+                evidence["blockers"].append(str(exc))
+            except (OSError, ValueError, TypeError, KeyError):
+                cleanup_report["passed"] = False
+                evidence["blockers"].append("Owned Docker or Testcontainers cleanup could not be verified")
+        if monitor is not None:
+            try:
+                require(monitor.worker.ident is not None, "Storage sampling did not start")
                 evidence["capacity_peak"] = monitor.finish()
                 require(not monitor.failed, "Filesystem reserve was exceeded during runtime")
             except (Blocked, OSError):
+                evidence["capacity_peak"] = None
+                evidence["capacity_errors"] = list(monitor.errors) or ["Measurement or reserve unavailable"]
                 evidence["blockers"].append("Filesystem peak or reserve could not be verified")
-        if inventory is not None:
-            try:
-                cleanup = inventory.cleanup() if inventory.resources else {"verified_owned_resources": 0}
-                require(ryuk_cleanup, "Testcontainers cleanup is unverified")
-                evidence["stages"]["cleanup"] = cleanup | {"passed": True}
-            except (Blocked, OSError, ValueError, TypeError, KeyError):
-                evidence["blockers"].append("Owned Docker or Testcontainers cleanup could not be verified")
         if scratch is not None:
             # Temp area is the fixed controller-created root. Never prune the daemon.
             try:
